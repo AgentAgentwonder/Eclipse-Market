@@ -1,0 +1,40 @@
+{
+  "name": "eclipse-market-pro",
+  "version": "1.0.0",
+  "main": "index.js",
+  {
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
+  }
+}
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@tanstack/react-query": "^5.90.5",
+    "autoprefixer": "^10.4.21",
+    "framer-motion": "^12.23.24",
+    "lucide-react": "^0.546.0",
+    "postcss": "^8.5.6",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-toastify": "^11.0.5",
+    "recharts": "^3.3.0",
+    "tailwindcss": "^4.1.15",
+    "zustand": "^5.0.8"
+  },
+  "devDependencies": {
+    "@tauri-apps/api": "^2.9.0",
+    "@tauri-apps/cli": "^2.9.0",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^4.7.0",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.1"
+  }
+}
