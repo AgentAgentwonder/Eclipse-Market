@@ -15,11 +15,39 @@ name = "app_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "2.5.0" }
+tauri-build = { version = "2.5.0", features = [] }
 
 [dependencies]
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
-tauri = { version = "2.9.0" }
-tauri-plugin-log = "2"
+tauri = "2.9.0"
+solana-sdk = "2.0.0"
+tokio = { version = "1.48.0", features = ["full"] }
+duckdb = "1.0.0"
+tokio-tungstenite = { version = "0.20.0", features = ["connect"] }
+futures-util = "0.3.0"
+url = "2.5.0"
+linfa = "0.8.0"
+linfa-svm = { version = "0.8.0", features = ["serde"] }
+ndarray = "0.16.1"
+smartcore = { version = "0.4.5", default-features = false, features = [] }
+getrandom = { version = "0.2", features = ["std"] }
+rand = { version = "0.8", default-features = false }
+reqwest = { version = "0.11.0", features = ["rustls-tls"], default-features = false }
+chrono = { version = "0.4.0", features = ["serde"] }
+sysinfo = "0.29.0"
+openssl = { version = "0.10", optional = true }
+webpki-roots = "0.25.4"
+openssl-sys = { version = "0.9", features = ["vendored"] }
+tauri-plugin-log = "2.7.0"
+
+[features]
+default = ["rustls"]
+rustls = ["reqwest/rustls-tls"]
+
+[profile.release]
+opt-level = 'z'
+lto = true
+codegen-units = 1
+panic = 'abort'
