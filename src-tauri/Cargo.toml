@@ -35,12 +35,13 @@ smartcore = { version = "0.4.5", default-features = false, features = [] }
 getrandom = { version = "0.2", features = ["std"] }
 rand = { version = "0.8", default-features = false }
 reqwest = { version = "0.11.0", features = ["rustls-tls"], default-features = false }
-chrono = { version = "0.4.0", features = ["serde"] }
+chrono = { version = "0.4", features = ["serde"] }
 sysinfo = "0.29.0"
 openssl = { version = "0.10", optional = true }
 webpki-roots = "0.25.4"
 openssl-sys = { version = "0.9", features = ["vendored"] }
 tauri-plugin-log = "2.7.0"
+uuid = { version = "1.0", features = ["v4", "serde"] }
 
 [features]
 default = ["rustls"]

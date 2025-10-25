@@ -1,4 +1,4 @@
-use duckdb::{Connection, params};
+use duckdb::Connection;
 use std::path::Path;
 
 pub struct MarketDB {
