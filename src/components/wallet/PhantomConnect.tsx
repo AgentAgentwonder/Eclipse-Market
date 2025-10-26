@@ -4,9 +4,9 @@ import { useWallet as useAdapterWallet, useConnection } from '@solana/wallet-ada
 import { WalletReadyState } from '@solana/wallet-adapter-base'
 import { LAMPORTS_PER_SOL } from '@solana/web3.js'
 import { Wallet, AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
-import { shallow } from 'zustand/shallow'
 
 import { useWalletStore, PhantomSession } from '../../store/walletStore'
+import { HardwareWalletStatus } from './HardwareWalletStatus'
 
 function getErrorMessage(error: unknown): string {
   if (!error) return 'Unknown error'
@@ -32,26 +32,33 @@ export function PhantomConnect() {
     setSession,
     reset,
     network,
-  } = useWalletStore(
-    (state) => ({
-      status: state.status,
-      setStatus: state.setStatus,
-      publicKey: state.publicKey,
-      setPublicKey: state.setPublicKey,
-      balance: state.balance,
-      setBalance: state.setBalance,
-      error: state.error,
-      setError: state.setError,
-      autoReconnect: state.autoReconnect,
-      attemptedAutoConnect: state.attemptedAutoConnect,
-      setAttemptedAutoConnect: state.setAttemptedAutoConnect,
-      setLastConnected: state.setLastConnected,
-      setSession: state.setSession,
-      reset: state.reset,
-      network: state.network,
-    }),
-    shallow,
-  )
+    walletType,
+    setWalletType,
+    hardwareSession,
+    hardwareStatus,
+    setHardwareStatus,
+  } = useWalletStore((state) => ({
+    status: state.status,
+    setStatus: state.setStatus,
+    publicKey: state.publicKey,
+    setPublicKey: state.setPublicKey,
+    balance: state.balance,
+    setBalance: state.setBalance,
+    error: state.error,
+    setError: state.setError,
+    autoReconnect: state.autoReconnect,
+    attemptedAutoConnect: state.attemptedAutoConnect,
+    setAttemptedAutoConnect: state.setAttemptedAutoConnect,
+    setLastConnected: state.setLastConnected,
+    setSession: state.setSession,
+    reset: state.reset,
+    network: state.network,
+    walletType: state.walletType,
+    setWalletType: state.setWalletType,
+    hardwareSession: state.hardwareSession,
+    hardwareStatus: state.hardwareStatus,
+    setHardwareStatus: state.setHardwareStatus,
+  }))
 
   const { connection } = useConnection()
   const {
@@ -61,8 +68,9 @@ export function PhantomConnect() {
     connect,
     disconnect,
     wallet,
-    readyState,
   } = useAdapterWallet()
+
+  const walletReadyState = wallet?.readyState ?? wallet?.adapter?.readyState ?? WalletReadyState.Unsupported
 
   const base58Key = useMemo(() => adapterPublicKey?.toBase58() ?? null, [adapterPublicKey])
 
@@ -84,6 +92,7 @@ export function PhantomConnect() {
     setPublicKey(base58Key)
     setLastConnected(new Date().toISOString())
     setError(null)
+    setWalletType('phantom')
 
     let cancelled = false
 
@@ -155,8 +164,9 @@ export function PhantomConnect() {
           setSession(session)
           setPublicKey(session.publicKey)
           setLastConnected(session.lastConnected ?? null)
+          setWalletType('phantom')
 
-          if (!connected && wallet && (readyState === WalletReadyState.Installed || readyState === WalletReadyState.Loadable)) {
+          if (!connected && wallet && (walletReadyState === WalletReadyState.Installed || walletReadyState === WalletReadyState.Loadable)) {
             try {
               await connect()
             } catch (err) {
@@ -170,7 +180,7 @@ export function PhantomConnect() {
     }
 
     attemptRestore()
-  }, [attemptedAutoConnect, autoReconnect, setAttemptedAutoConnect, setSession, setPublicKey, setLastConnected, connected, wallet, readyState, connect])
+  }, [attemptedAutoConnect, autoReconnect, setAttemptedAutoConnect, setSession, setPublicKey, setLastConnected, connected, wallet, walletReadyState, connect])
 
   const handleConnect = useCallback(async () => {
     if (!wallet) {
@@ -179,7 +189,7 @@ export function PhantomConnect() {
       return
     }
 
-    if (readyState === WalletReadyState.Unsupported) {
+    if (walletReadyState === WalletReadyState.Unsupported) {
       setError('Phantom wallet is not installed. Install it from https://phantom.app/')
       setStatus('error')
       return
@@ -195,7 +205,7 @@ export function PhantomConnect() {
       setError(message.includes('User rejected') ? 'Connection rejected' : message)
       setStatus('error')
     }
-  }, [wallet, readyState, connect, setError, setStatus])
+  }, [wallet, walletReadyState, connect, setError, setStatus])
 
   const handleDisconnect = useCallback(async () => {
     try {
@@ -235,6 +245,10 @@ export function PhantomConnect() {
       default:
         return null
     }
+  }
+
+  if (hardwareSession) {
+    return <HardwareWalletStatus />
   }
 
   if (connected && publicKey) {

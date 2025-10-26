@@ -1,11 +1,12 @@
 import { describe, expect, beforeEach, it } from 'vitest'
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base'
 
-import { useWalletStore, PhantomSession } from './walletStore'
+import { useWalletStore, PhantomSession, HardwareWalletSession, HardwareDevice } from './walletStore'
 
 const resetStore = () => {
   const state = useWalletStore.getState()
   state.reset()
+  state.resetHardware()
   state.setNetwork(WalletAdapterNetwork.Devnet)
   state.setEndpoint(null)
   state.setAutoReconnect(true)
@@ -69,5 +70,45 @@ describe('walletStore', () => {
     expect(next.balance).toBe(0)
     expect(next.status).toBe('disconnected')
     expect(next.error).toBeNull()
+  })
+
+  it('manages hardware wallet state', () => {
+    const device: HardwareDevice = {
+      id: 'ledger-1',
+      deviceType: 'ledger',
+      model: 'Nano X',
+      firmwareVersion: '1.0.0',
+      connected: false,
+    }
+
+    const session: HardwareWalletSession = {
+      device: { ...device, connected: true },
+      publicKey: 'abc123',
+      derivationPath: "44'/501'/0'/0'",
+      connectedAt: '2024-01-01T00:00:00Z',
+    }
+
+    const state = useWalletStore.getState()
+    state.setHardwareDevices([device])
+    state.setHardwareStatus('connecting')
+    state.setHardwareSession(session)
+    state.setHardwareError('test-error')
+    state.setWalletType('ledger')
+
+    const next = useWalletStore.getState()
+    expect(next.hardwareDevices).toHaveLength(1)
+    expect(next.hardwareDevices[0].model).toBe('Nano X')
+    expect(next.hardwareStatus).toBe('connecting')
+    expect(next.hardwareSession?.publicKey).toBe('abc123')
+    expect(next.hardwareError).toBe('test-error')
+    expect(next.walletType).toBe('ledger')
+
+    state.resetHardware()
+    const resetState = useWalletStore.getState()
+    expect(resetState.hardwareDevices).toHaveLength(0)
+    expect(resetState.hardwareSession).toBeNull()
+    expect(resetState.hardwareStatus).toBe('disconnected')
+    expect(resetState.hardwareError).toBeNull()
+    expect(resetState.walletType).toBeNull()
   })
 })

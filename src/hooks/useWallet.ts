@@ -17,7 +17,8 @@ export function useWallet() {
     reset,
   } = useWalletStore()
 
-  const { connect: adapterConnect, disconnect: adapterDisconnect, readyState } = useAdapterWallet()
+  const { connect: adapterConnect, disconnect: adapterDisconnect, wallet: adapterWallet } = useAdapterWallet()
+  const readyState = adapterWallet?.readyState ?? adapterWallet?.adapter?.readyState ?? WalletReadyState.Unsupported
 
   const loading = status === 'connecting'
   const wallet = publicKey

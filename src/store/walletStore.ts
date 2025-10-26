@@ -3,6 +3,7 @@ import { WalletAdapterNetwork } from '@solana/wallet-adapter-base'
 import { createJSONStorage, persist, StateStorage } from 'zustand/middleware'
 
 export type WalletStatus = 'disconnected' | 'connecting' | 'connected' | 'error'
+export type WalletType = 'phantom' | 'ledger' | 'trezor' | null
 
 export interface PhantomSession {
   publicKey: string
@@ -10,6 +11,21 @@ export interface PhantomSession {
   connected: boolean
   lastConnected?: string | null
   label?: string
+}
+
+export interface HardwareDevice {
+  id: string
+  deviceType: 'ledger' | 'trezor'
+  model: string
+  firmwareVersion?: string
+  connected: boolean
+}
+
+export interface HardwareWalletSession {
+  device: HardwareDevice
+  publicKey?: string
+  derivationPath: string
+  connectedAt: string
 }
 
 interface WalletStoreState {
@@ -23,6 +39,11 @@ interface WalletStoreState {
   attemptedAutoConnect: boolean
   lastConnected: string | null
   session: PhantomSession | null
+  walletType: WalletType
+  hardwareDevices: HardwareDevice[]
+  hardwareSession: HardwareWalletSession | null
+  hardwareStatus: WalletStatus
+  hardwareError: string | null
 
   setStatus: (status: WalletStatus) => void
   setPublicKey: (publicKey: string | null) => void
@@ -34,7 +55,13 @@ interface WalletStoreState {
   setAttemptedAutoConnect: (attempted: boolean) => void
   setLastConnected: (timestamp: string | null) => void
   setSession: (session: PhantomSession | null) => void
+  setWalletType: (type: WalletType) => void
+  setHardwareDevices: (devices: HardwareDevice[]) => void
+  setHardwareSession: (session: HardwareWalletSession | null) => void
+  setHardwareStatus: (status: WalletStatus) => void
+  setHardwareError: (error: string | null) => void
   reset: () => void
+  resetHardware: () => void
 }
 
 const memoryStorage = (): StateStorage => {
@@ -84,6 +111,11 @@ export const useWalletStore = create<WalletStoreState>()(
       attemptedAutoConnect: false,
       lastConnected: null,
       session: null,
+      walletType: null,
+      hardwareDevices: [],
+      hardwareSession: null,
+      hardwareStatus: 'disconnected',
+      hardwareError: null,
 
       setStatus: (status) => set({ status }),
       setPublicKey: (publicKey) => set({ publicKey }),
@@ -95,6 +127,11 @@ export const useWalletStore = create<WalletStoreState>()(
       setAttemptedAutoConnect: (attempted) => set({ attemptedAutoConnect: attempted }),
       setLastConnected: (timestamp) => set({ lastConnected: timestamp }),
       setSession: (session) => set({ session }),
+      setWalletType: (type) => set({ walletType: type }),
+      setHardwareDevices: (devices) => set({ hardwareDevices: devices }),
+      setHardwareSession: (session) => set({ hardwareSession: session }),
+      setHardwareStatus: (status) => set({ hardwareStatus: status }),
+      setHardwareError: (error) => set({ hardwareError: error }),
       reset: () =>
         set({
           status: 'disconnected',
@@ -103,6 +140,15 @@ export const useWalletStore = create<WalletStoreState>()(
           error: null,
           session: null,
           lastConnected: null,
+          walletType: null,
+        }),
+      resetHardware: () =>
+        set({
+          hardwareDevices: [],
+          hardwareSession: null,
+          hardwareStatus: 'disconnected',
+          hardwareError: null,
+          walletType: null,
         }),
     }),
     {
@@ -120,6 +166,8 @@ export const useWalletStore = create<WalletStoreState>()(
         autoReconnect: state.autoReconnect,
         lastConnected: state.lastConnected,
         session: state.session,
+        walletType: state.walletType,
+        hardwareSession: state.hardwareSession,
       }),
     },
   ),
