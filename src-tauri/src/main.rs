@@ -4,6 +4,9 @@
     windows_subsystem = "windows"
 )]
 
+mod sentiment;
+pub use sentiment::*;
+
 use tauri::Manager;
 
 fn main() {

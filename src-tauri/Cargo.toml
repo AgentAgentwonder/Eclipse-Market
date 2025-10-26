@@ -24,7 +24,7 @@ log = "0.4"
 tauri = "2.9.0"
 solana-sdk = "2.0.0"
 tokio = { version = "1.48.0", features = ["full"] }
-duckdb = "1.0.0"
+duckdb = { version = "1.0.0", features = ["bundled"] }
 tokio-tungstenite = { version = "0.20.0", features = ["connect"] }
 futures-util = "0.3.0"
 url = "2.5.0"

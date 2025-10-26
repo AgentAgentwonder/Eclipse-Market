@@ -7,6 +7,7 @@ pub struct SentimentResult {
     pub confidence: f32,
 }
 
+#[tauri::command]
 pub fn analyze_sentiment(text: &str) -> SentimentResult {
     let positive_words = ["good", "great", "excellent", "bullish", "moon", "pump", "profit", "gain", "win", "rocket"];
     let negative_words = ["bad", "terrible", "bearish", "dump", "crash", "loss", "scam", "rug", "fail", "dead"];

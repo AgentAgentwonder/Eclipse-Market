@@ -1,17 +1,12 @@
-import { Layout } from './Layout'
-import { Routes, Route } from 'react-router-dom'
-import { Trading } from './pages/Trading'
-import { Market } from './pages/Market'
-import { AIAnalysis } from './pages/AIAnalysis'
+import React from 'react';
+import { Layout } from './Layout';
 
 export default function App() {
   return (
     <Layout>
-      <Routes>
-        <Route path="/" element={<Trading />} />
-        <Route path="/market" element={<Market />} />
-        <Route path="/ai" element={<AIAnalysis />} />
-      </Routes>
+      <div className="p-4">
+        {/* Your main app content */}
+      </div>
     </Layout>
   );
 }

@@ -4,24 +4,26 @@
   "version": "0.1.0",
   "identifier": "com.tauri.dev",
   "build": {
-    "frontendDist": "../build",
-    "devUrl": "http://localhost:1420",
+    "frontendDist": "../dist",
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build"
   },
-  "app": {
-    "windows": [
-      {
-        "title": "Eclipse Market Pro",
-        "width": 800,
-        "height": 600,
-        "resizable": true,
-        "fullscreen": false
-      }
-    ],
-    "security": {
-      "csp": null
+  "tauri": {
+    "embeddedServer": {
+      "active": false
     }
+  },
+  "windows": [
+    {
+      "title": "Eclipse Market Pro",
+      "width": 800,
+      "height": 600,
+      "resizable": true,
+      "fullscreen": false
+    }
+  ],
+  "security": {
+    "csp": null
   },
   "bundle": {
     "active": true,
