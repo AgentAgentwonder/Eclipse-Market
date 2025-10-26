@@ -18,3 +18,5 @@ export function Trading() {
     </div>
   );
 }
+
+export default Trading;

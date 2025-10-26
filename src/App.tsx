@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, Home, TrendingUp, BarChart3, Users, Bell, Settings } from 'lucide-react'
-import { PhantomConnect } from './components/wallet/PhantomConnect'
+import { WalletSelector } from './components/wallet/WalletSelector'
 import Dashboard from './pages/Dashboard'
 import Coins from './pages/Coins'
 import Stocks from './pages/Stocks'
@@ -46,7 +46,7 @@ function App() {
             </div>
 
             <div className="flex items-center gap-4">
-              <PhantomConnect />
+              <WalletSelector />
               <div className="px-3 py-1 bg-green-500/20 text-green-400 rounded-xl border border-green-500/30 flex items-center gap-2 text-sm">
                 <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
                 LIVE
