@@ -1,74 +1,80 @@
-import { useState, useEffect } from 'react'
+import { useWallet as useAdapterWallet } from '@solana/wallet-adapter-react'
+import { WalletReadyState } from '@solana/wallet-adapter-base'
+import { useCallback, useEffect } from 'react'
 import { invoke } from '@tauri-apps/api/tauri'
 
+import { useWalletStore } from '../store/walletStore'
+
 export function useWallet() {
-  const [wallet, setWallet] = useState<string | null>(null)
-  const [balance, setBalance] = useState<number>(0)
-  const [loading, setLoading] = useState(false)
+  const {
+    publicKey,
+    balance,
+    status,
+    error,
+    setBalance,
+    setStatus,
+    setError,
+    reset,
+  } = useWalletStore()
 
-  useEffect(() => {
-    loadWallet()
-  }, [])
+  const { connect: adapterConnect, disconnect: adapterDisconnect, readyState } = useAdapterWallet()
 
-  useEffect(() => {
-    if (wallet) {
-      loadBalance()
-      const interval = setInterval(loadBalance, 10000)
-      return () => clearInterval(interval)
-    }
-  }, [wallet])
+  const loading = status === 'connecting'
+  const wallet = publicKey
 
-  const loadWallet = async () => {
-    try {
-      const address = await invoke<string | null>('get_wallet')
-      if (address) {
-        setWallet(address)
-      }
-    } catch (e) {
-      console.error('Failed to load wallet:', e)
-    }
-  }
-
-  const loadBalance = async () => {
+  const loadBalance = useCallback(async () => {
     if (!wallet) return
     try {
-      const bal = await invoke<number>('get_balance', { address: wallet })
+      const bal = await invoke<number>('phantom_balance', { address: wallet })
       setBalance(bal)
     } catch (e) {
       console.error('Failed to load balance:', e)
     }
-  }
+  }, [wallet, setBalance])
 
-  const connectWallet = async () => {
-    const address = prompt('Enter your Solana wallet address:')
-    if (!address) return
-
-    setLoading(true)
-    try {
-      await invoke('connect_wallet', { address })
-      setWallet(address)
-      await loadBalance()
-    } catch (e: any) {
-      alert('Failed to connect wallet: ' + e)
-    } finally {
-      setLoading(false)
+  useEffect(() => {
+    if (wallet && status === 'connected') {
+      loadBalance()
+      const interval = setInterval(loadBalance, 15000)
+      return () => clearInterval(interval)
     }
-  }
+  }, [wallet, status, loadBalance])
 
-  const disconnectWallet = async () => {
+  const connectWallet = useCallback(async () => {
+    if (readyState === WalletReadyState.Unsupported) {
+      setError('Phantom wallet is not installed')
+      setStatus('error')
+      return
+    }
+
     try {
-      await invoke('disconnect_wallet')
-      setWallet(null)
-      setBalance(0)
+      setStatus('connecting')
+      setError(null)
+      await adapterConnect()
+    } catch (e) {
+      console.error('Failed to connect wallet via hook:', e)
+      setError(e instanceof Error ? e.message : 'Unable to connect wallet')
+      setStatus('error')
+    }
+  }, [adapterConnect, readyState, setError, setStatus])
+
+  const disconnectWallet = useCallback(async () => {
+    try {
+      await adapterDisconnect()
+      await invoke('phantom_disconnect')
+      reset()
     } catch (e) {
       console.error('Failed to disconnect:', e)
+      setError('Unable to disconnect wallet')
     }
-  }
+  }, [adapterDisconnect, reset, setError])
 
   return {
     wallet,
     balance,
     loading,
+    error,
+    connected: status === 'connected',
     connectWallet,
     disconnectWallet,
     refresh: loadBalance,
