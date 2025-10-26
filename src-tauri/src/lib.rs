@@ -1,30 +1,37 @@
 mod auth;
-mod db;
-mod jupiter;
-mod realtime;
-mod automation;
 mod ai;
 mod sentiment;
+mod market;
+mod websocket_handler;
 
 pub use auth::*;
-pub use db::*;
-pub use jupiter::*;
-pub use realtime::*;
-pub use automation::*;
 pub use ai::*;
 pub use sentiment::*;
+pub use market::*;
+pub use websocket_handler::*;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .setup(|_app| Ok(()))
+        .setup(|_app| {
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
+            // Auth
             connect_phantom,
-            quote_swap,
-            subscribe_price_feed,
-            create_automation,
+            
+            // AI & Sentiment
             assess_risk,
             analyze_text_sentiment,
+            
+            // Market Data
+            get_coin_price,
+            get_price_history,
+            search_tokens,
+            
+            // WebSocket
+            start_price_stream,
+            stop_price_stream,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

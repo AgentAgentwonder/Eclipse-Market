@@ -1,20 +1,20 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import path from 'path'
 
 export default defineConfig({
-  root: path.resolve(__dirname, './'),
   plugins: [react()],
+  clearScreen: false,
   server: {
-    port: 3000,
+    port: 1420,
     strictPort: true,
-  },
-  build: {
-    outDir: './dist',
-    emptyOutDir: true,
-    rollupOptions: {
-      input: path.resolve(__dirname, 'index.html')
+    watch: {
+      ignored: ["**/src-tauri/**"],
     },
-    target: 'esnext',
-  }
+  },
+  envPrefix: ['VITE_', 'TAURI_'],
+  build: {
+    target: process.env.TAURI_PLATFORM == 'windows' ? 'chrome105' : 'safari13',
+    minify: !process.env.TAURI_DEBUG ? 'esbuild' : false,
+    sourcemap: !!process.env.TAURI_DEBUG,
+  },
 })
