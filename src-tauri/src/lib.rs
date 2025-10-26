@@ -1,4 +1,5 @@
 mod ai;
+mod api;
 mod auth;
 mod market;
 mod sentiment;
@@ -6,6 +7,7 @@ mod wallet;
 mod websocket_handler;
 
 pub use ai::*;
+pub use api::*;
 pub use auth::*;
 pub use market::*;
 pub use sentiment::*;
@@ -48,6 +50,10 @@ pub fn run() {
             // WebSocket
             start_price_stream,
             stop_price_stream,
+            
+            // Jupiter v6
+            jupiter_quote,
+            jupiter_swap,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
