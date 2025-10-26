@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, Home, TrendingUp, BarChart3, Users, Bell, Settings, Wallet } from 'lucide-react'
-import { useWallet } from './hooks/useWallet'
+import { Menu, X, Home, TrendingUp, BarChart3, Users, Bell, Settings } from 'lucide-react'
+import { PhantomConnect } from './components/wallet/PhantomConnect'
 import Dashboard from './pages/Dashboard'
 import Coins from './pages/Coins'
 import Stocks from './pages/Stocks'
@@ -12,7 +12,6 @@ import SettingsPage from './pages/Settings'
 function App() {
   const [currentPage, setCurrentPage] = useState('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { wallet, balance, connectWallet, disconnectWallet } = useWallet()
 
   const pages = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, component: Dashboard },
@@ -47,30 +46,7 @@ function App() {
             </div>
 
             <div className="flex items-center gap-4">
-              {wallet ? (
-                <div className="flex items-center gap-3">
-                  <div className="px-4 py-2 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center gap-2">
-                    <Wallet className="w-4 h-4" />
-                    <span className="font-mono text-sm">{wallet.slice(0, 4)}...{wallet.slice(-4)}</span>
-                  </div>
-                  <div className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 font-bold">
-                    {balance.toFixed(4)} SOL
-                  </div>
-                  <button
-                    onClick={disconnectWallet}
-                    className="px-4 py-2 rounded-xl border-2 border-red-500/30 hover:border-red-500/50 hover:bg-red-500/10 transition-all text-sm"
-                  >
-                    Disconnect
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={connectWallet}
-                  className="px-6 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 font-medium transition-all shadow-lg shadow-purple-500/30"
-                >
-                  Connect Wallet
-                </button>
-              )}
+              <PhantomConnect />
               <div className="px-3 py-1 bg-green-500/20 text-green-400 rounded-xl border border-green-500/30 flex items-center gap-2 text-sm">
                 <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
                 LIVE
