@@ -1,6 +1,7 @@
 mod ai;
 mod api;
 mod auth;
+mod bots;
 mod core;
 mod market;
 mod portfolio;
@@ -14,6 +15,7 @@ mod stream_commands;
 pub use ai::*;
 pub use api::*;
 pub use auth::*;
+pub use bots::*;
 pub use core::*;
 pub use market::*;
 pub use portfolio::*;
@@ -70,19 +72,29 @@ pub fn run() {
             app.manage(two_factor_manager);
             app.manage(ws_manager);
 
-            trading::register_trading_state(app);
+             trading::register_trading_state(app);
 
-            let portfolio_data = portfolio::PortfolioDataState::new();
-            let rebalancer_state = portfolio::RebalancerState::default();
-            let tax_lots_state = portfolio::TaxLotsState::default();
+             let automation_handle = app.handle();
+             tauri::async_runtime::spawn(async move {
+                 if let Err(err) = bots::init_dca(&automation_handle).await {
+                     eprintln!("Failed to initialize DCA bots: {err}");
+                 }
+                 if let Err(err) = trading::init_copy_trading(&automation_handle).await {
+                     eprintln!("Failed to initialize copy trading: {err}");
+                 }
+             });
 
-            app.manage(std::sync::Mutex::new(portfolio_data));
-            app.manage(std::sync::Mutex::new(rebalancer_state));
-            app.manage(std::sync::Mutex::new(tax_lots_state));
+             let portfolio_data = portfolio::PortfolioDataState::new();
+             let rebalancer_state = portfolio::RebalancerState::default();
+             let tax_lots_state = portfolio::TaxLotsState::default();
 
-            Ok(())
-        })
-        .invoke_handler(tauri::generate_handler![
+             app.manage(std::sync::Mutex::new(portfolio_data));
+             app.manage(std::sync::Mutex::new(rebalancer_state));
+             app.manage(std::sync::Mutex::new(tax_lots_state));
+
+             Ok(())
+            })
+
             // Wallet
             phantom_connect,
             phantom_disconnect,
@@ -189,6 +201,30 @@ pub fn run() {
             get_order,
             acknowledge_order,
             update_order_prices,
+            
+            // DCA Bots
+            dca_init,
+            dca_create,
+            dca_list,
+            dca_get,
+            dca_pause,
+            dca_resume,
+            dca_delete,
+            dca_history,
+            dca_performance,
+            
+            // Copy Trading
+            copy_trading_init,
+            copy_trading_create,
+            copy_trading_list,
+            copy_trading_get,
+            copy_trading_pause,
+            copy_trading_resume,
+            copy_trading_delete,
+            copy_trading_history,
+            copy_trading_performance,
+            copy_trading_process_activity,
+            copy_trading_followed_wallets,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
