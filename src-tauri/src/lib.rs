@@ -2,6 +2,7 @@ mod ai;
 mod api;
 mod auth;
 mod market;
+mod security;
 mod sentiment;
 mod wallet;
 mod websocket_handler;
@@ -17,6 +18,10 @@ pub use websocket_handler::*;
 
 use wallet::hardware_wallet::HardwareWalletState;
 use wallet::phantom::{hydrate_wallet_state, WalletState};
+use security::keystore::Keystore;
+use auth::session_manager::SessionManager;
+use auth::two_factor::TwoFactorManager;
+use std::error::Error;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -27,6 +32,26 @@ pub fn run() {
             if let Err(e) = hydrate_wallet_state(&app.handle()) {
                 eprintln!("Failed to hydrate wallet state: {e}");
             }
+
+            let keystore = Keystore::initialize(&app.handle()).map_err(|e| {
+                eprintln!("Failed to initialize keystore: {e}");
+                Box::new(e) as Box<dyn Error>
+            })?;
+
+            let session_manager = SessionManager::new();
+            if let Err(e) = session_manager.hydrate(&keystore) {
+                eprintln!("Failed to hydrate session manager: {e}");
+            }
+
+            let two_factor_manager = TwoFactorManager::new();
+            if let Err(e) = two_factor_manager.hydrate(&keystore) {
+                eprintln!("Failed to hydrate 2FA manager: {e}");
+            }
+
+            app.manage(keystore);
+            app.manage(session_manager);
+            app.manage(two_factor_manager);
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -51,6 +76,22 @@ pub fn run() {
             biometric_disable,
             biometric_verify_fallback,
             connect_phantom,
+
+            // Session Management
+            session_create,
+            session_renew,
+            session_end,
+            session_status,
+            session_verify,
+            session_update_activity,
+            session_configure_timeout,
+
+            // 2FA
+            two_factor_enroll,
+            two_factor_verify,
+            two_factor_disable,
+            two_factor_status,
+            two_factor_regenerate_backup_codes,
             
             // AI & Sentiment
             assess_risk,

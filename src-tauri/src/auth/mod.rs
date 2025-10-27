@@ -1,4 +1,6 @@
 pub mod biometric;
+pub mod session_manager;
+pub mod two_factor;
 
 use biometric::BiometricStatus;
 use serde::{Deserialize, Serialize};
