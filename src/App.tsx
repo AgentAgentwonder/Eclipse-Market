@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, Home, TrendingUp, BarChart3, Users, Bell, Settings, Briefcase } from 'lucide-react'
+import { Menu, X, Home, TrendingUp, BarChart3, Users, Bell, Settings, Briefcase, Loader2 } from 'lucide-react'
 import { invoke } from '@tauri-apps/api/tauri'
 import { PhantomConnect } from './components/wallet/PhantomConnect'
+import { WalletSwitcher } from './components/wallet/WalletSwitcher'
+import { AddWalletModal } from './components/wallet/AddWalletModal'
+import { GroupManagementModal } from './components/wallet/GroupManagementModal'
+import { WalletSettingsModal } from './components/wallet/WalletSettingsModal'
 import { LockScreen } from './components/auth/LockScreen'
 import { ConnectionStatus } from './components/common/ConnectionStatus'
 import Dashboard from './pages/Dashboard'
@@ -13,6 +17,7 @@ import Trading from './pages/Trading'
 import Portfolio from './pages/Portfolio'
 import SettingsPage from './pages/Settings'
 import { BIOMETRIC_STATUS_EVENT } from './constants/events'
+import { useWalletStore } from './store/walletStore'
 
 type BiometricStatus = {
   available: boolean
@@ -27,6 +32,13 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [lockVisible, setLockVisible] = useState(false)
   const [initializingLock, setInitializingLock] = useState(true)
+  const [addWalletModalOpen, setAddWalletModalOpen] = useState(false)
+  const [groupsModalOpen, setGroupsModalOpen] = useState(false)
+  const [walletSettingsModalOpen, setWalletSettingsModalOpen] = useState(false)
+  const [selectedWalletId, setSelectedWalletId] = useState<string | null>(null)
+
+  const wallets = useWalletStore((state) => state.wallets)
+  const refreshMultiWallet = useWalletStore((state) => state.refreshMultiWallet)
 
   useEffect(() => {
     const hydrate = async () => {
@@ -43,6 +55,12 @@ function App() {
 
     hydrate()
   }, [])
+
+  useEffect(() => {
+    refreshMultiWallet().catch((error) => {
+      console.error('Failed to refresh multi-wallet state', error)
+    })
+  }, [refreshMultiWallet])
 
   useEffect(() => {
     const handleVisibility = async () => {
@@ -114,6 +132,14 @@ function App() {
             </div>
 
             <div className="flex items-center gap-4">
+              <WalletSwitcher
+                onAddWallet={() => setAddWalletModalOpen(true)}
+                onManageGroups={() => setGroupsModalOpen(true)}
+                onWalletSettings={(walletId) => {
+                  setSelectedWalletId(walletId)
+                  setWalletSettingsModalOpen(true)
+                }}
+              />
               <PhantomConnect />
               <ConnectionStatus />
             </div>
@@ -189,6 +215,24 @@ function App() {
       {!initializingLock && lockVisible && (
         <LockScreen onUnlock={() => setLockVisible(false)} />
       )}
+
+      {/* Multi-Wallet Modals */}
+      <AddWalletModal
+        isOpen={addWalletModalOpen}
+        onClose={() => setAddWalletModalOpen(false)}
+      />
+      <GroupManagementModal
+        isOpen={groupsModalOpen}
+        onClose={() => setGroupsModalOpen(false)}
+      />
+      <WalletSettingsModal
+        isOpen={walletSettingsModalOpen}
+        onClose={() => {
+          setWalletSettingsModalOpen(false)
+          setSelectedWalletId(null)
+        }}
+        walletId={selectedWalletId}
+      />
     </div>
   )
 }

@@ -21,9 +21,11 @@ pub use sentiment::*;
 pub use trading::*;
 pub use wallet::hardware_wallet::*;
 pub use wallet::phantom::*;
+pub use wallet::multi_wallet::*;
 
 use wallet::hardware_wallet::HardwareWalletState;
 use wallet::phantom::{hydrate_wallet_state, WalletState};
+use wallet::multi_wallet::MultiWalletManager;
 use security::keystore::Keystore;
 use auth::session_manager::SessionManager;
 use auth::two_factor::TwoFactorManager;
@@ -57,7 +59,13 @@ pub fn run() {
 
             let ws_manager = WebSocketManager::new(app.handle());
 
+            let multi_wallet_manager = MultiWalletManager::initialize(&keystore).map_err(|e| {
+                eprintln!("Failed to initialize multi-wallet manager: {e}");
+                Box::new(e) as Box<dyn Error>
+            })?;
+
             app.manage(keystore);
+            app.manage(multi_wallet_manager);
             app.manage(session_manager);
             app.manage(two_factor_manager);
             app.manage(ws_manager);
@@ -88,6 +96,21 @@ pub fn run() {
             get_hardware_wallet_address,
             sign_with_hardware_wallet,
             get_firmware_version,
+            
+            // Multi-Wallet
+            multi_wallet_add,
+            multi_wallet_update,
+            multi_wallet_remove,
+            multi_wallet_set_active,
+            multi_wallet_get_active,
+            multi_wallet_list,
+            multi_wallet_update_balance,
+            multi_wallet_update_performance,
+            multi_wallet_create_group,
+            multi_wallet_update_group,
+            multi_wallet_delete_group,
+            multi_wallet_list_groups,
+            multi_wallet_get_aggregated,
             
             // Auth
             biometric_get_status,
