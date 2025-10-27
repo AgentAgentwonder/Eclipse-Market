@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, Home, TrendingUp, BarChart3, Users, Bell, Settings } from 'lucide-react'
+import { Menu, X, Home, TrendingUp, BarChart3, Users, Bell, Settings, Briefcase } from 'lucide-react'
 import { invoke } from '@tauri-apps/api/tauri'
 import { PhantomConnect } from './components/wallet/PhantomConnect'
 import { LockScreen } from './components/auth/LockScreen'
@@ -10,6 +10,7 @@ import Coins from './pages/Coins'
 import Stocks from './pages/Stocks'
 import Insiders from './pages/Insiders'
 import Trading from './pages/Trading'
+import Portfolio from './pages/Portfolio'
 import SettingsPage from './pages/Settings'
 import { BIOMETRIC_STATUS_EVENT } from './constants/events'
 
@@ -80,6 +81,7 @@ function App() {
     () => [
       { id: 'dashboard', label: 'Dashboard', icon: Home, component: Dashboard },
       { id: 'coins', label: 'Coins', icon: TrendingUp, component: Coins },
+      { id: 'portfolio', label: 'Portfolio', icon: Briefcase, component: Portfolio },
       { id: 'stocks', label: 'Stocks', icon: BarChart3, component: Stocks },
       { id: 'insiders', label: 'Insiders', icon: Users, component: Insiders },
       { id: 'trading', label: 'Trading', icon: Bell, component: Trading },

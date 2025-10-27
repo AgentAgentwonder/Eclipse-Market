@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/tauri';
-import { AlertCircle, Info } from 'lucide-react';
+import { AlertCircle, Info, Lightbulb } from 'lucide-react';
 import { useTradingSettingsStore } from '../../store/tradingSettingsStore';
+import { useOrderFormSuggestionStore } from '../../store/orderFormSuggestionStore';
 
 interface OrderFormProps {
   fromToken: {
@@ -30,8 +31,23 @@ export function OrderForm({ fromToken, toToken, walletAddress, onOrderCreated }:
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [suggestionInfo, setSuggestionInfo] = useState<{ id: number; note?: string; source: string } | null>(null);
 
   const { slippage, gasOptimization, getPriorityFeeForPreset } = useTradingSettingsStore();
+  const { suggestion, consumeSuggestion } = useOrderFormSuggestionStore();
+
+  useEffect(() => {
+    if (suggestion && suggestionInfo?.id !== suggestion.id) {
+      if (suggestion.amount !== undefined) setAmount(suggestion.amount.toString());
+      if (suggestion.limitPrice !== undefined) setLimitPrice(suggestion.limitPrice.toString());
+      if (suggestion.stopPrice !== undefined) setStopPrice(suggestion.stopPrice.toString());
+      if (suggestion.side !== undefined) setSide(suggestion.side);
+      if (suggestion.orderType !== undefined) setOrderType(suggestion.orderType);
+
+      setSuggestionInfo({ id: suggestion.id, note: suggestion.note, source: suggestion.source });
+      consumeSuggestion();
+    }
+  }, [suggestion, suggestionInfo, consumeSuggestion]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,6 +109,20 @@ export function OrderForm({ fromToken, toToken, walletAddress, onOrderCreated }:
       <h2 className="text-lg font-semibold mb-4">Place Order</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {suggestionInfo && (
+          <div className="bg-purple-500/10 border border-purple-500/20 rounded p-3 text-sm">
+            <div className="flex items-start gap-2">
+              <Lightbulb className="w-4 h-4 mt-0.5 text-purple-400 flex-shrink-0" />
+              <div>
+                <p className="font-medium text-purple-300">Calculator suggestion applied</p>
+                {suggestionInfo.note && (
+                  <p className="text-gray-400 mt-1">{suggestionInfo.note}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div>
           <label className="block text-sm text-gray-400 mb-2">Order Type</label>
           <div className="grid grid-cols-2 gap-2">

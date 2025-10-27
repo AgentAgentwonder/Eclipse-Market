@@ -3,6 +3,7 @@ mod api;
 mod auth;
 mod core;
 mod market;
+mod portfolio;
 mod security;
 mod sentiment;
 mod trading;
@@ -15,6 +16,7 @@ pub use api::*;
 pub use auth::*;
 pub use core::*;
 pub use market::*;
+pub use portfolio::*;
 pub use sentiment::*;
 pub use trading::*;
 pub use wallet::hardware_wallet::*;
@@ -61,6 +63,14 @@ pub fn run() {
             app.manage(ws_manager);
 
             trading::register_trading_state(app);
+
+            let portfolio_data = portfolio::PortfolioDataState::new();
+            let rebalancer_state = portfolio::RebalancerState::default();
+            let tax_lots_state = portfolio::TaxLotsState::default();
+
+            app.manage(std::sync::Mutex::new(portfolio_data));
+            app.manage(std::sync::Mutex::new(rebalancer_state));
+            app.manage(std::sync::Mutex::new(tax_lots_state));
 
             Ok(())
         })
@@ -111,6 +121,25 @@ pub fn run() {
             get_coin_price,
             get_price_history,
             search_tokens,
+            
+            // Portfolio & Analytics
+            get_portfolio_metrics,
+            get_positions,
+            list_rebalance_profiles,
+            save_rebalance_profile,
+            delete_rebalance_profile,
+            preview_rebalance,
+            execute_rebalance,
+            get_rebalance_history,
+            check_rebalance_triggers,
+            get_tax_lots,
+            get_open_tax_lots,
+            set_tax_lot_strategy,
+            get_tax_lot_strategy,
+            dispose_tax_lot,
+            generate_tax_report,
+            export_tax_report,
+            get_tax_loss_harvesting_suggestions,
             
             // WebSocket Streams
             subscribe_price_stream,
