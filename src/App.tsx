@@ -1,26 +1,91 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, Home, TrendingUp, BarChart3, Users, Bell, Settings } from 'lucide-react'
+import { invoke } from '@tauri-apps/api/tauri'
 import { PhantomConnect } from './components/wallet/PhantomConnect'
+import { LockScreen } from './components/auth/LockScreen'
 import Dashboard from './pages/Dashboard'
 import Coins from './pages/Coins'
 import Stocks from './pages/Stocks'
 import Insiders from './pages/Insiders'
 import Trading from './pages/Trading'
 import SettingsPage from './pages/Settings'
+import { BIOMETRIC_STATUS_EVENT } from './constants/events'
+
+type BiometricStatus = {
+  available: boolean
+  enrolled: boolean
+  fallbackConfigured: boolean
+  platform: 'WindowsHello' | 'TouchId' | 'PasswordOnly'
+}
 
 function App() {
+
   const [currentPage, setCurrentPage] = useState('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [lockVisible, setLockVisible] = useState(false)
+  const [initializingLock, setInitializingLock] = useState(true)
 
-  const pages = [
-    { id: 'dashboard', label: 'Dashboard', icon: Home, component: Dashboard },
-    { id: 'coins', label: 'Coins', icon: TrendingUp, component: Coins },
-    { id: 'stocks', label: 'Stocks', icon: BarChart3, component: Stocks },
-    { id: 'insiders', label: 'Insiders', icon: Users, component: Insiders },
-    { id: 'trading', label: 'Trading', icon: Bell, component: Trading },
-    { id: 'settings', label: 'Settings', icon: Settings, component: SettingsPage },
-  ]
+  useEffect(() => {
+    const hydrate = async () => {
+      try {
+        const status = await invoke<BiometricStatus>('biometric_get_status')
+        setLockVisible(Boolean(status.enrolled))
+      } catch (error) {
+        console.error('Failed to hydrate biometric status', error)
+        setLockVisible(false)
+      } finally {
+        setInitializingLock(false)
+      }
+    }
+
+    hydrate()
+  }, [])
+
+  useEffect(() => {
+    const handleVisibility = async () => {
+      if (document.visibilityState !== 'visible') return
+      try {
+        const status = await invoke<BiometricStatus>('biometric_get_status')
+        if (status.enrolled) {
+          setLockVisible(true)
+        }
+      } catch (error) {
+        console.error('Failed to refresh biometric status on resume', error)
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
+  }, [])
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<BiometricStatus>).detail
+      if (detail) {
+        setLockVisible(detail.enrolled)
+      }
+    }
+
+    window.addEventListener(BIOMETRIC_STATUS_EVENT, handler as EventListener)
+    return () => {
+      window.removeEventListener(BIOMETRIC_STATUS_EVENT, handler as EventListener)
+    }
+  }, [])
+
+  const pages = useMemo(
+    () => [
+      { id: 'dashboard', label: 'Dashboard', icon: Home, component: Dashboard },
+      { id: 'coins', label: 'Coins', icon: TrendingUp, component: Coins },
+      { id: 'stocks', label: 'Stocks', icon: BarChart3, component: Stocks },
+      { id: 'insiders', label: 'Insiders', icon: Users, component: Insiders },
+      { id: 'trading', label: 'Trading', icon: Bell, component: Trading },
+      { id: 'settings', label: 'Settings', icon: Settings, component: SettingsPage },
+    ],
+    []
+  )
 
   const CurrentPageComponent = pages.find(p => p.id === currentPage)?.component || Dashboard
 
@@ -119,6 +184,11 @@ function App() {
           </motion.div>
         </AnimatePresence>
       </main>
+
+      {/* Lock Screen */}
+      {!initializingLock && lockVisible && (
+        <LockScreen onUnlock={() => setLockVisible(false)} />
+      )}
     </div>
   )
 }
