@@ -1,20 +1,22 @@
 mod ai;
 mod api;
 mod auth;
+mod core;
 mod market;
 mod security;
 mod sentiment;
 mod wallet;
-mod websocket_handler;
+mod websocket;
+mod stream_commands;
 
 pub use ai::*;
 pub use api::*;
 pub use auth::*;
+pub use core::*;
 pub use market::*;
 pub use sentiment::*;
 pub use wallet::hardware_wallet::*;
 pub use wallet::phantom::*;
-pub use websocket_handler::*;
 
 use wallet::hardware_wallet::HardwareWalletState;
 use wallet::phantom::{hydrate_wallet_state, WalletState};
@@ -22,6 +24,7 @@ use security::keystore::Keystore;
 use auth::session_manager::SessionManager;
 use auth::two_factor::TwoFactorManager;
 use std::error::Error;
+use stream_commands::*;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -48,9 +51,12 @@ pub fn run() {
                 eprintln!("Failed to hydrate 2FA manager: {e}");
             }
 
+            let ws_manager = WebSocketManager::new(app.handle());
+
             app.manage(keystore);
             app.manage(session_manager);
             app.manage(two_factor_manager);
+            app.manage(ws_manager);
 
             Ok(())
         })
@@ -102,9 +108,13 @@ pub fn run() {
             get_price_history,
             search_tokens,
             
-            // WebSocket
-            start_price_stream,
-            stop_price_stream,
+            // WebSocket Streams
+            subscribe_price_stream,
+            unsubscribe_price_stream,
+            subscribe_wallet_stream,
+            unsubscribe_wallet_stream,
+            get_stream_status,
+            reconnect_stream,
             
             // Jupiter v6
             jupiter_quote,

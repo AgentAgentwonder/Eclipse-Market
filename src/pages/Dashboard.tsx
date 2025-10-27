@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { TrendingUp, Users, Target, Activity, Bell, RefreshCw, PlayCircle, Database, Zap, Shield } from 'lucide-react'
+import { usePriceStream } from '../hooks/usePriceStream'
 
 interface Alert {
   id: string
@@ -10,24 +11,49 @@ interface Alert {
   created_at: string
 }
 
+interface CoinData {
+  symbol: string
+  name: string
+  price: number
+  change: number
+  rank: number
+}
+
 export default function Dashboard() {
   const [alerts, setAlerts] = useState<Alert[]>([])
 
+  const symbols = useMemo(() => ['SOL', 'BONK', 'JUP', 'WIF', 'PYTH', 'JTO'], [])
+  const { prices, loading } = usePriceStream(symbols)
+
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (Math.random() > 0.7) {
-        const newAlert: Alert = {
-          id: Date.now().toString(),
-          title: ['Large Transaction', 'Price Spike', 'New Coin Detected'][Math.floor(Math.random() * 3)],
-          message: `${(Math.random() * 100).toFixed(1)} SOL transaction detected`,
-          priority: Math.random() > 0.7 ? 'high' : 'normal',
-          created_at: new Date().toISOString(),
+    const prevPrices = new Map<string, number>()
+
+    symbols.forEach((symbol) => {
+      const current = prices[symbol]?.price
+      if (!current) return
+
+      const previous = prevPrices.get(symbol)
+      if (previous) {
+        const change = ((current - previous) / previous) * 100
+        if (Math.abs(change) >= 5) {
+          const newAlert: Alert = {
+            id: `${symbol}-${Date.now()}`,
+            title: change > 0 ? 'Price Surge Detected' : 'Price Drop Detected',
+            message: `${symbol} moved ${change.toFixed(2)}% in the last update`,
+            priority: Math.abs(change) > 10 ? 'high' : 'normal',
+            created_at: new Date().toISOString(),
+          }
+
+          setAlerts((prev) => {
+            const updated = [newAlert, ...prev]
+            return updated.slice(0, 10)
+          })
         }
-        setAlerts(prev => [newAlert, ...prev].slice(0, 10))
       }
-    }, 5000)
-    return () => clearInterval(interval)
-  }, [])
+
+      prevPrices.set(symbol, current)
+    })
+  }, [prices, symbols])
 
   const stats = [
     { label: 'Portfolio Value', value: '12.34 SOL', change: '+3.4%', icon: TrendingUp, color: 'from-green-500 to-emerald-500' },
@@ -36,13 +62,39 @@ export default function Dashboard() {
     { label: 'API Response', value: '45ms', change: 'Healthy', icon: Activity, color: 'from-orange-500 to-red-500' },
   ]
 
-  const trendingCoins = [
-    { symbol: 'BONK', name: 'Bonk', price: 0.000023, change: 15.4, rank: 1 },
-    { symbol: 'JUP', name: 'Jupiter', price: 1.23, change: 8.7, rank: 2 },
-    { symbol: 'WIF', name: 'dogwifhat', price: 2.45, change: -3.2, rank: 3 },
-    { symbol: 'PYTH', name: 'Pyth Network', price: 0.87, change: 12.1, rank: 4 },
-    { symbol: 'JTO', name: 'Jito', price: 3.21, change: 5.6, rank: 5 },
-  ]
+  const trendingCoins: CoinData[] = useMemo(() => {
+    const coinNames: Record<string, string> = {
+      SOL: 'Solana',
+      BONK: 'Bonk',
+      JUP: 'Jupiter',
+      WIF: 'dogwifhat',
+      PYTH: 'Pyth Network',
+      JTO: 'Jito',
+    }
+
+    const fallback: CoinData[] = [
+      { symbol: 'BONK', name: 'Bonk', price: 0.000023, change: 15.4, rank: 1 },
+      { symbol: 'JUP', name: 'Jupiter', price: 1.23, change: 8.7, rank: 2 },
+      { symbol: 'WIF', name: 'dogwifhat', price: 2.45, change: -3.2, rank: 3 },
+      { symbol: 'PYTH', name: 'Pyth Network', price: 0.87, change: 12.1, rank: 4 },
+      { symbol: 'JTO', name: 'Jito', price: 3.21, change: 5.6, rank: 5 },
+    ]
+
+    if (loading || Object.keys(prices).length === 0) {
+      return fallback
+    }
+
+    return symbols
+      .map((symbol, index) => ({
+        symbol,
+        name: coinNames[symbol] || symbol,
+        price: prices[symbol]?.price ?? 0,
+        change: prices[symbol]?.change ?? 0,
+        rank: index + 1,
+      }))
+      .filter((coin) => coin.symbol !== 'SOL')
+      .slice(0, 5)
+  }, [prices, loading, symbols])
 
   return (
     <div className="space-y-6">

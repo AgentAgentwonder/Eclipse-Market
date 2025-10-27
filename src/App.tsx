@@ -4,6 +4,7 @@ import { Menu, X, Home, TrendingUp, BarChart3, Users, Bell, Settings } from 'luc
 import { invoke } from '@tauri-apps/api/tauri'
 import { PhantomConnect } from './components/wallet/PhantomConnect'
 import { LockScreen } from './components/auth/LockScreen'
+import { ConnectionStatus } from './components/common/ConnectionStatus'
 import Dashboard from './pages/Dashboard'
 import Coins from './pages/Coins'
 import Stocks from './pages/Stocks'
@@ -112,10 +113,7 @@ function App() {
 
             <div className="flex items-center gap-4">
               <PhantomConnect />
-              <div className="px-3 py-1 bg-green-500/20 text-green-400 rounded-xl border border-green-500/30 flex items-center gap-2 text-sm">
-                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
-                LIVE
-              </div>
+              <ConnectionStatus />
             </div>
           </div>
         </div>
