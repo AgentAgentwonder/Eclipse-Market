@@ -5,6 +5,7 @@ mod core;
 mod market;
 mod security;
 mod sentiment;
+mod trading;
 mod wallet;
 mod websocket;
 mod stream_commands;
@@ -15,6 +16,7 @@ pub use auth::*;
 pub use core::*;
 pub use market::*;
 pub use sentiment::*;
+pub use trading::*;
 pub use wallet::hardware_wallet::*;
 pub use wallet::phantom::*;
 
@@ -57,6 +59,8 @@ pub fn run() {
             app.manage(session_manager);
             app.manage(two_factor_manager);
             app.manage(ws_manager);
+
+            trading::register_trading_state(app);
 
             Ok(())
         })
@@ -123,6 +127,16 @@ pub fn run() {
             get_priority_fee_estimates,
             submit_with_mev_protection,
             validate_trade_thresholds,
+            
+            // Trading & Orders
+            trading_init,
+            create_order,
+            cancel_order,
+            get_active_orders,
+            get_order_history,
+            get_order,
+            acknowledge_order,
+            update_order_prices,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
