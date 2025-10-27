@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { OrderBook } from '../components/OrderBook';
 import { SwapForm } from '../components/SwapForm';
-import { TradeHistory } from '../components/TradeHistory';
+import { EnhancedTradeHistory } from '../components/trading/EnhancedTradeHistory';
 import { QuickTradeButton } from '../components/trading/QuickTradeButton';
 import { OrderForm } from '../components/trading/OrderForm';
 import { ActiveOrders } from '../components/trading/ActiveOrders';
@@ -77,7 +77,7 @@ function Trading() {
         <RiskRewardCalculator />
       </div>
 
-      <TradeHistory />
+      <EnhancedTradeHistory />
     </div>
   );
 }
