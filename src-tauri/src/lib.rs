@@ -11,15 +11,18 @@ pub use api::*;
 pub use auth::*;
 pub use market::*;
 pub use sentiment::*;
+pub use wallet::hardware_wallet::*;
 pub use wallet::phantom::*;
 pub use websocket_handler::*;
 
+use wallet::hardware_wallet::HardwareWalletState;
 use wallet::phantom::{hydrate_wallet_state, WalletState};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .manage(WalletState::new())
+        .manage(HardwareWalletState::new())
         .setup(|app| {
             if let Err(e) = hydrate_wallet_state(&app.handle()) {
                 eprintln!("Failed to hydrate wallet state: {e}");
@@ -34,6 +37,12 @@ pub fn run() {
             phantom_sign_message,
             phantom_sign_transaction,
             phantom_balance,
+            list_hardware_wallets,
+            connect_hardware_wallet,
+            disconnect_hardware_wallet,
+            get_hardware_wallet_address,
+            sign_with_hardware_wallet,
+            get_firmware_version,
             
             // Auth
             biometric_get_status,

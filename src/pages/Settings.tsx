@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Shield, Lock, Fingerprint, AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Shield, Lock, Fingerprint, AlertCircle, CheckCircle, Eye, EyeOff, Usb } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { BIOMETRIC_STATUS_EVENT } from '../constants/events';
+import HardwareWalletManager from '../components/wallet/HardwareWalletManager';
+import { useWalletStore } from '../store/walletStore';
 
 interface BiometricStatus {
   available: boolean;
@@ -22,6 +24,9 @@ function Settings() {
   const [showEnrollConfirmPassword, setShowEnrollConfirmPassword] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
   const [disabling, setDisabling] = useState(false);
+  const [showHardwareManager, setShowHardwareManager] = useState(false);
+
+  const { hardwareDevices, activeHardwareDevice, signingMethod } = useWalletStore();
 
   useEffect(() => {
     loadStatus();
@@ -320,6 +325,102 @@ function Settings() {
           )}
         </div>
 
+        {/* Hardware Wallets */}
+        <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+              <Usb className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">Hardware Wallets</h2>
+              <p className="text-white/60 text-sm">Manage Ledger and Trezor devices</p>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="p-4 bg-slate-900/50 rounded-2xl border border-purple-500/10 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-lg">Default Signing</h3>
+                  <p className="text-sm text-white/60">Current signing method preference</p>
+                </div>
+                <div
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold uppercase tracking-wide ${
+                    signingMethod === 'hardware'
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                      : 'bg-slate-700/50 text-white/60 border border-purple-500/10'
+                  }`}
+                >
+                  {signingMethod}
+                </div>
+              </div>
+
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-white/60">Detected devices</span>
+                  <span className="font-medium">{hardwareDevices.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/60">Active device</span>
+                  <span className="font-medium">
+                    {activeHardwareDevice ? activeHardwareDevice.productName : 'None'}
+                  </span>
+                </div>
+              </div>
+
+              <motion.button
+                onClick={() => setShowHardwareManager(true)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl font-semibold text-white shadow-lg shadow-purple-500/30"
+              >
+                Manage Hardware Wallets
+              </motion.button>
+            </div>
+
+            <div className="p-4 bg-slate-900/50 rounded-2xl border border-purple-500/10 space-y-3">
+              <h3 className="font-semibold text-lg">Active Device</h3>
+              {activeHardwareDevice ? (
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-white/60">Device</span>
+                    <span className="font-medium">{activeHardwareDevice.productName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-white/60">Type</span>
+                    <span className="font-medium capitalize">{activeHardwareDevice.deviceType}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-white/60">Status</span>
+                    <span
+                      className={
+                        activeHardwareDevice.connected
+                          ? 'font-medium text-emerald-400'
+                          : 'font-medium text-yellow-400'
+                      }
+                    >
+                      {activeHardwareDevice.connected ? 'Connected' : 'Disconnected'}
+                    </span>
+                  </div>
+                  {activeHardwareDevice.address && (
+                    <div className="mt-2 p-3 bg-slate-900 rounded-xl">
+                      <p className="text-xs text-white/50 mb-1">Last known address</p>
+                      <p className="text-xs font-mono break-all text-white/80">
+                        {activeHardwareDevice.address}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="p-4 bg-slate-900 rounded-xl border border-purple-500/10 text-center">
+                  <p className="text-sm text-white/60">No hardware wallet connected.</p>
+                  <p className="text-xs text-white/40 mt-1">Connect a Ledger or Trezor device to get started.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* Platform Requirements */}
         <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6">
           <h3 className="font-semibold mb-4">Platform Requirements</h3>
@@ -348,6 +449,10 @@ function Settings() {
           </div>
         </div>
       </motion.div>
+
+      <AnimatePresence>
+        {showHardwareManager && <HardwareWalletManager onClose={() => setShowHardwareManager(false)} />}
+      </AnimatePresence>
     </div>
   );
 }
