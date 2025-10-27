@@ -26,6 +26,27 @@ export interface HardwareWalletDevice {
 
 export type SigningMethod = 'software' | 'hardware'
 
+export interface MultisigWallet {
+  wallet_id: string
+  name: string
+  threshold: number
+  members: string[]
+  created_at: string
+  squad_address?: string | null
+}
+
+export type ProposalStatus = 'pending' | 'approved' | 'executed' | 'rejected' | 'cancelled'
+
+export interface MultisigProposal {
+  proposal_id: string
+  wallet_id: string
+  transaction_data: string
+  status: ProposalStatus
+  created_by: string
+  created_at: string
+  description?: string | null
+}
+
 interface WalletStoreState {
   status: WalletStatus
   publicKey: string | null
@@ -41,6 +62,9 @@ interface WalletStoreState {
   activeHardwareDevice: HardwareWalletDevice | null
   signingMethod: SigningMethod
   defaultDerivationPath: string
+  multisigWallets: MultisigWallet[]
+  activeMultisigWalletId: string | null
+  pendingProposals: number
 
   setStatus: (status: WalletStatus) => void
   setPublicKey: (publicKey: string | null) => void
@@ -56,6 +80,9 @@ interface WalletStoreState {
   setActiveHardwareDevice: (device: HardwareWalletDevice | null) => void
   setSigningMethod: (method: SigningMethod) => void
   setDefaultDerivationPath: (path: string) => void
+  setMultisigWallets: (wallets: MultisigWallet[]) => void
+  setActiveMultisigWalletId: (walletId: string | null) => void
+  setPendingProposals: (count: number) => void
   reset: () => void
 }
 
@@ -110,6 +137,9 @@ export const useWalletStore = create<WalletStoreState>()(
       activeHardwareDevice: null,
       signingMethod: 'software',
       defaultDerivationPath: "m/44'/501'/0'/0'",
+      multisigWallets: [],
+      activeMultisigWalletId: null,
+      pendingProposals: 0,
 
       setStatus: (status) => set({ status }),
       setPublicKey: (publicKey) => set({ publicKey }),
@@ -125,6 +155,9 @@ export const useWalletStore = create<WalletStoreState>()(
       setActiveHardwareDevice: (device) => set({ activeHardwareDevice: device }),
       setSigningMethod: (method) => set({ signingMethod: method }),
       setDefaultDerivationPath: (path) => set({ defaultDerivationPath: path }),
+      setMultisigWallets: (wallets) => set({ multisigWallets: wallets }),
+      setActiveMultisigWalletId: (walletId) => set({ activeMultisigWalletId: walletId }),
+      setPendingProposals: (count) => set({ pendingProposals: count }),
       reset: () =>
         set({
           status: 'disconnected',
@@ -136,6 +169,9 @@ export const useWalletStore = create<WalletStoreState>()(
           hardwareDevices: [],
           activeHardwareDevice: null,
           signingMethod: 'software',
+          multisigWallets: [],
+          activeMultisigWalletId: null,
+          pendingProposals: 0,
         }),
     }),
     {
@@ -157,6 +193,9 @@ export const useWalletStore = create<WalletStoreState>()(
         activeHardwareDevice: state.activeHardwareDevice,
         signingMethod: state.signingMethod,
         defaultDerivationPath: state.defaultDerivationPath,
+        multisigWallets: state.multisigWallets,
+        activeMultisigWalletId: state.activeMultisigWalletId,
+        pendingProposals: state.pendingProposals,
       }),
     },
   ),

@@ -14,11 +14,15 @@ pub use market::*;
 pub use sentiment::*;
 pub use wallet::hardware_wallet::*;
 pub use wallet::phantom::*;
+pub use wallet::multisig::*;
+pub use security::activity_log::*;
 pub use websocket_handler::*;
 
 use wallet::hardware_wallet::HardwareWalletState;
 use wallet::phantom::{hydrate_wallet_state, WalletState};
+use wallet::multisig::MultisigDB;
 use security::keystore::Keystore;
+use security::activity_log::ActivityLogDB;
 use auth::session_manager::SessionManager;
 use auth::two_factor::TwoFactorManager;
 use std::error::Error;
@@ -51,6 +55,36 @@ pub fn run() {
             app.manage(keystore);
             app.manage(session_manager);
             app.manage(two_factor_manager);
+
+            match tauri::async_runtime::block_on(MultisigDB::initialize(&app.handle())) {
+                Ok(db) => app.manage(db),
+                Err(e) => eprintln!("Failed to initialize multisig database: {e}"),
+            }
+
+            match tauri::async_runtime::block_on(ActivityLogDB::initialize(&app.handle())) {
+                Ok(db) => app.manage(db),
+                Err(e) => eprintln!("Failed to initialize activity log database: {e}"),
+            }
+
+            let cleanup_handle = app.handle();
+            if let Some(activity_db) = cleanup_handle.try_state::<ActivityLogDB>() {
+                if let Err(err) = tauri::async_runtime::block_on(activity_db.cleanup_old_logs()) {
+                    eprintln!("Failed to cleanup old activity logs: {err}");
+                }
+            }
+
+            tauri::async_runtime::spawn(async move {
+                use tokio::time::{sleep, Duration};
+
+                loop {
+                    sleep(Duration::from_secs(24 * 60 * 60)).await;
+                    if let Some(activity_db) = cleanup_handle.try_state::<ActivityLogDB>() {
+                        if let Err(err) = activity_db.cleanup_old_logs().await {
+                            eprintln!("Failed to cleanup old activity logs: {err}");
+                        }
+                    }
+                }
+            });
 
             Ok(())
         })
@@ -109,6 +143,27 @@ pub fn run() {
             // Jupiter v6
             jupiter_quote,
             jupiter_swap,
+
+            // Multisig
+            create_multisig_wallet,
+            list_multisig_wallets,
+            get_multisig_wallet,
+            create_proposal,
+            list_proposals,
+            get_proposal,
+            sign_proposal,
+            get_proposal_signatures,
+            get_proposal_status,
+            execute_proposal,
+            cancel_proposal,
+
+            // Activity Logging
+            log_wallet_activity,
+            get_activity_logs,
+            get_activity_stats,
+            check_suspicious_activity,
+            export_activity_logs,
+            cleanup_old_activity_logs,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
