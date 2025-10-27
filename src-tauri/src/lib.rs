@@ -35,7 +35,12 @@ pub fn run() {
             phantom_sign_transaction,
             phantom_balance,
             
-            // Auth (deprecated)
+            // Auth
+            biometric_get_status,
+            biometric_enroll,
+            biometric_verify,
+            biometric_disable,
+            biometric_verify_fallback,
             connect_phantom,
             
             // AI & Sentiment
