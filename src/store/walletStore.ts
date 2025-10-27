@@ -12,6 +12,20 @@ export interface PhantomSession {
   label?: string
 }
 
+export type DeviceType = 'ledger' | 'trezor'
+
+export interface HardwareWalletDevice {
+  deviceId: string
+  deviceType: DeviceType
+  productName: string
+  manufacturer: string
+  connected: boolean
+  firmwareVersion?: string | null
+  address?: string | null
+}
+
+export type SigningMethod = 'software' | 'hardware'
+
 interface WalletStoreState {
   status: WalletStatus
   publicKey: string | null
@@ -23,6 +37,10 @@ interface WalletStoreState {
   attemptedAutoConnect: boolean
   lastConnected: string | null
   session: PhantomSession | null
+  hardwareDevices: HardwareWalletDevice[]
+  activeHardwareDevice: HardwareWalletDevice | null
+  signingMethod: SigningMethod
+  defaultDerivationPath: string
 
   setStatus: (status: WalletStatus) => void
   setPublicKey: (publicKey: string | null) => void
@@ -34,6 +52,10 @@ interface WalletStoreState {
   setAttemptedAutoConnect: (attempted: boolean) => void
   setLastConnected: (timestamp: string | null) => void
   setSession: (session: PhantomSession | null) => void
+  setHardwareDevices: (devices: HardwareWalletDevice[]) => void
+  setActiveHardwareDevice: (device: HardwareWalletDevice | null) => void
+  setSigningMethod: (method: SigningMethod) => void
+  setDefaultDerivationPath: (path: string) => void
   reset: () => void
 }
 
@@ -84,6 +106,10 @@ export const useWalletStore = create<WalletStoreState>()(
       attemptedAutoConnect: false,
       lastConnected: null,
       session: null,
+      hardwareDevices: [],
+      activeHardwareDevice: null,
+      signingMethod: 'software',
+      defaultDerivationPath: "m/44'/501'/0'/0'",
 
       setStatus: (status) => set({ status }),
       setPublicKey: (publicKey) => set({ publicKey }),
@@ -95,6 +121,10 @@ export const useWalletStore = create<WalletStoreState>()(
       setAttemptedAutoConnect: (attempted) => set({ attemptedAutoConnect: attempted }),
       setLastConnected: (timestamp) => set({ lastConnected: timestamp }),
       setSession: (session) => set({ session }),
+      setHardwareDevices: (devices) => set({ hardwareDevices: devices }),
+      setActiveHardwareDevice: (device) => set({ activeHardwareDevice: device }),
+      setSigningMethod: (method) => set({ signingMethod: method }),
+      setDefaultDerivationPath: (path) => set({ defaultDerivationPath: path }),
       reset: () =>
         set({
           status: 'disconnected',
@@ -103,6 +133,9 @@ export const useWalletStore = create<WalletStoreState>()(
           error: null,
           session: null,
           lastConnected: null,
+          hardwareDevices: [],
+          activeHardwareDevice: null,
+          signingMethod: 'software',
         }),
     }),
     {
@@ -120,6 +153,10 @@ export const useWalletStore = create<WalletStoreState>()(
         autoReconnect: state.autoReconnect,
         lastConnected: state.lastConnected,
         session: state.session,
+        hardwareDevices: state.hardwareDevices,
+        activeHardwareDevice: state.activeHardwareDevice,
+        signingMethod: state.signingMethod,
+        defaultDerivationPath: state.defaultDerivationPath,
       }),
     },
   ),
