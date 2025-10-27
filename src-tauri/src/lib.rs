@@ -116,9 +116,13 @@ pub fn run() {
             get_stream_status,
             reconnect_stream,
             
-            // Jupiter v6
+            // Jupiter v6 & execution safeguards
             jupiter_quote,
             jupiter_swap,
+            get_network_congestion,
+            get_priority_fee_estimates,
+            submit_with_mev_protection,
+            validate_trade_thresholds,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

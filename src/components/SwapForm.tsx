@@ -1,8 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
+import { invoke } from '@tauri-apps/api/tauri';
 import { ArrowDown, AlertCircle, ArrowRight, Loader2, Settings } from 'lucide-react';
 import type { QuoteInput, QuoteResult, SwapInput } from '../hooks/useJupiter';
 import type { useJupiter } from '../hooks/useJupiter';
 import type { useWallet } from '../hooks/useWallet';
+import { TradeConfirmationModal } from './TradeConfirmationModal';
+import { useTradingSettingsStore } from '../store/tradingSettingsStore';
 
 interface SwapFormProps {
   jupiter: ReturnType<typeof useJupiter>;
@@ -21,12 +24,33 @@ export function SwapForm({ jupiter, wallet }: SwapFormProps) {
   const [fromToken, setFromToken] = useState(COMMON_TOKENS[0]);
   const [toToken, setToToken] = useState(COMMON_TOKENS[1]);
   const [amount, setAmount] = useState('');
-  const [slippageBps, setSlippageBps] = useState(50);
-  const [priorityFee, setPriorityFee] = useState<number | undefined>(undefined);
   const [showSettings, setShowSettings] = useState(false);
   const [confirmationStep, setConfirmationStep] = useState(false);
+  const [marketVolatility, setMarketVolatility] = useState(1);
 
   const { loadingQuote, loadingSwap, quoteError, swapError, currentQuote, fetchQuote, executeSwap, clearQuote } = jupiter;
+  
+  const {
+    slippage,
+    mevProtection,
+    gasOptimization,
+    getPriorityFeeForPreset,
+    addTradeToHistory,
+    getRecommendedSlippage,
+  } = useTradingSettingsStore();
+
+  const slippageBps = slippage.tolerance;
+  const effectiveSlippageBps = Math.max(
+    1,
+    Math.round(
+      slippage.autoAdjust ? getRecommendedSlippage(marketVolatility) : slippage.tolerance
+    )
+  );
+  const priorityFeeOption = getPriorityFeeForPreset(gasOptimization.priorityFeePreset);
+  const priorityFee =
+    gasOptimization.priorityFeePreset === 'custom' && gasOptimization.customPriorityFee
+      ? gasOptimization.customPriorityFee
+      : priorityFeeOption.microLamports;
 
   const handleFetchQuote = useCallback(async () => {
     if (!amount || parseFloat(amount) <= 0) return;
@@ -37,12 +61,15 @@ export function SwapForm({ jupiter, wallet }: SwapFormProps) {
       inputMint: fromToken.mint,
       outputMint: toToken.mint,
       amount: amountInSmallestUnit,
-      slippageBps,
+      slippageBps: effectiveSlippageBps,
       priorityFeeConfig: priorityFee ? { computeUnitPriceMicroLamports: priorityFee } : undefined,
     };
 
-    await fetchQuote(input);
-  }, [amount, fromToken.decimals, fromToken.mint, toToken.mint, slippageBps, priorityFee, fetchQuote]);
+    const result = await fetchQuote(input);
+    if (result) {
+      setMarketVolatility(Math.max(1, result.route.priceImpactPct || 1));
+    }
+  }, [amount, fromToken.decimals, fromToken.mint, toToken.mint, effectiveSlippageBps, priorityFee, fetchQuote]);
 
   useEffect(() => {
     if (amount && parseFloat(amount) > 0 && fromToken && toToken) {
@@ -53,7 +80,7 @@ export function SwapForm({ jupiter, wallet }: SwapFormProps) {
     } else {
       clearQuote();
     }
-  }, [amount, fromToken.mint, toToken.mint, slippageBps, clearQuote, handleFetchQuote]);
+  }, [amount, fromToken.mint, toToken.mint, effectiveSlippageBps, clearQuote, handleFetchQuote]);
 
   const handleSwapTokens = () => {
     setFromToken(toToken);
@@ -77,6 +104,53 @@ export function SwapForm({ jupiter, wallet }: SwapFormProps) {
 
     const result = await executeSwap(input);
     if (result) {
+      // Record trade in history
+      const gasCost = (priorityFee / 1e9) || 0.000005; // estimate
+      const actualSlippage = currentQuote.route.priceImpactPct; // simplified
+      
+      // If MEV protection is enabled, submit with protection
+      let mevProtected = false;
+      let mevSavings = 0;
+      
+      if (mevProtection.enabled) {
+        try {
+          const mevConfig = {
+            enabled: true,
+            useJito: mevProtection.useJito,
+            usePrivateRpc: mevProtection.usePrivateRPC,
+          };
+          
+          const mevResult = await invoke<{
+            protected: boolean;
+            method?: string;
+            bundleId?: string;
+            estimatedSavings: number;
+          }>('submit_with_mev_protection', {
+            transactionBase64: result.transaction.base64,
+            config: mevConfig,
+          });
+          
+          mevProtected = mevResult.protected;
+          mevSavings = mevResult.estimatedSavings;
+        } catch (err) {
+          console.error('MEV protection failed:', err);
+        }
+      }
+      
+      addTradeToHistory({
+        slippage: actualSlippage,
+        mevProtected,
+        mevSavings,
+        gasCost,
+        priorityFeeMicroLamports: priorityFee,
+        priceImpact: currentQuote.route.priceImpactPct,
+        timestamp: Date.now(),
+        txSignature: undefined, // Would be populated after transaction confirmation
+        fromToken: fromToken.symbol,
+        toToken: toToken.symbol,
+        amount: amount,
+      });
+      
       setConfirmationStep(false);
       setAmount('');
       clearQuote();
@@ -153,32 +227,12 @@ export function SwapForm({ jupiter, wallet }: SwapFormProps) {
 
       {showSettings && (
         <div className="mb-4 p-3 bg-gray-700/50 rounded-lg space-y-3">
-          <div>
-            <label className="block text-sm mb-1 text-gray-400">
-              Slippage Tolerance (bps)
-            </label>
-            <input
-              type="number"
-              value={slippageBps}
-              onChange={(e) => setSlippageBps(parseInt(e.target.value) || 50)}
-              className="w-full bg-gray-800 p-2 rounded text-sm"
-              placeholder="50"
-            />
-            <div className="text-xs text-gray-500 mt-1">
-              {(slippageBps / 100).toFixed(2)}%
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm mb-1 text-gray-400">
-              Priority Fee (micro lamports)
-            </label>
-            <input
-              type="number"
-              value={priorityFee || ''}
-              onChange={(e) => setPriorityFee(e.target.value ? parseInt(e.target.value) : undefined)}
-              className="w-full bg-gray-800 p-2 rounded text-sm"
-              placeholder="Auto"
-            />
+          <div className="text-sm text-gray-400">
+            <p>Slippage: {(slippageBps / 100).toFixed(2)}%</p>
+            <p>Priority Fee: {(priorityFee / 1e6).toFixed(4)} SOL</p>
+            <p className="mt-2 text-xs text-gray-500">
+              Configure these settings in Settings → Trading Execution
+            </p>
           </div>
         </div>
       )}
@@ -274,44 +328,37 @@ export function SwapForm({ jupiter, wallet }: SwapFormProps) {
 
       {currentQuote && !loadingQuote && renderRouteDetails(currentQuote)}
 
-      {!confirmationStep ? (
-        <button
-          onClick={() => {
-            if (!wallet.connected) {
-              wallet.connectWallet();
-            } else if (currentQuote) {
-              setConfirmationStep(true);
-            }
-          }}
-          disabled={loadingQuote || (!currentQuote && amount !== '')}
-          className={`w-full mt-4 py-3 rounded-lg font-medium transition-colors ${
-            loadingQuote || (!currentQuote && amount !== '')
-              ? 'bg-gray-600 cursor-not-allowed'
-              : wallet.connected
-              ? 'bg-purple-600 hover:bg-purple-700'
-              : 'bg-blue-600 hover:bg-blue-700'
-          }`}
-        >
-          {!wallet.connected ? 'Connect Wallet' : currentQuote ? 'Review Swap' : 'Enter Amount'}
-        </button>
-      ) : (
-        <div className="mt-4 space-y-2">
-          <button
-            onClick={handleExecuteSwap}
-            disabled={loadingSwap}
-            className="w-full py-3 rounded-lg font-medium bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-          >
-            {loadingSwap && <Loader2 className="w-4 h-4 animate-spin" />}
-            {loadingSwap ? 'Executing Swap...' : 'Confirm Swap'}
-          </button>
-          <button
-            onClick={() => setConfirmationStep(false)}
-            disabled={loadingSwap}
-            className="w-full py-2 rounded-lg font-medium bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            Cancel
-          </button>
-        </div>
+      <button
+        onClick={() => {
+          if (!wallet.connected) {
+            wallet.connectWallet();
+          } else if (currentQuote) {
+            setConfirmationStep(true);
+          }
+        }}
+        disabled={loadingQuote || (!currentQuote && amount !== '')}
+        className={`w-full mt-4 py-3 rounded-lg font-medium transition-colors ${
+          loadingQuote || (!currentQuote && amount !== '')
+            ? 'bg-gray-600 cursor-not-allowed'
+            : wallet.connected
+            ? 'bg-purple-600 hover:bg-purple-700'
+            : 'bg-blue-600 hover:bg-blue-700'
+        }`}
+      >
+        {!wallet.connected ? 'Connect Wallet' : currentQuote ? 'Review Swap' : 'Enter Amount'}
+      </button>
+      
+      {currentQuote && (
+        <TradeConfirmationModal
+          isOpen={confirmationStep}
+          onClose={() => setConfirmationStep(false)}
+          onConfirm={handleExecuteSwap}
+          quote={currentQuote}
+          fromToken={fromToken}
+          toToken={toToken}
+          amount={amount}
+          loading={loadingSwap}
+        />
       )}
 
       {wallet.balance !== null && (

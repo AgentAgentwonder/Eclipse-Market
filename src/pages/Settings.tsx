@@ -1,16 +1,32 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Lock, Fingerprint, AlertCircle, CheckCircle, Eye, EyeOff, Usb } from 'lucide-react';
+import { Shield, Lock, Fingerprint, AlertCircle, CheckCircle, Eye, EyeOff, Usb, TrendingUp, Zap } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { BIOMETRIC_STATUS_EVENT } from '../constants/events';
 import HardwareWalletManager from '../components/wallet/HardwareWalletManager';
 import { useWalletStore } from '../store/walletStore';
+import { useTradingSettingsStore } from '../store/tradingSettingsStore';
 
 interface BiometricStatus {
   available: boolean;
   enrolled: boolean;
   fallbackConfigured: boolean;
   platform: 'WindowsHello' | 'TouchId' | 'PasswordOnly';
+}
+
+interface CongestionData {
+  level: 'low' | 'medium' | 'high';
+  averageFee: number;
+  medianFee: number;
+  percentile75: number;
+  percentile95: number;
+  timestamp: number;
+}
+
+interface PriorityFeeEstimate {
+  preset: 'slow' | 'normal' | 'fast';
+  microLamports: number;
+  estimatedConfirmationTime: string;
 }
 
 function Settings() {
@@ -25,12 +41,65 @@ function Settings() {
   const [enrolling, setEnrolling] = useState(false);
   const [disabling, setDisabling] = useState(false);
   const [showHardwareManager, setShowHardwareManager] = useState(false);
+  const [congestionData, setCongestionData] = useState<CongestionData | null>(null);
+  const [priorityEstimates, setPriorityEstimates] = useState<PriorityFeeEstimate[]>([]);
+  const [networkLoading, setNetworkLoading] = useState(false);
+  const [networkError, setNetworkError] = useState<string | null>(null);
 
   const { hardwareDevices, activeHardwareDevice, signingMethod } = useWalletStore();
+  
+  const {
+    slippage,
+    setSlippageTolerance,
+    setSlippageAutoAdjust,
+    setSlippageMaxTolerance,
+    setSlippageRejectAbove,
+    mevProtection,
+    toggleMEVProtection,
+    setJitoEnabled,
+    setPrivateRPCEnabled,
+    gasOptimization,
+    setPriorityFeePreset,
+    setCustomPriorityFee,
+    tradeHistory,
+    updateCongestionData,
+  } = useTradingSettingsStore();
 
   useEffect(() => {
     loadStatus();
+    loadNetworkData();
   }, []);
+
+  const averageGasCost = tradeHistory.length
+    ? tradeHistory.reduce((sum, trade) => sum + trade.gasCost, 0) / tradeHistory.length
+    : 0;
+
+  const latestTrade = tradeHistory[0];
+
+  const loadNetworkData = async () => {
+    setNetworkLoading(true);
+    setNetworkError(null);
+    try {
+      const [congestion, estimates] = await Promise.all([
+        invoke<CongestionData>('get_network_congestion'),
+        invoke<PriorityFeeEstimate[]>('get_priority_fee_estimates'),
+      ]);
+      setCongestionData(congestion);
+      setPriorityEstimates(estimates);
+      
+      // Update congestion data in store
+      updateCongestionData(
+        congestion.level,
+        congestion.averageFee,
+        congestion.medianFee
+      );
+    } catch (err) {
+      console.error('Failed to load network data:', err);
+      setNetworkError(String(err));
+    } finally {
+      setNetworkLoading(false);
+    }
+  };
 
   const loadStatus = async () => {
     setLoading(true);
@@ -418,6 +487,279 @@ function Settings() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* Trading Settings */}
+        <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
+              <TrendingUp className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">Trading Execution</h2>
+              <p className="text-white/60 text-sm">Slippage, MEV protection, and gas optimization</p>
+            </div>
+          </div>
+
+          {/* Slippage Configuration */}
+          <div className="mb-6 p-4 bg-slate-900/50 rounded-2xl border border-purple-500/10 space-y-4">
+            <h3 className="font-semibold text-lg">Slippage Tolerance</h3>
+            
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Default Tolerance (bps)
+              </label>
+              <input
+                type="number"
+                value={slippage.tolerance}
+                onChange={(e) => setSlippageTolerance(parseInt(e.target.value) || 50)}
+                className="w-full px-4 py-3 bg-slate-800 border border-purple-500/20 rounded-xl text-white focus:outline-none focus:border-purple-500/50 transition-colors"
+              />
+              <div className="text-xs text-white/60 mt-1">
+                {(slippage.tolerance / 100).toFixed(2)}% slippage tolerance
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Maximum Tolerance (bps)
+              </label>
+              <input
+                type="number"
+                value={slippage.maxTolerance}
+                onChange={(e) => setSlippageMaxTolerance(parseInt(e.target.value) || 1000)}
+                className="w-full px-4 py-3 bg-slate-800 border border-purple-500/20 rounded-xl text-white focus:outline-none focus:border-purple-500/50 transition-colors"
+              />
+              <div className="text-xs text-white/60 mt-1">
+                {(slippage.maxTolerance / 100).toFixed(2)}% maximum allowed
+              </div>
+            </div>
+
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={slippage.autoAdjust}
+                onChange={(e) => setSlippageAutoAdjust(e.target.checked)}
+                className="w-5 h-5 rounded border-purple-500/30 bg-slate-800 text-purple-500 focus:ring-purple-500"
+              />
+              <div>
+                <div className="font-medium">Auto-adjust for volatility</div>
+                <div className="text-xs text-white/60">
+                  Dynamically adjust slippage based on market conditions
+                </div>
+              </div>
+            </label>
+
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={slippage.rejectAboveThreshold}
+                onChange={(e) => setSlippageRejectAbove(e.target.checked)}
+                className="w-5 h-5 rounded border-purple-500/30 bg-slate-800 text-purple-500 focus:ring-purple-500"
+              />
+              <div>
+                <div className="font-medium">Block trades exceeding threshold</div>
+                <div className="text-xs text-white/60">
+                  Automatically reject trades that exceed maximum tolerance
+                </div>
+              </div>
+            </label>
+          </div>
+
+          {/* MEV Protection */}
+          <div className="mb-6 p-4 bg-slate-900/50 rounded-2xl border border-purple-500/10 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-green-400" />
+                  MEV Protection
+                </h3>
+                <p className="text-sm text-white/60 mt-1">
+                  Protect your trades from MEV attacks
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={mevProtection.enabled}
+                  onChange={(e) => toggleMEVProtection(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+              </label>
+            </div>
+
+            {mevProtection.enabled && (
+              <div className="space-y-3 pl-7">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={mevProtection.useJito}
+                    onChange={(e) => setJitoEnabled(e.target.checked)}
+                    className="w-5 h-5 rounded border-purple-500/30 bg-slate-800 text-purple-500 focus:ring-purple-500"
+                  />
+                  <div>
+                    <div className="font-medium">Use Jito bundles</div>
+                    <div className="text-xs text-white/60">
+                      Submit transactions via Jito block engine
+                    </div>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={mevProtection.usePrivateRPC}
+                    onChange={(e) => setPrivateRPCEnabled(e.target.checked)}
+                    className="w-5 h-5 rounded border-purple-500/30 bg-slate-800 text-purple-500 focus:ring-purple-500"
+                  />
+                  <div>
+                    <div className="font-medium">Use private RPC</div>
+                    <div className="text-xs text-white/60">
+                      Route through private mempool
+                    </div>
+                  </div>
+                </label>
+
+                <div className="grid grid-cols-2 gap-3 mt-4">
+                  <div className="p-3 bg-slate-800/50 rounded-lg">
+                    <div className="text-xs text-white/60 mb-1">Protected Trades</div>
+                    <div className="text-2xl font-bold text-green-400">
+                      {mevProtection.protectedTrades}
+                    </div>
+                  </div>
+                  <div className="p-3 bg-slate-800/50 rounded-lg">
+                    <div className="text-xs text-white/60 mb-1">Est. Savings</div>
+                    <div className="text-2xl font-bold text-green-400">
+                      {mevProtection.estimatedSavings.toFixed(4)} SOL
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Gas Optimization */}
+          <div className="p-4 bg-slate-900/50 rounded-2xl border border-purple-500/10 space-y-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Zap className="w-5 h-5 text-yellow-400" />
+              <h3 className="font-semibold text-lg">Gas Optimization</h3>
+            </div>
+
+            {networkError && (
+              <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-400">
+                Failed to load network data. Please refresh.
+              </div>
+            )}
+
+            {networkLoading ? (
+              <div className="text-center py-4">
+                <div className="inline-block w-6 h-6 border-2 border-purple-500/30 border-t-purple-500 rounded-full animate-spin"></div>
+                <p className="text-sm text-white/60 mt-2">Loading network data...</p>
+              </div>
+            ) : (
+              <>
+                {congestionData && (
+                  <div className="p-3 bg-slate-800/50 rounded-lg mb-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-white/60">Network Congestion</span>
+                      <span
+                        className={`px-3 py-1 rounded-lg text-xs font-semibold uppercase ${
+                          congestionData.level === 'high'
+                            ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                            : congestionData.level === 'medium'
+                            ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                            : 'bg-green-500/20 text-green-400 border border-green-500/30'
+                        }`}
+                      >
+                        {congestionData.level}
+                      </span>
+                    </div>
+                    <div className="text-xs text-white/60">
+                      Avg fee: {(congestionData.averageFee / 1e6).toFixed(4)} SOL
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium mb-3">
+                    Priority Fee Preset
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['slow', 'normal', 'fast'].map((preset) => {
+                      const estimate = priorityEstimates.find((e) => e.preset === preset);
+                      return (
+                        <button
+                          key={preset}
+                          onClick={() => setPriorityFeePreset(preset as any)}
+                          className={`p-3 rounded-xl border transition-all ${
+                            gasOptimization.priorityFeePreset === preset
+                              ? 'bg-purple-500/20 border-purple-500/50 text-white'
+                              : 'bg-slate-800/50 border-purple-500/10 text-white/70 hover:border-purple-500/30'
+                          }`}
+                        >
+                          <div className="font-semibold capitalize">{preset}</div>
+                          {estimate && (
+                            <>
+                              <div className="text-xs text-white/60 mt-1">
+                                {estimate.estimatedConfirmationTime}
+                              </div>
+                              <div className="text-xs text-white/40 mt-1">
+                                {(estimate.microLamports / 1e6).toFixed(4)} SOL
+                              </div>
+                            </>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {gasOptimization.priorityFeePreset === 'custom' && (
+                  <div className="mt-3">
+                    <label className="block text-sm font-medium mb-2">
+                      Custom Priority Fee (micro lamports)
+                    </label>
+                    <input
+                      type="number"
+                      value={gasOptimization.customPriorityFee || ''}
+                      onChange={(e) => setCustomPriorityFee(parseInt(e.target.value) || 0)}
+                      className="w-full px-4 py-3 bg-slate-800 border border-purple-500/20 rounded-xl text-white focus:outline-none focus:border-purple-500/50 transition-colors"
+                      placeholder="Enter custom fee"
+                    />
+                  </div>
+                )}
+
+                {tradeHistory.length > 0 && (
+                  <div className="grid grid-cols-2 gap-3 mt-4">
+                    <div className="p-3 bg-slate-800/50 rounded-lg">
+                      <div className="text-xs text-white/60 mb-1">Avg Gas Cost</div>
+                      <div className="font-bold text-white">
+                        {averageGasCost.toFixed(6)} SOL
+                      </div>
+                    </div>
+                    {latestTrade && (
+                      <div className="p-3 bg-slate-800/50 rounded-lg">
+                        <div className="text-xs text-white/60 mb-1">Last Trade</div>
+                        <div className="font-bold text-white">
+                          {latestTrade.gasCost.toFixed(6)} SOL
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <motion.button
+                  onClick={loadNetworkData}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full mt-3 py-2 bg-slate-700/50 hover:bg-slate-700 rounded-xl font-medium text-sm transition-colors"
+                >
+                  Refresh Network Data
+                </motion.button>
+              </>
+            )}
           </div>
         </div>
 
