@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Lock, Fingerprint, AlertCircle, CheckCircle, Eye, EyeOff, Usb, TrendingUp, Zap } from 'lucide-react';
+import { Shield, Lock, Fingerprint, AlertCircle, CheckCircle, Eye, EyeOff, Usb, TrendingUp, Zap, Gamepad2 } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { BIOMETRIC_STATUS_EVENT } from '../constants/events';
 import HardwareWalletManager from '../components/wallet/HardwareWalletManager';
 import { useWalletStore } from '../store/walletStore';
 import { useTradingSettingsStore } from '../store/tradingSettingsStore';
+import { usePaperTradingStore } from '../store/paperTradingStore';
 
 interface BiometricStatus {
   available: boolean;
@@ -65,16 +66,78 @@ function Settings() {
     updateCongestionData,
   } = useTradingSettingsStore();
 
+  const {
+    enabled: paperEnabled,
+    account: paperAccount,
+    loading: paperLoading,
+    error: paperError,
+    checkStatus: checkPaperStatus,
+    setEnabled: setPaperMode,
+    loadAccount: loadPaperAccount,
+    loadBalances: loadPaperBalances,
+    loadPositions: loadPaperPositions,
+    loadTradeHistory: loadPaperTrades,
+    loadLeaderboard: loadPaperLeaderboard,
+    loadConfig: loadPaperConfig,
+  } = usePaperTradingStore();
+
   useEffect(() => {
     loadStatus();
     loadNetworkData();
+    checkPaperStatus();
+    loadPaperConfig();
   }, []);
+
+  useEffect(() => {
+    if (paperEnabled) {
+      loadPaperAccount();
+      loadPaperBalances();
+      loadPaperPositions();
+      loadPaperTrades(50);
+      loadPaperLeaderboard(5);
+    }
+  }, [paperEnabled, loadPaperAccount, loadPaperBalances, loadPaperPositions, loadPaperTrades, loadPaperLeaderboard]);
+  
+  const handlePaperModeToggle = async (enabled: boolean) => {
+    if (enabled) {
+      const confirmed = window.confirm(
+        'Switch to Paper Trading Mode?\n\n' +
+        'You will be trading with virtual funds. No real transactions will occur on the blockchain.\n\n' +
+        'Do you want to continue?'
+      );
+      if (!confirmed) return;
+    } else {
+      const confirmed = window.confirm(
+        'Switch to Live Trading Mode?\n\n' +
+        'You will be trading with real funds. All transactions will occur on the blockchain.\n\n' +
+        'Are you sure you want to continue?'
+      );
+      if (!confirmed) return;
+    }
+    
+    try {
+      await setPaperMode(enabled);
+      setSuccess(enabled ? 'Paper trading mode enabled!' : 'Live trading mode enabled!');
+    } catch (err) {
+      setError(String(err));
+    }
+  };
 
   const averageGasCost = tradeHistory.length
     ? tradeHistory.reduce((sum, trade) => sum + trade.gasCost, 0) / tradeHistory.length
     : 0;
 
   const latestTrade = tradeHistory[0];
+
+  const paperBalance = paperAccount?.current_value ?? paperAccount?.initial_balance ?? 0;
+  const paperTotalPnl = paperAccount?.total_pnl ?? 0;
+  const paperPnlPercent = paperAccount && paperAccount.initial_balance > 0
+    ? (paperAccount.total_pnl / paperAccount.initial_balance) * 100
+    : 0;
+  const paperTotalTrades = paperAccount?.total_trades ?? 0;
+  const paperWinRate = paperTotalTrades > 0
+    ? (paperAccount!.winning_trades / paperTotalTrades) * 100
+    : 0;
 
   const loadNetworkData = async () => {
     setNetworkLoading(true);
@@ -500,6 +563,85 @@ function Settings() {
               <h2 className="text-2xl font-bold">Trading Execution</h2>
               <p className="text-white/60 text-sm">Slippage, MEV protection, and gas optimization</p>
             </div>
+          </div>
+
+          {/* Paper Trading Mode */}
+          <div className="mb-6 p-4 bg-slate-900/50 rounded-2xl border border-purple-500/10 space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                  <Gamepad2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">Paper Trading Sandbox</h3>
+                  <p className="text-sm text-white/60">
+                    Toggle between live execution and a risk-free simulation environment with isolated balances.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold uppercase tracking-wide ${
+                    paperEnabled
+                      ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                      : 'bg-slate-700/50 text-white/60 border border-purple-500/20'
+                  }`}
+                >
+                  {paperEnabled ? 'Paper Mode Active' : 'Live Mode'}
+                </span>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  disabled={paperLoading}
+                  onClick={() => handlePaperModeToggle(!paperEnabled)}
+                  className={`px-4 py-2 rounded-xl font-semibold transition-colors ${
+                    paperEnabled
+                      ? 'bg-slate-700/50 hover:bg-slate-700'
+                      : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
+                  } ${paperLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
+                >
+                  {paperLoading
+                    ? 'Updating...'
+                    : paperEnabled
+                    ? 'Switch to Live Trading'
+                    : 'Enable Paper Trading'}
+                </motion.button>
+              </div>
+            </div>
+
+            {paperError && (
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-sm text-red-400">
+                {paperError}
+              </div>
+            )}
+
+            {paperEnabled ? (
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <div className="p-3 bg-slate-800/60 rounded-xl border border-purple-500/10">
+                  <p className="text-xs text-white/60">Virtual Balance</p>
+                  <p className="text-lg font-semibold">${paperBalance.toFixed(2)}</p>
+                </div>
+                <div className="p-3 bg-slate-800/60 rounded-xl border border-purple-500/10">
+                  <p className="text-xs text-white/60">Total P&amp;L</p>
+                  <p className={`text-lg font-semibold ${paperTotalPnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {paperTotalPnl >= 0 ? '+' : ''}${paperTotalPnl.toFixed(2)} ({paperPnlPercent.toFixed(2)}%)
+                  </p>
+                </div>
+                <div className="p-3 bg-slate-800/60 rounded-xl border border-purple-500/10">
+                  <p className="text-xs text-white/60">Trades</p>
+                  <p className="text-lg font-semibold">{paperTotalTrades}</p>
+                </div>
+                <div className="p-3 bg-slate-800/60 rounded-xl border border-purple-500/10">
+                  <p className="text-xs text-white/60">Win Rate</p>
+                  <p className="text-lg font-semibold">{paperWinRate.toFixed(1)}%</p>
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 bg-slate-800/40 rounded-xl text-sm text-white/60">
+                Paper trading is currently disabled. Enable the sandbox to practice strategies with simulated balances.
+                Access your performance anytime from the Paper Trading dashboard in the main navigation.
+              </div>
+            )}
           </div>
 
           {/* Slippage Configuration */}

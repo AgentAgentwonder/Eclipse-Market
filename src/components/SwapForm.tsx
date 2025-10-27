@@ -6,6 +6,7 @@ import type { useJupiter } from '../hooks/useJupiter';
 import type { useWallet } from '../hooks/useWallet';
 import { TradeConfirmationModal } from './TradeConfirmationModal';
 import { useTradingSettingsStore } from '../store/tradingSettingsStore';
+import { usePaperTradingStore } from '../store/paperTradingStore';
 
 interface SwapFormProps {
   jupiter: ReturnType<typeof useJupiter>;
