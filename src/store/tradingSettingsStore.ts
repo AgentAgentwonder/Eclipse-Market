@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { EnhancedTradeMetrics, TradeFilters } from '../types/tradeReporting';
 
 export type PriorityFeePreset = 'slow' | 'normal' | 'fast' | 'custom';
 
@@ -34,25 +35,42 @@ export interface GasOptimizationConfig {
   };
 }
 
-export interface TradeMetrics {
-  slippage: number; // actual slippage in percentage
-  mevProtected: boolean;
-  mevSavings?: number; // estimated MEV savings in SOL
-  gasCost: number; // in SOL
-  priorityFeeMicroLamports: number;
-  priceImpact: number; // in percentage
-  timestamp: number;
-  txSignature?: string;
-  fromToken: string;
-  toToken: string;
-  amount: string;
+export type TradeMetrics = EnhancedTradeMetrics;
+
+export interface TradePagination {
+  page: number;
+  pageSize: number;
+  sortBy: keyof TradeMetrics;
+  sortOrder: 'asc' | 'desc';
 }
+
+const DEFAULT_TRADE_FILTERS: TradeFilters = {
+  side: 'all',
+  status: 'all',
+  isPaperTrade: 'all',
+  tokens: [],
+  searchQuery: '',
+  pnlRange: { min: null, max: null },
+  dateRange: { start: null, end: null },
+};
+
+const DEFAULT_PAGINATION: TradePagination = {
+  page: 1,
+  pageSize: 10,
+  sortBy: 'timestamp',
+  sortOrder: 'desc',
+};
+
+const DEFAULT_TIMEZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 interface TradingSettingsState {
   slippage: SlippageConfig;
   mevProtection: MEVProtectionConfig;
   gasOptimization: GasOptimizationConfig;
   tradeHistory: TradeMetrics[];
+  tradeFilters: TradeFilters;
+  tradePagination: TradePagination;
+  timezone: string;
   
   // Actions
   setSlippageTolerance: (tolerance: number) => void;
@@ -69,7 +87,13 @@ interface TradingSettingsState {
   updateCongestionData: (level: 'low' | 'medium' | 'high', avgFee: number, medianFee: number) => void;
   
   addTradeToHistory: (trade: TradeMetrics) => void;
+  updateTradeInHistory: (tradeId: string, updates: Partial<TradeMetrics>) => void;
+  removeTradeFromHistory: (tradeId: string) => void;
   clearTradeHistory: () => void;
+  setTradeFilters: (filters: Partial<TradeFilters>) => void;
+  resetTradeFilters: () => void;
+  setTradePagination: (pagination: Partial<TradePagination>) => void;
+  setTimezone: (timezone: string) => void;
   
   getRecommendedSlippage: (volatility: number) => number;
   getPriorityFeeForPreset: (preset: PriorityFeePreset) => PriorityFeeOption;
@@ -108,6 +132,9 @@ export const useTradingSettingsStore = create<TradingSettingsState>()(
         },
       },
       tradeHistory: [],
+      tradeFilters: { ...DEFAULT_TRADE_FILTERS },
+      tradePagination: { ...DEFAULT_PAGINATION },
+      timezone: DEFAULT_TIMEZONE,
 
       setSlippageTolerance: (tolerance: number) =>
         set((state) => ({
@@ -172,7 +199,16 @@ export const useTradingSettingsStore = create<TradingSettingsState>()(
 
       addTradeToHistory: (trade: TradeMetrics) =>
         set((state) => {
-          const updatedHistory = [trade, ...state.tradeHistory].slice(0, 100); // Keep last 100 trades
+          const generateId = () =>
+            `${Math.random().toString(36).slice(2, 10)}-${Date.now().toString(36)}`;
+
+          const tradeWithId = {
+            ...trade,
+            id: trade.id || generateId(),
+            status: trade.status || 'filled',
+          };
+
+          const updatedHistory = [tradeWithId, ...state.tradeHistory].slice(0, 100); // Keep last 100 trades
           
           // Update MEV metrics if trade was protected
           let updatedMevProtection = state.mevProtection;
@@ -190,7 +226,37 @@ export const useTradingSettingsStore = create<TradingSettingsState>()(
           };
         }),
 
+      updateTradeInHistory: (tradeId, updates) =>
+        set((state) => ({
+          tradeHistory: state.tradeHistory.map((trade) =>
+            trade.id === tradeId ? { ...trade, ...updates } : trade
+          ),
+        })),
+
+      removeTradeFromHistory: (tradeId) =>
+        set((state) => ({
+          tradeHistory: state.tradeHistory.filter((trade) => trade.id !== tradeId),
+        })),
+
       clearTradeHistory: () => set({ tradeHistory: [] }),
+
+      setTradeFilters: (filters) =>
+        set((state) => ({
+          tradeFilters: { ...state.tradeFilters, ...filters },
+        })),
+
+      resetTradeFilters: () =>
+        set({
+          tradeFilters: { ...DEFAULT_TRADE_FILTERS },
+        }),
+
+      setTradePagination: (pagination) =>
+        set((state) => ({
+          tradePagination: { ...state.tradePagination, ...pagination },
+        })),
+
+      setTimezone: (timezone) =>
+        set({ timezone }),
 
       getRecommendedSlippage: (volatility: number) => {
         const state = get();
