@@ -166,6 +166,22 @@ pub fn run() {
             get_order,
             acknowledge_order,
             update_order_prices,
+
+            // Paper Trading
+            paper_get_status,
+            paper_set_enabled,
+            paper_get_account,
+            paper_get_balances,
+            paper_get_balance,
+            paper_execute_trade,
+            paper_get_positions,
+            paper_get_trade_history,
+            paper_reset_account,
+            paper_update_config,
+            paper_get_config,
+            paper_update_price,
+            paper_submit_to_leaderboard,
+            paper_get_leaderboard,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

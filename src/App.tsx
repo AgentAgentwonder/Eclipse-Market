@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, Home, TrendingUp, BarChart3, Users, Bell, Settings, Briefcase } from 'lucide-react'
+import { Menu, X, Home, TrendingUp, BarChart3, Users, Bell, Settings, Briefcase, Gamepad2 } from 'lucide-react'
 import { invoke } from '@tauri-apps/api/tauri'
 import { PhantomConnect } from './components/wallet/PhantomConnect'
 import { LockScreen } from './components/auth/LockScreen'
@@ -11,8 +11,10 @@ import Stocks from './pages/Stocks'
 import Insiders from './pages/Insiders'
 import Trading from './pages/Trading'
 import Portfolio from './pages/Portfolio'
+import PaperTrading from './pages/PaperTrading'
 import SettingsPage from './pages/Settings'
 import { BIOMETRIC_STATUS_EVENT } from './constants/events'
+import { usePaperTradingStore } from './store/paperTradingStore'
 
 type BiometricStatus = {
   available: boolean
@@ -22,6 +24,8 @@ type BiometricStatus = {
 }
 
 function App() {
+  const paperEnabled = usePaperTradingStore((state) => state.enabled)
+  const checkPaperStatus = usePaperTradingStore((state) => state.checkStatus)
 
   const [currentPage, setCurrentPage] = useState('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -42,7 +46,8 @@ function App() {
     }
 
     hydrate()
-  }, [])
+    checkPaperStatus()
+  }, [checkPaperStatus])
 
   useEffect(() => {
     const handleVisibility = async () => {
@@ -85,6 +90,7 @@ function App() {
       { id: 'stocks', label: 'Stocks', icon: BarChart3, component: Stocks },
       { id: 'insiders', label: 'Insiders', icon: Users, component: Insiders },
       { id: 'trading', label: 'Trading', icon: Bell, component: Trading },
+      { id: 'paper-trading', label: 'Paper Trading', icon: Gamepad2, component: PaperTrading },
       { id: 'settings', label: 'Settings', icon: Settings, component: SettingsPage },
     ],
     []
@@ -114,10 +120,25 @@ function App() {
             </div>
 
             <div className="flex items-center gap-4">
+              {paperEnabled && (
+                <div className="px-3 py-1.5 bg-green-500/20 border border-green-500/30 rounded-lg flex items-center gap-2">
+                  <Gamepad2 className="w-4 h-4 text-green-400" />
+                  <span className="text-xs font-semibold text-green-400 uppercase tracking-wide">
+                    Paper Mode
+                  </span>
+                </div>
+              )}
               <PhantomConnect />
               <ConnectionStatus />
             </div>
           </div>
+
+          {paperEnabled && (
+            <div className="mt-4 flex items-center gap-3 px-4 py-2 rounded-xl bg-green-500/10 border border-green-500/20 text-sm text-green-100">
+              <Gamepad2 className="w-4 h-4" />
+              <span>Paper trading mode is active. All orders are simulated until you switch back to live trading.</span>
+            </div>
+          )}
         </div>
       </header>
 
