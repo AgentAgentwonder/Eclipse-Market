@@ -7,6 +7,8 @@ import { QuickTradeButton } from '../components/trading/QuickTradeButton';
 import { OrderForm } from '../components/trading/OrderForm';
 import { ActiveOrders } from '../components/trading/ActiveOrders';
 import { OrderHistory } from '../components/trading/OrderHistory';
+import { PositionSizeCalculator } from '../components/trading/PositionSizeCalculator';
+import { RiskRewardCalculator } from '../components/trading/RiskRewardCalculator';
 import { useJupiter } from '../hooks/useJupiter';
 import { useWallet } from '../hooks/useWallet';
 import { useOrderNotifications } from '../hooks/useOrderNotifications';
@@ -68,6 +70,11 @@ function Trading() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <ActiveOrders walletAddress={wallet.wallet || undefined} />
         <OrderHistory walletAddress={wallet.wallet || undefined} />
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <PositionSizeCalculator />
+        <RiskRewardCalculator />
       </div>
 
       <TradeHistory />
