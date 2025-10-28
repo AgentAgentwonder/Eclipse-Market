@@ -4,7 +4,11 @@ mod api;
 mod api_config;
 mod auth;
 mod bots;
+mod cache_commands;
+mod chart_stream;
 mod core;
+mod insiders;
+mod data;
 mod market;
 mod portfolio;
 mod security;
@@ -20,12 +24,16 @@ pub use api::*;
 pub use api_config::*;
 pub use auth::*;
 pub use bots::*;
+pub use chart_stream::*;
 pub use core::*;
+pub use insiders::*;
+pub use data::*;
 pub use market::*;
 pub use portfolio::*;
 pub use sentiment::*;
 pub use trading::*;
 pub use wallet::hardware_wallet::*;
+pub use wallet::ledger::*;
 pub use wallet::multi_wallet::*;
 pub use wallet::phantom::*;
 
@@ -34,14 +42,15 @@ pub use wallet::multisig::*;
 use alerts::{AlertManager, SharedAlertManager};
 use portfolio::{SharedWatchlistManager, WatchlistManager};
 use wallet::hardware_wallet::HardwareWalletState;
+use wallet::ledger::LedgerState;
 use wallet::phantom::{hydrate_wallet_state, WalletState};
 use wallet::multi_wallet::MultiWalletManager;
 use wallet::multisig::{MultisigDatabase, SharedMultisigDatabase};
 use security::keystore::Keystore;
 use security::activity_log::ActivityLogger;
+use data::event_store::{EventStore, SharedEventStore};
 use auth::session_manager::SessionManager;
 use auth::two_factor::TwoFactorManager;
-use security::keystore::Keystore;
 use std::error::Error;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -51,12 +60,55 @@ use tokio::sync::RwLock;
 use wallet::hardware_wallet::HardwareWalletState;
 use wallet::multi_wallet::MultiWalletManager;
 use wallet::phantom::{hydrate_wallet_state, WalletState};
+use core::cache_manager::{CacheType, SharedCacheManager};
+
+async fn warm_cache_on_startup(
+    _app_handle: tauri::AppHandle,
+    cache_manager: SharedCacheManager,
+) -> Result<(), String> {
+    use serde_json::json;
+
+    // Define top tokens to warm
+    let top_tokens = vec![
+        "So11111111111111111111111111111111111111112", // SOL
+        "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", // USDC
+        "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB", // USDT
+        "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263", // BONK
+        "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN", // JUP
+        "7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs", // ETH
+        "mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So", // mSOL
+        "7dHbWXmci3dT8UFYWYZweBLXgycu7Y3iL6trKn1Y7ARj", // stSOL
+        "orcaEKTdK7LKz57vaAYr9QeNsVEPfiu6QeMU1kektZE", // ORCA
+        "4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R", // RAY
+    ];
+
+    let manager = cache_manager.read().await;
+    
+    // Warm cache with top tokens
+    let keys: Vec<String> = top_tokens
+        .iter()
+        .map(|addr| format!("token_price_{}", addr))
+        .collect();
+
+    let _ = manager.warm_cache(keys, |key| async move {
+        // Mock data - in real implementation would fetch from API
+        let data = json!({
+            "price": 100.0,
+            "change24h": 5.0,
+            "volume": 1000000.0,
+        });
+        Ok((data, CacheType::TokenPrice))
+    }).await;
+
+    Ok(())
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .manage(WalletState::new())
         .manage(HardwareWalletState::new())
+        .manage(LedgerState::new())
         .setup(|app| {
             if let Err(e) = hydrate_wallet_state(&app.handle()) {
                 eprintln!("Failed to hydrate wallet state: {e}");
@@ -124,6 +176,14 @@ pub fn run() {
 
             trading::register_trading_state(app);
             trading::register_paper_trading_state(app);
+
+            // Initialize wallet monitor
+            let monitor_handle = app.handle();
+            tauri::async_runtime::spawn(async move {
+               if let Err(err) = insiders::init_wallet_monitor(&monitor_handle).await {
+                   eprintln!("Failed to initialize wallet monitor: {err}");
+               }
+            });
 
             // Initialize multisig database
             let mut multisig_db_path = app
@@ -216,6 +276,37 @@ pub fn run() {
                  }
              });
 
+             // Initialize cache manager
+             let cache_manager = core::cache_manager::CacheManager::new(100, 1000);
+             let shared_cache_manager = Arc::new(RwLock::new(cache_manager));
+             app.manage(shared_cache_manager.clone());
+
+             // Start background cache warming
+             let app_handle = app.handle();
+             let cache_manager_handle = shared_cache_manager.clone();
+             tauri::async_runtime::spawn(async move {
+                 if let Err(err) = warm_cache_on_startup(app_handle, cache_manager_handle).await {
+                     eprintln!("Failed to warm cache on startup: {err}");
+                 }
+             });
+
+             // Initialize event store
+             let mut event_store_path = app
+                 .path_resolver()
+                 .app_data_dir()
+                 .ok_or_else(|| "Unable to resolve app data directory".to_string())?;
+
+             event_store_path.push("events.db");
+
+             let event_store = tauri::async_runtime::block_on(EventStore::new(event_store_path))
+                 .map_err(|e| {
+                     eprintln!("Failed to initialize event store: {e}");
+                     Box::new(e) as Box<dyn Error>
+                 })?;
+
+             let shared_event_store: SharedEventStore = Arc::new(RwLock::new(event_store));
+             app.manage(shared_event_store.clone());
+
              Ok(())
              })
 
@@ -232,6 +323,16 @@ pub fn run() {
             get_hardware_wallet_address,
             sign_with_hardware_wallet,
             get_firmware_version,
+            ledger_register_device,
+            ledger_list_devices,
+            ledger_get_device,
+            ledger_connect_device,
+            ledger_disconnect_device,
+            ledger_update_device_address,
+            ledger_validate_transaction,
+            ledger_get_active_device,
+            ledger_remove_device,
+            ledger_clear_devices,
             // Multi-Wallet
             multi_wallet_add,
             multi_wallet_update,
@@ -348,6 +449,10 @@ pub fn run() {
             unsubscribe_wallet_stream,
             get_stream_status,
             reconnect_stream,
+            // Chart Streams
+            subscribe_chart_prices,
+            unsubscribe_chart_prices,
+            get_chart_subscriptions,
             // Jupiter v6 & execution safeguards
             jupiter_quote,
             jupiter_swap,
@@ -398,6 +503,15 @@ pub fn run() {
             copy_trading_process_activity,
             copy_trading_followed_wallets,
             
+            // Wallet Monitor
+            wallet_monitor_init,
+            wallet_monitor_add_wallet,
+            wallet_monitor_update_wallet,
+            wallet_monitor_remove_wallet,
+            wallet_monitor_list_wallets,
+            wallet_monitor_get_activities,
+            wallet_monitor_get_statistics,
+            
             // Activity Logging
             security::activity_log::get_activity_logs,
             security::activity_log::export_activity_logs,
@@ -411,6 +525,19 @@ pub fn run() {
             get_performance_metrics,
             run_performance_test,
             reset_performance_stats,
+
+            // Cache Management
+            cache_commands::get_cache_statistics,
+            cache_commands::clear_cache,
+            cache_commands::warm_cache,
+
+            // Event Sourcing & Audit Trail
+            data::event_store::get_events_command,
+            data::event_store::replay_events_command,
+            data::event_store::get_state_at_time_command,
+            data::event_store::export_audit_trail_command,
+            data::event_store::create_snapshot_command,
+            data::event_store::get_event_stats,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

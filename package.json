@@ -11,6 +11,9 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@ledgerhq/hw-app-solana": "^7.5.5",
+    "@ledgerhq/hw-transport-webhid": "^6.30.8",
+    "@react-spring/web": "^9.7.2",
     "@solana/wallet-adapter-base": "^0.9.27",
     "@solana/wallet-adapter-phantom": "^0.9.28",
     "@solana/wallet-adapter-react": "0.15.0",
@@ -22,7 +25,6 @@
     "framer-motion": "^12.23.24",
     "lightweight-charts": "^5.0.9",
     "lucide-react": "^0.548.0",
-    "@react-spring/web": "^9.7.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^7.9.4",

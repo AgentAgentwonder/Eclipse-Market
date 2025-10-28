@@ -17,6 +17,7 @@ use std::{
 };
 use tauri::{AppHandle, Manager, State};
 use crate::security::activity_log::ActivityLogger;
+use crate::data::event_store::{Event as AuditEvent, SharedEventStore};
 
 const SESSION_FILE: &str = "phantom_session.json";
 const DEFAULT_NETWORK: &str = "devnet";
@@ -39,6 +40,26 @@ impl PhantomSession {
             connected: true,
             last_connected: Some(Utc::now().to_rfc3339()),
             label,
+        }
+    }
+}
+
+fn get_event_store(handle: &AppHandle) -> Option<SharedEventStore> {
+    handle
+        .try_state::<SharedEventStore>()
+        .map(|state| state.inner().clone())
+}
+
+async fn publish_wallet_event(handle: &AppHandle, event: AuditEvent, wallet_address: &str) {
+    if let Some(store) = get_event_store(handle) {
+        let aggregate_id = format!("wallet_{}", wallet_address);
+        let result = {
+            let guard = store.read().await;
+            guard.publish_event(event, &aggregate_id).await
+        };
+
+        if let Err(err) = result {
+            eprintln!("Failed to publish wallet event for {}: {}", wallet_address, err);
         }
     }
 }
@@ -277,14 +298,25 @@ pub async fn phantom_connect(
         .log_connect(
             &public_key,
             json!({
-                "network": network,
-                "label": label,
+                "network": network.clone(),
+                "label": label.clone(),
                 "source": "phantom"
             }),
             true,
             None,
         )
         .await;
+
+    // Publish wallet connected event to event store
+    publish_wallet_event(
+        &app,
+        AuditEvent::WalletConnected {
+            wallet_address: public_key.clone(),
+            wallet_type: "phantom".to_string(),
+            timestamp: Utc::now(),
+        },
+        &public_key,
+    ).await;
 
     Ok(session)
 }
@@ -321,6 +353,19 @@ pub async fn phantom_disconnect(
                     None,
                 )
                 .await;
+
+            if had_session {
+                publish_wallet_event(
+                    &app,
+                    AuditEvent::WalletDisconnected {
+                        wallet_address: wallet_addr.clone(),
+                        timestamp: Utc::now(),
+                    },
+                    &wallet_addr,
+                )
+                .await;
+            }
+
             Ok(())
         }
         Err(err) => {
