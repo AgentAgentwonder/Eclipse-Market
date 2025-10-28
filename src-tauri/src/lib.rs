@@ -104,6 +104,7 @@ pub fn run() {
             });
 
             trading::register_trading_state(app);
+            trading::register_paper_trading_state(app);
 
             // Initialize multisig database
             let mut multisig_db_path = app
@@ -282,6 +283,16 @@ pub fn run() {
             get_order,
             acknowledge_order,
             update_order_prices,
+            
+            // Paper Trading Simulation
+            paper_trading_init,
+            get_paper_account,
+            reset_paper_account,
+            execute_paper_trade,
+            get_paper_positions,
+            get_paper_trade_history,
+            get_paper_performance,
+            update_paper_position_prices,
             
             // DCA Bots
             dca_init,
