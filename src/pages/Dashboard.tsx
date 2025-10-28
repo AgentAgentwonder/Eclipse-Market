@@ -2,6 +2,9 @@ import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { TrendingUp, Users, Target, Activity, Bell, RefreshCw, PlayCircle, Database, Zap, Shield } from 'lucide-react'
 import { usePriceStream } from '../hooks/usePriceStream'
+import WatchlistWidget from '../components/portfolio/WatchlistWidget'
+import WatchlistManager from '../components/portfolio/WatchlistManager'
+import AlertsManager from '../components/alerts/AlertsManager'
 
 interface Alert {
   id: string
@@ -21,6 +24,10 @@ interface CoinData {
 
 export default function Dashboard() {
   const [alerts, setAlerts] = useState<Alert[]>([])
+  const [watchlistManagerOpen, setWatchlistManagerOpen] = useState(false)
+  const [alertsManagerOpen, setAlertsManagerOpen] = useState(false)
+  const [prefilledSymbol, setPrefilledSymbol] = useState<string | undefined>(undefined)
+  const [prefilledMint, setPrefilledMint] = useState<string | undefined>(undefined)
 
   const symbols = useMemo(() => ['SOL', 'BONK', 'JUP', 'WIF', 'PYTH', 'JTO'], [])
   const { prices, loading } = usePriceStream(symbols)
@@ -96,8 +103,25 @@ export default function Dashboard() {
       .slice(0, 5)
   }, [prices, loading, symbols])
 
+  const openWatchlistManager = () => {
+    setWatchlistManagerOpen(true)
+  }
+
+  const openAlertsManager = () => {
+    setPrefilledSymbol(undefined)
+    setPrefilledMint(undefined)
+    setAlertsManagerOpen(true)
+  }
+
+  const handleCreateAlertFromWatchlist = (symbol: string, mint: string) => {
+    setPrefilledSymbol(symbol)
+    setPrefilledMint(mint)
+    setAlertsManagerOpen(true)
+  }
+
   return (
-    <div className="space-y-6">
+    <>
+      <div className="space-y-6">
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, i) => (
@@ -199,6 +223,12 @@ export default function Dashboard() {
 
         {/* Alerts Sidebar */}
         <aside className="space-y-6">
+          <WatchlistWidget
+            onOpenManager={openWatchlistManager}
+            onCreateWatchlist={openWatchlistManager}
+            onOpenAlerts={openAlertsManager}
+          />
+
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -250,5 +280,23 @@ export default function Dashboard() {
         </aside>
       </div>
     </div>
+
+    <WatchlistManager
+      isOpen={watchlistManagerOpen}
+      onClose={() => setWatchlistManagerOpen(false)}
+      onCreateAlert={handleCreateAlertFromWatchlist}
+    />
+
+    <AlertsManager
+      isOpen={alertsManagerOpen}
+      onClose={() => {
+        setAlertsManagerOpen(false)
+        setPrefilledSymbol(undefined)
+        setPrefilledMint(undefined)
+      }}
+      prefilledSymbol={prefilledSymbol}
+      prefilledMint={prefilledMint}
+    />
+    </>
   )
 }

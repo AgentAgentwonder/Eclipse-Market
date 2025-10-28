@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Lock, Fingerprint, AlertCircle, AlertTriangle, CheckCircle, Eye, EyeOff, Usb, TrendingUp, Zap, FileText, Server } from 'lucide-react';
+import { Shield, Lock, Fingerprint, AlertCircle, AlertTriangle, CheckCircle, Eye, EyeOff, Usb, TrendingUp, Zap, FileText, Server, Bell } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { BIOMETRIC_STATUS_EVENT } from '../constants/events';
 import HardwareWalletManager from '../components/wallet/HardwareWalletManager';
@@ -10,6 +10,7 @@ import { usePaperTradingStore } from '../store/paperTradingStore';
 import { ActivityLog } from './Settings/ActivityLog';
 import { PerformanceDashboard } from './Settings/PerformanceDashboard';
 import { ApiSettings } from './Settings/ApiSettings';
+import AlertSettings from './Settings/AlertSettings';
 
 interface BiometricStatus {
   available: boolean;
@@ -49,7 +50,7 @@ function Settings() {
   const [priorityEstimates, setPriorityEstimates] = useState<PriorityFeeEstimate[]>([]);
   const [networkLoading, setNetworkLoading] = useState(false);
   const [networkError, setNetworkError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'security' | 'hardware' | 'trading' | 'activity'>('security');
+  const [activeTab, setActiveTab] = useState<'security' | 'hardware' | 'trading' | 'activity' | 'alerts'>('security');
   const [paperModeDialogOpen, setPaperModeDialogOpen] = useState(false);
   const [paperModeTarget, setPaperModeTarget] = useState<'paper' | 'live'>('paper');
   const [acknowledgeLiveTrading, setAcknowledgeLiveTrading] = useState(false);
@@ -417,6 +418,21 @@ function Settings() {
           </div>
 
           <ApiSettings />
+        </div>
+
+        {/* Price Alerts & Watchlists */}
+        <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/30">
+              <Bell className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">Price Alerts</h2>
+              <p className="text-white/60 text-sm">Manage watchlists and notification preferences</p>
+            </div>
+          </div>
+
+          <AlertSettings />
         </div>
 
         {/* Hardware Wallets */}

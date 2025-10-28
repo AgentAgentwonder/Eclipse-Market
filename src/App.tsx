@@ -22,6 +22,7 @@ import SettingsPage from './pages/Settings'
 import { BIOMETRIC_STATUS_EVENT } from './constants/events'
 import { useWalletStore } from './store/walletStore'
 import { usePaperTradingStore } from './store/paperTradingStore'
+import { useAlertNotifications } from './hooks/useAlertNotifications'
 
 type BiometricStatus = {
   available: boolean
@@ -44,6 +45,8 @@ function App() {
   const wallets = useWalletStore((state) => state.wallets)
   const refreshMultiWallet = useWalletStore((state) => state.refreshMultiWallet)
   const { isPaperMode, togglePaperMode } = usePaperTradingStore()
+
+  useAlertNotifications()
 
   useEffect(() => {
     const hydrate = async () => {
