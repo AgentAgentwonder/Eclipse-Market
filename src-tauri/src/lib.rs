@@ -3,6 +3,7 @@ mod api;
 mod auth;
 mod bots;
 mod core;
+mod data;
 mod market;
 mod portfolio;
 mod security;
@@ -17,6 +18,7 @@ pub use api::*;
 pub use auth::*;
 pub use bots::*;
 pub use core::*;
+pub use data::*;
 pub use market::*;
 pub use portfolio::*;
 pub use sentiment::*;
@@ -162,9 +164,50 @@ pub fn run() {
              let top_coins_cache: market::SharedTopCoinsCache = Arc::new(RwLock::new(market::TopCoinsCache::new()));
              app.manage(top_coins_cache.clone());
 
+             // Initialize cache manager
+             let cache_manager = CacheManager::new(
+                 &app.handle(),
+                 10000,  // max 10k entries
+                 100 * 1024 * 1024,  // max 100MB
+                 true,  // enable L2 disk cache
+             ).map_err(|e| {
+                 eprintln!("Failed to initialize cache manager: {e}");
+                 Box::new(std::io::Error::new(std::io::ErrorKind::Other, e)) as Box<dyn Error>
+             })?;
+
+             let cache_state: SharedCacheManager = Arc::new(cache_manager);
+             app.manage(cache_state.clone());
+
+             // Start cache warming in background
+             let cache_for_warming = cache_state.clone();
+             tauri::async_runtime::spawn(async move {
+                 // Mock top tokens for warming
+                 let top_tokens = vec![
+                     WarmRequest {
+                         key: "So11111111111111111111111111111111111111112".to_string(),
+                         cache_type: CacheType::Price,
+                         value: None,
+                     },
+                     WarmRequest {
+                         key: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263".to_string(),
+                         cache_type: CacheType::Price,
+                         value: None,
+                     },
+                     WarmRequest {
+                         key: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN".to_string(),
+                         cache_type: CacheType::Price,
+                         value: None,
+                     },
+                 ];
+                 
+                 if let Err(e) = cache_for_warming.warm_cache(top_tokens).await {
+                     eprintln!("Failed to warm cache: {e}");
+                 }
+             });
+
              Ok(())
              })
-
+        .invoke_handler(tauri::generate_handler![
              // Wallet
              phantom_connect,
              phantom_disconnect,
@@ -338,7 +381,16 @@ pub fn run() {
             get_performance_metrics,
             run_performance_test,
             reset_performance_stats,
-        ])
+
+            // Cache Management
+            get_cache_stats,
+            get_cache_warming_progress,
+            clear_cache,
+            clear_all_caches,
+            warm_cache,
+            update_cache_ttl,
+            get_cache_ttl_config,
+            ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -70,6 +70,8 @@ crossbeam = "0.8.4"
 parking_lot = "0.12.1"
 bytes = "1.5.0"
 sysinfo = { version = "0.30.11", default-features = false, features = ["cpu"] }
+moka = { version = "0.12", features = ["future"] }
+sled = "0.34"
 
 tauri = { version = "1.5.3", features = ["shell-open"] }
 

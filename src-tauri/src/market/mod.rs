@@ -4,8 +4,10 @@ pub mod top_coins;
 pub use new_coins_scanner::*;
 pub use top_coins::*;
 
-use serde::{Deserialize, Serialize};
+use crate::{CacheType, SharedCacheManager};
 use reqwest;
+use serde::{Deserialize, Serialize};
+use tauri::State;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CoinPrice {
@@ -129,27 +131,52 @@ fn generate_mock_history(hours: i64) -> Vec<PricePoint> {
 }
 
 #[tauri::command]
-pub async fn get_coin_price(address: String, api_key: Option<String>) -> Result<CoinPrice, String> {
+pub async fn get_coin_price(
+    address: String,
+    api_key: Option<String>,
+    cache: State<'_, SharedCacheManager>,
+) -> Result<CoinPrice, String> {
+    // Try cache first
+    let cache_key = format!("price:{}", address);
+    if let Ok(Some(cached)) = cache.get::<CoinPrice>(CacheType::Price, &cache_key).await {
+        return Ok(cached);
+    }
+
     // If API key provided, use real API
-    if let Some(key) = api_key {
+    let price = if let Some(key) = api_key {
         if !key.is_empty() {
             match fetch_birdeye_price(&address, &key).await {
-                Ok(price) => return Ok(price),
-                Err(_) => {} // Fall through to mock data
+                Ok(price) => price,
+                Err(_) => generate_mock_price(&address),
             }
+        } else {
+            generate_mock_price(&address)
         }
-    }
+    } else {
+        generate_mock_price(&address)
+    };
+
+    // Store in cache
+    let _ = cache.set(CacheType::Price, cache_key, &price).await;
     
-    // Otherwise use mock data
-    Ok(generate_mock_price(&address))
+    Ok(price)
 }
 
 #[tauri::command]
 pub async fn get_price_history(
     address: String,
     timeframe: String,
-    _api_key: Option<String>
+    _api_key: Option<String>,
+    cache: State<'_, SharedCacheManager>,
 ) -> Result<Vec<PricePoint>, String> {
+    let cache_key = format!("history:{}:{}", address, timeframe);
+    if let Ok(Some(history)) = cache
+        .get::<Vec<PricePoint>>(CacheType::Historical, &cache_key)
+        .await
+    {
+        return Ok(history);
+    }
+
     let hours = match timeframe.as_str() {
         "1H" => 1,
         "4H" => 4,
@@ -159,12 +186,29 @@ pub async fn get_price_history(
         _ => 24,
     };
     
-    // For now, return mock data
-    Ok(generate_mock_history(hours))
+    let history = generate_mock_history(hours);
+
+    let _ = cache
+        .set(CacheType::Historical, cache_key, &history)
+        .await;
+    
+    Ok(history)
 }
 
 #[tauri::command]
-pub async fn search_tokens(query: String) -> Result<Vec<TokenSearchResult>, String> {
+pub async fn search_tokens(
+    query: String,
+    cache: State<'_, SharedCacheManager>,
+) -> Result<Vec<TokenSearchResult>, String> {
+    let normalized_query = query.to_lowercase();
+    let cache_key = format!("search:{}", normalized_query);
+    if let Ok(Some(results)) = cache
+        .get::<Vec<TokenSearchResult>>(CacheType::TokenMetadata, &cache_key)
+        .await
+    {
+        return Ok(results);
+    }
+
     // Mock search results
     let tokens = vec![
         TokenSearchResult {
@@ -194,6 +238,10 @@ pub async fn search_tokens(query: String) -> Result<Vec<TokenSearchResult>, Stri
             t.name.to_lowercase().contains(&query.to_lowercase())
         })
         .collect();
+
+    let _ = cache
+        .set(CacheType::TokenMetadata, cache_key, &filtered)
+        .await;
     
     Ok(filtered)
 }
