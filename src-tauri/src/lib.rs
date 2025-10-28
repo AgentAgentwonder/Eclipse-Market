@@ -333,6 +333,11 @@ pub fn run() {
             security::activity_log::cleanup_activity_logs,
             security::activity_log::get_activity_retention,
             security::activity_log::set_activity_retention,
+
+            // Performance & Diagnostics
+            get_performance_metrics,
+            run_performance_test,
+            reset_performance_stats,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
