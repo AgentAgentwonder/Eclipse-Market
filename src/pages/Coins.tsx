@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Search, TrendingUp, Zap, BarChart3 } from 'lucide-react'
 import NewCoins from './Coins/NewCoins'
+import TopCoins from './Coins/TopCoins'
 
 interface Coin {
   address: string
@@ -32,9 +33,22 @@ export default function Coins() {
     return coin.symbol.toLowerCase().includes(query) || coin.name.toLowerCase().includes(query)
   })
 
-  const displayedCoins = activeTab === 'top'
-    ? [...filteredCoins].sort((a, b) => b.market_cap - a.market_cap)
-    : filteredCoins
+  const displayedCoins = filteredCoins
+
+  const tabMeta = {
+    trending: {
+      title: 'Coins Market',
+      subtitle: 'Real-time cryptocurrency tracking and analysis',
+    },
+    new: {
+      title: 'Coin Discovery',
+      subtitle: 'New Solana token launches with safety insights',
+    },
+    top: {
+      title: 'Top Coins by Market Cap',
+      subtitle: 'Top 100 Solana tokens ranked by market capitalization',
+    },
+  } as const
 
   return (
     <div className="space-y-6">
@@ -42,15 +56,13 @@ export default function Coins() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold mb-2">
-            {activeTab === 'new' ? 'Coin Discovery' : 'Coins Market'}
+            {tabMeta[activeTab as keyof typeof tabMeta].title}
           </h1>
           <p className="text-gray-400">
-            {activeTab === 'new'
-              ? 'New Solana token launches with safety insights'
-              : 'Real-time cryptocurrency tracking and analysis'}
+            {tabMeta[activeTab as keyof typeof tabMeta].subtitle}
           </p>
         </div>
-        {activeTab !== 'new' && (
+        {activeTab === 'trending' && (
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
@@ -89,6 +101,8 @@ export default function Coins() {
       {/* Tab Content */}
       {activeTab === 'new' ? (
         <NewCoins />
+      ) : activeTab === 'top' ? (
+        <TopCoins />
       ) : (
         /* Coins Grid */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
