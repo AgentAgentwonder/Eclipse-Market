@@ -7,6 +7,7 @@ mod cache_commands;
 mod chart_stream;
 mod core;
 mod insiders;
+mod data;
 mod market;
 mod portfolio;
 mod security;
@@ -24,25 +25,28 @@ pub use bots::*;
 pub use chart_stream::*;
 pub use core::*;
 pub use insiders::*;
+pub use data::*;
 pub use market::*;
 pub use portfolio::*;
 pub use sentiment::*;
 pub use trading::*;
 pub use wallet::hardware_wallet::*;
+pub use wallet::ledger::*;
 pub use wallet::multi_wallet::*;
 pub use wallet::phantom::*;
 
 pub use wallet::multisig::*;
 
 use wallet::hardware_wallet::HardwareWalletState;
+use wallet::ledger::LedgerState;
 use wallet::phantom::{hydrate_wallet_state, WalletState};
 use wallet::multi_wallet::MultiWalletManager;
 use wallet::multisig::{MultisigDatabase, SharedMultisigDatabase};
 use security::keystore::Keystore;
 use security::activity_log::ActivityLogger;
+use data::event_store::{EventStore, SharedEventStore};
 use auth::session_manager::SessionManager;
 use auth::two_factor::TwoFactorManager;
-use security::keystore::Keystore;
 use std::error::Error;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -100,6 +104,7 @@ pub fn run() {
     tauri::Builder::default()
         .manage(WalletState::new())
         .manage(HardwareWalletState::new())
+        .manage(LedgerState::new())
         .setup(|app| {
             if let Err(e) = hydrate_wallet_state(&app.handle()) {
                 eprintln!("Failed to hydrate wallet state: {e}");
@@ -246,6 +251,23 @@ pub fn run() {
                  }
              });
 
+             // Initialize event store
+             let mut event_store_path = app
+                 .path_resolver()
+                 .app_data_dir()
+                 .ok_or_else(|| "Unable to resolve app data directory".to_string())?;
+
+             event_store_path.push("events.db");
+
+             let event_store = tauri::async_runtime::block_on(EventStore::new(event_store_path))
+                 .map_err(|e| {
+                     eprintln!("Failed to initialize event store: {e}");
+                     Box::new(e) as Box<dyn Error>
+                 })?;
+
+             let shared_event_store: SharedEventStore = Arc::new(RwLock::new(event_store));
+             app.manage(shared_event_store.clone());
+
              Ok(())
              })
 
@@ -262,6 +284,16 @@ pub fn run() {
             get_hardware_wallet_address,
             sign_with_hardware_wallet,
             get_firmware_version,
+            ledger_register_device,
+            ledger_list_devices,
+            ledger_get_device,
+            ledger_connect_device,
+            ledger_disconnect_device,
+            ledger_update_device_address,
+            ledger_validate_transaction,
+            ledger_get_active_device,
+            ledger_remove_device,
+            ledger_clear_devices,
             // Multi-Wallet
             multi_wallet_add,
             multi_wallet_update,
@@ -440,6 +472,14 @@ pub fn run() {
             cache_commands::get_cache_statistics,
             cache_commands::clear_cache,
             cache_commands::warm_cache,
+
+            // Event Sourcing & Audit Trail
+            data::event_store::get_events_command,
+            data::event_store::replay_events_command,
+            data::event_store::get_state_at_time_command,
+            data::event_store::export_audit_trail_command,
+            data::event_store::create_snapshot_command,
+            data::event_store::get_event_stats,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
