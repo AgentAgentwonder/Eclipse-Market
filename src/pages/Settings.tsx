@@ -13,6 +13,7 @@ import { PerformanceDashboard } from './Settings/PerformanceDashboard';
 import { CacheSettings } from '../components/CacheSettings';
 import { ApiSettings } from './Settings/ApiSettings';
 import AlertSettings from './Settings/AlertSettings';
+import { StorageSettings } from './Settings/StorageSettings';
 
 interface BiometricStatus {
   available: boolean;
@@ -1074,6 +1075,11 @@ function Settings() {
           </>
         )}
       </AnimatePresence>
+
+      {/* Storage Management */}
+      <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6">
+        <StorageSettings />
+      </div>
 
       {/* Cache Management */}
       <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6">

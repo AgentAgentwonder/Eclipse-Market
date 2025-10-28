@@ -307,6 +307,64 @@ pub fn run() {
              let shared_event_store: SharedEventStore = Arc::new(RwLock::new(event_store));
              app.manage(shared_event_store.clone());
 
+             // Initialize compression manager
+             let mut compression_db_path = app
+                 .path_resolver()
+                 .app_data_dir()
+                 .ok_or_else(|| "Unable to resolve app data directory".to_string())?;
+
+             compression_db_path.push("events.db");
+
+             let compression_manager = tauri::async_runtime::block_on(CompressionManager::new(compression_db_path))
+                 .map_err(|e| {
+                     eprintln!("Failed to initialize compression manager: {e}");
+                     Box::new(e) as Box<dyn Error>
+                 })?;
+
+             let shared_compression_manager: SharedCompressionManager = Arc::new(RwLock::new(compression_manager));
+             app.manage(shared_compression_manager.clone());
+
+             // Start background compression job (runs daily at 3 AM)
+             let compression_job = shared_compression_manager.clone();
+             tauri::async_runtime::spawn(async move {
+                 use chrono::Timelike;
+                 use tokio::time::{sleep, Duration};
+
+                 loop {
+                     let now = chrono::Utc::now();
+                     
+                     // Calculate time until 3 AM
+                     let mut next_run = now
+                         .date_naive()
+                         .and_hms_opt(3, 0, 0)
+                         .unwrap()
+                         .and_utc();
+                     
+                     if now.hour() >= 3 {
+                         next_run = next_run + chrono::Duration::days(1);
+                     }
+                     
+                     let duration_until_next = next_run.signed_duration_since(now);
+                     let sleep_secs = duration_until_next.num_seconds().max(0) as u64;
+                     
+                     sleep(Duration::from_secs(sleep_secs)).await;
+                     
+                     // Run compression
+                     let manager = compression_job.read().await;
+                     let config = manager.get_config().await;
+                     
+                     if config.enabled && config.auto_compress {
+                         if let Err(err) = manager.compress_old_events().await {
+                             eprintln!("Failed to compress old events: {err}");
+                         }
+                         if let Err(err) = manager.compress_old_trades().await {
+                             eprintln!("Failed to compress old trades: {err}");
+                         }
+                         manager.cleanup_cache().await;
+                     }
+                 }
+             });
+
              Ok(())
              })
 
@@ -538,6 +596,14 @@ pub fn run() {
             data::event_store::export_audit_trail_command,
             data::event_store::create_snapshot_command,
             data::event_store::get_event_stats,
+
+            // Data Compression
+            data::compression_commands::get_compression_stats,
+            data::compression_commands::compress_old_data,
+            data::compression_commands::update_compression_config,
+            data::compression_commands::get_compression_config,
+            data::compression_commands::decompress_data,
+            data::compression_commands::get_database_size,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -71,6 +71,9 @@ parking_lot = "0.12.1"
 bytes = "1.5.0"
 sysinfo = { version = "0.30.11", default-features = false, features = ["cpu"] }
 
+# Compression
+zstd = "0.13.0"
+
 tauri = { version = "1.5.3", features = ["shell-open"] }
 
 curve25519-dalek = { version = "3.2.1", default-features = false }
