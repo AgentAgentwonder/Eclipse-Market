@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Lock, Fingerprint, AlertCircle, CheckCircle, Eye, EyeOff, Usb, TrendingUp, Zap } from 'lucide-react';
+import { Shield, Lock, Fingerprint, AlertCircle, CheckCircle, Eye, EyeOff, Usb, TrendingUp, Zap, FileText } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { BIOMETRIC_STATUS_EVENT } from '../constants/events';
 import HardwareWalletManager from '../components/wallet/HardwareWalletManager';
 import { useWalletStore } from '../store/walletStore';
 import { useTradingSettingsStore } from '../store/tradingSettingsStore';
+import { ActivityLog } from './Settings/ActivityLog';
 
 interface BiometricStatus {
   available: boolean;
@@ -45,6 +46,7 @@ function Settings() {
   const [priorityEstimates, setPriorityEstimates] = useState<PriorityFeeEstimate[]>([]);
   const [networkLoading, setNetworkLoading] = useState(false);
   const [networkError, setNetworkError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'security' | 'hardware' | 'trading' | 'activity'>('security');
 
   const { hardwareDevices, activeHardwareDevice, signingMethod } = useWalletStore();
   
@@ -760,6 +762,23 @@ function Settings() {
                 </motion.button>
               </>
             )}
+          </div>
+        </div>
+
+        {/* Activity Logging */}
+        <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6 space-y-6">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30">
+              <FileText className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">Wallet Activity</h2>
+              <p className="text-white/60 text-sm">Review recent wallet actions and investigate alerts</p>
+            </div>
+          </div>
+
+          <div className="bg-slate-900/40 border border-purple-500/10 rounded-2xl p-4">
+            <ActivityLog />
           </div>
         </div>
 

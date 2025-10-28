@@ -29,6 +29,7 @@ use wallet::hardware_wallet::HardwareWalletState;
 use wallet::phantom::{hydrate_wallet_state, WalletState};
 use wallet::multi_wallet::MultiWalletManager;
 use security::keystore::Keystore;
+use security::activity_log::ActivityLogger;
 use auth::session_manager::SessionManager;
 use auth::two_factor::TwoFactorManager;
 use std::error::Error;
@@ -66,11 +67,36 @@ pub fn run() {
                 Box::new(e) as Box<dyn Error>
             })?;
 
+            let activity_logger = tauri::async_runtime::block_on(async {
+                ActivityLogger::new(&app.handle()).await
+            }).map_err(|e| {
+                eprintln!("Failed to initialize activity logger: {e}");
+                Box::new(e) as Box<dyn Error>
+            })?;
+
+            let cleanup_logger = activity_logger.clone();
+
             app.manage(keystore);
             app.manage(multi_wallet_manager);
             app.manage(session_manager);
             app.manage(two_factor_manager);
             app.manage(ws_manager);
+            app.manage(activity_logger);
+
+            tauri::async_runtime::spawn(async move {
+                use tokio::time::{sleep, Duration};
+
+                if let Err(err) = cleanup_logger.cleanup_old_logs(None).await {
+                    eprintln!("Failed to run initial activity log cleanup: {err}");
+                }
+
+                loop {
+                    sleep(Duration::from_secs(24 * 60 * 60)).await;
+                    if let Err(err) = cleanup_logger.cleanup_old_logs(None).await {
+                        eprintln!("Failed to run scheduled activity log cleanup: {err}");
+                    }
+                }
+            });
 
              trading::register_trading_state(app);
 
@@ -225,6 +251,15 @@ pub fn run() {
             copy_trading_performance,
             copy_trading_process_activity,
             copy_trading_followed_wallets,
+            
+            // Activity Logging
+            security::activity_log::get_activity_logs,
+            security::activity_log::export_activity_logs,
+            security::activity_log::get_activity_stats,
+            security::activity_log::check_suspicious_activity,
+            security::activity_log::cleanup_activity_logs,
+            security::activity_log::get_activity_retention,
+            security::activity_log::set_activity_retention,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
