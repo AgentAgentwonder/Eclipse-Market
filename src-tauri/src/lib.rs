@@ -236,6 +236,9 @@ pub fn run() {
             get_coin_price,
             get_price_history,
             search_tokens,
+            get_trending_coins,
+            get_coin_sentiment,
+            refresh_trending,
             
             // New Coins Scanner
             get_new_coins,
