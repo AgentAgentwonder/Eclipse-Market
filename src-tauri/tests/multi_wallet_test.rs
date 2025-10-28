@@ -1,11 +1,11 @@
 #[cfg(test)]
 mod multi_wallet_tests {
+    use eclipse_market_pro::security::keystore::Keystore;
     use eclipse_market_pro::wallet::multi_wallet::{
         AddWalletRequest, CreateGroupRequest, GroupSettings, MultiWalletManager, WalletType,
     };
-    use eclipse_market_pro::security::keystore::Keystore;
-    use tempfile::tempdir;
     use tauri::{App, Manager};
+    use tempfile::tempdir;
 
     fn create_test_keystore() -> Keystore {
         let temp = tempdir().expect("Failed to create temp directory");
@@ -80,8 +80,12 @@ mod multi_wallet_tests {
             group_id: None,
         };
 
-        let wallet1 = manager.add_wallet(request1, &keystore).expect("Add wallet 1");
-        let wallet2 = manager.add_wallet(request2, &keystore).expect("Add wallet 2");
+        let wallet1 = manager
+            .add_wallet(request1, &keystore)
+            .expect("Add wallet 1");
+        let wallet2 = manager
+            .add_wallet(request2, &keystore)
+            .expect("Add wallet 2");
 
         let result = manager.set_active_wallet(&wallet2.id, &keystore);
         assert!(result.is_ok());
@@ -187,8 +191,12 @@ mod multi_wallet_tests {
             group_id: None,
         };
 
-        manager.add_wallet(request1, &keystore).expect("Add wallet 1");
-        manager.add_wallet(request2, &keystore).expect("Add wallet 2");
+        manager
+            .add_wallet(request1, &keystore)
+            .expect("Add wallet 1");
+        manager
+            .add_wallet(request2, &keystore)
+            .expect("Add wallet 2");
 
         let portfolio = manager
             .get_aggregated_portfolio()

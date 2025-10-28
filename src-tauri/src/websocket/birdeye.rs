@@ -4,9 +4,9 @@ use futures_util::{SinkExt, StreamExt};
 use serde_json::json;
 use std::time::Instant;
 use tauri::{AppHandle, Manager};
+use tokio::net::TcpStream;
 use tokio_tungstenite::tungstenite::Message;
 use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
-use tokio::net::TcpStream;
 
 const BIRDEYE_WS_URL: &str = "wss://public-api.birdeye.so/socket";
 
@@ -41,7 +41,10 @@ impl BirdeyeStream {
         self.handle_stream(ws_stream).await
     }
 
-    async fn handle_stream(&self, ws_stream: WebSocketStream<MaybeTlsStream<TcpStream>>) -> anyhow::Result<()> {
+    async fn handle_stream(
+        &self,
+        ws_stream: WebSocketStream<MaybeTlsStream<TcpStream>>,
+    ) -> anyhow::Result<()> {
         let (mut write, mut read) = ws_stream.split();
 
         while let Some(msg) = read.next().await {
@@ -102,7 +105,10 @@ impl BirdeyeStream {
             .get("price")
             .and_then(|v| v.as_f64())
             .ok_or_else(|| anyhow::anyhow!("Missing price"))?;
-        let change = value.get("change_24h").and_then(|v| v.as_f64()).unwrap_or(0.0);
+        let change = value
+            .get("change_24h")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0);
         let volume = value.get("volume_24h").and_then(|v| v.as_f64());
 
         Ok(PriceDelta {
@@ -144,7 +150,10 @@ impl BirdeyeStream {
         let _ = self.connection.event_tx.send(event);
     }
 
-    pub async fn subscribe(connection: StreamConnection, symbols: Vec<String>) -> anyhow::Result<()> {
+    pub async fn subscribe(
+        connection: StreamConnection,
+        symbols: Vec<String>,
+    ) -> anyhow::Result<()> {
         let mut subs = connection.subscriptions.write().await;
         subs.prices.extend(symbols.clone());
         drop(subs);
@@ -155,7 +164,10 @@ impl BirdeyeStream {
         Ok(())
     }
 
-    pub async fn unsubscribe(connection: StreamConnection, symbols: Vec<String>) -> anyhow::Result<()> {
+    pub async fn unsubscribe(
+        connection: StreamConnection,
+        symbols: Vec<String>,
+    ) -> anyhow::Result<()> {
         let mut subs = connection.subscriptions.write().await;
         subs.prices.retain(|s| !symbols.contains(s));
         drop(subs);

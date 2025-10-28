@@ -105,7 +105,7 @@ impl OrderManager {
         let mut cancelled_order = order;
         cancelled_order.status = OrderStatus::Cancelled;
         cancelled_order.updated_at = Utc::now();
-        
+
         self.emit_order_update(&cancelled_order);
 
         Ok(())
@@ -170,11 +170,11 @@ impl OrderManager {
                 if self.should_trigger_order(&order, current_price).await? {
                     if let Err(e) = self.execute_order(&order, current_price).await {
                         eprintln!("Failed to execute order {}: {}", order.id, e);
-                        let _ = self
-                            .db
-                            .write()
-                            .await
-                            .update_order_status(&order.id, OrderStatus::Failed, Some(e));
+                        let _ = self.db.write().await.update_order_status(
+                            &order.id,
+                            OrderStatus::Failed,
+                            Some(e),
+                        );
                     }
                 }
             }
@@ -183,7 +183,11 @@ impl OrderManager {
         Ok(())
     }
 
-    async fn should_trigger_order(&self, order: &Order, current_price: f64) -> Result<bool, String> {
+    async fn should_trigger_order(
+        &self,
+        order: &Order,
+        current_price: f64,
+    ) -> Result<bool, String> {
         match order.order_type {
             OrderType::Limit => {
                 if let Some(limit_price) = order.limit_price {
@@ -219,9 +223,7 @@ impl OrderManager {
     }
 
     async fn check_trailing_stop(&self, order: &Order, current_price: f64) -> Result<bool, String> {
-        let trailing_percent = order
-            .trailing_percent
-            .ok_or("Trailing percent not set")?;
+        let trailing_percent = order.trailing_percent.ok_or("Trailing percent not set")?;
 
         let mut should_trigger = false;
         let mut new_highest = order.highest_price;

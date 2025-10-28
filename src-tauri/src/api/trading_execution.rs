@@ -13,7 +13,7 @@ pub struct MEVProtectionConfig {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct GasConfig {
-    pub preset: String, // "slow", "normal", "fast", "custom"
+    pub preset: String,                   // "slow", "normal", "fast", "custom"
     pub custom_priority_fee: Option<u64>, // in micro lamports
 }
 
@@ -51,7 +51,7 @@ pub struct MEVProtectionResult {
 pub async fn get_network_congestion() -> Result<CongestionData, String> {
     // In a real implementation, this would query the Solana RPC for recent priority fees
     // For now, we'll return mock data that simulates congestion analysis
-    
+
     let timestamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_err(|e| format!("Time error: {}", e))?
@@ -94,7 +94,7 @@ pub async fn get_network_congestion() -> Result<CongestionData, String> {
 #[instrument]
 pub async fn get_priority_fee_estimates() -> Result<Vec<PriorityFeeEstimate>, String> {
     let congestion = get_network_congestion().await?;
-    
+
     let multiplier = match congestion.level.as_str() {
         "high" => 2.0,
         "low" => 0.75,
@@ -148,7 +148,7 @@ pub async fn submit_with_mev_protection(
     // 1. If use_jito: Submit to Jito block engine as bundle
     // 2. If use_private_rpc: Submit via private mempool RPC
     // 3. Track and estimate MEV savings
-    
+
     let method = if config.use_jito {
         Some("jito".to_string())
     } else if config.use_private_rpc {
@@ -198,7 +198,8 @@ pub async fn validate_trade_thresholds(
     let slippage_percent = slippage_bps as f64 / 100.0;
     let max_tolerance_percent = max_tolerance_bps as f64 / 100.0;
 
-    let should_block = price_impact > max_tolerance_percent || slippage_percent > max_tolerance_percent;
+    let should_block =
+        price_impact > max_tolerance_percent || slippage_percent > max_tolerance_percent;
 
     debug!(
         "Trade validation: price_impact={}, slippage={}, max_tolerance={}, blocked={}",
@@ -216,7 +217,7 @@ mod tests {
     async fn test_get_network_congestion() {
         let result = get_network_congestion().await;
         assert!(result.is_ok());
-        
+
         let congestion = result.unwrap();
         assert!(["low", "medium", "high"].contains(&congestion.level.as_str()));
         assert!(congestion.average_fee > 0);
@@ -227,7 +228,7 @@ mod tests {
     async fn test_get_priority_fee_estimates() {
         let result = get_priority_fee_estimates().await;
         assert!(result.is_ok());
-        
+
         let estimates = result.unwrap();
         assert_eq!(estimates.len(), 3);
         assert_eq!(estimates[0].preset, "slow");
@@ -260,10 +261,10 @@ mod tests {
             use_jito: false,
             use_private_rpc: false,
         };
-        
+
         let result = submit_with_mev_protection("test_tx".to_string(), config).await;
         assert!(result.is_ok());
-        
+
         let protection = result.unwrap();
         assert_eq!(protection.protected, false);
         assert!(protection.method.is_none());
@@ -276,10 +277,10 @@ mod tests {
             use_jito: true,
             use_private_rpc: false,
         };
-        
+
         let result = submit_with_mev_protection("test_tx".to_string(), config).await;
         assert!(result.is_ok());
-        
+
         let protection = result.unwrap();
         assert_eq!(protection.protected, true);
         assert_eq!(protection.method, Some("jito".to_string()));

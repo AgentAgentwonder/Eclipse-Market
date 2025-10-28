@@ -64,8 +64,5 @@ pub async fn reconnect_stream(
         _ => return Err("Invalid provider".to_string()),
     };
 
-    manager
-        .reconnect(provider)
-        .await
-        .map_err(|e| e.to_string())
+    manager.reconnect(provider).await.map_err(|e| e.to_string())
 }

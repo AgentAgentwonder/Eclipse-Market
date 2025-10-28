@@ -143,10 +143,7 @@ impl SessionManager {
         Ok(session)
     }
 
-    pub fn renew_session(
-        &self,
-        keystore: &Keystore,
-    ) -> Result<SessionState, SessionError> {
+    pub fn renew_session(&self, keystore: &Keystore) -> Result<SessionState, SessionError> {
         let mut guard = self.lock_session()?;
         let current = guard.as_mut().ok_or(SessionError::NoSession)?;
 
@@ -225,10 +222,7 @@ impl SessionManager {
         }
     }
 
-    pub fn update_activity(
-        &self,
-        keystore: &Keystore,
-    ) -> Result<(), SessionError> {
+    pub fn update_activity(&self, keystore: &Keystore) -> Result<(), SessionError> {
         let mut guard = self.lock_session()?;
         if let Some(session) = guard.as_mut() {
             session.last_activity = Utc::now();
@@ -319,9 +313,7 @@ pub async fn session_end(
 }
 
 #[tauri::command]
-pub async fn session_status(
-    state: State<'_, SessionManager>,
-) -> Result<SessionStatus, String> {
+pub async fn session_status(state: State<'_, SessionManager>) -> Result<SessionStatus, String> {
     state.get_status().map_err(|e| e.to_string())
 }
 

@@ -203,7 +203,11 @@ impl MultiWalletManager {
     ) -> Result<WalletInfo, MultiWalletError> {
         let mut guard = self.lock_state()?;
 
-        if guard.wallets.values().any(|w| w.public_key == request.public_key) {
+        if guard
+            .wallets
+            .values()
+            .any(|w| w.public_key == request.public_key)
+        {
             return Err(MultiWalletError::WalletExists(request.public_key));
         }
 

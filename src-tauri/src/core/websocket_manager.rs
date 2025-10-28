@@ -1,8 +1,8 @@
 use crate::market::get_coin_price;
 use crate::websocket::birdeye::BirdeyeStream;
 use crate::websocket::helius::HeliusStream;
-use crate::websocket::types::*;
 use crate::websocket::reconnect::ExponentialBackoff;
+use crate::websocket::types::*;
 use rand::Rng;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
@@ -123,7 +123,9 @@ impl WebSocketManager {
             queue: Arc::new(Mutex::new(MessageQueue::with_capacity(QUEUE_CAPACITY))),
             delta_prices: Arc::new(Mutex::new(DeltaState::new(Duration::from_millis(100)))),
             last_message: Arc::new(RwLock::new(None)),
-            backoff: Arc::new(Mutex::new(ExponentialBackoff::new(BackoffConfig::default()))),
+            backoff: Arc::new(Mutex::new(
+                ExponentialBackoff::new(BackoffConfig::default()),
+            )),
             fallback: Arc::new(RwLock::new(FallbackState {
                 active: false,
                 last_success: None,
@@ -134,7 +136,9 @@ impl WebSocketManager {
             event_tx: tx,
         };
 
-        self.connections.blocking_write().insert(provider.clone(), connection.clone());
+        self.connections
+            .blocking_write()
+            .insert(provider.clone(), connection.clone());
 
         let manager = self.clone();
         let provider_clone = provider.clone();
@@ -154,7 +158,8 @@ impl WebSocketManager {
 
     async fn start_connection(&self, provider: StreamProvider) {
         if let Some(connection) = self.get_connection(&provider).await {
-            self.transition_state(&connection, ConnectionStateInternal::Connecting).await;
+            self.transition_state(&connection, ConnectionStateInternal::Connecting)
+                .await;
             self.emit_status(&connection).await;
 
             match provider {
@@ -193,14 +198,23 @@ impl WebSocketManager {
         }
     }
 
-    fn schedule_reconnect(&self, provider: StreamProvider, delay: Duration, manager: WebSocketManager) {
+    fn schedule_reconnect(
+        &self,
+        provider: StreamProvider,
+        delay: Duration,
+        manager: WebSocketManager,
+    ) {
         tauri::async_runtime::spawn(async move {
             tokio::time::sleep(delay).await;
             manager.start_connection(provider).await;
         });
     }
 
-    async fn transition_state(&self, connection: &StreamConnection, new_state: ConnectionStateInternal) {
+    async fn transition_state(
+        &self,
+        connection: &StreamConnection,
+        new_state: ConnectionStateInternal,
+    ) {
         {
             let mut state = connection.state.write().await;
             *state = new_state.clone();
@@ -220,7 +234,10 @@ impl WebSocketManager {
                 ticker.tick().await;
 
                 let state = connection.state.read().await.clone();
-                if matches!(state, ConnectionStateInternal::Disconnected | ConnectionStateInternal::Failed) {
+                if matches!(
+                    state,
+                    ConnectionStateInternal::Disconnected | ConnectionStateInternal::Failed
+                ) {
                     break;
                 }
 
@@ -230,7 +247,8 @@ impl WebSocketManager {
                         self.force_reconnect(&connection, "heartbeat stale").await;
                     }
                 } else {
-                    self.force_reconnect(&connection, "no message received").await;
+                    self.force_reconnect(&connection, "no message received")
+                        .await;
                 }
             }
         }
@@ -249,17 +267,21 @@ impl WebSocketManager {
         }
         self.emit_status(connection).await;
 
-        let delay = connection.backoff.lock().await.next_delay().unwrap_or(Duration::from_secs(60));
+        let delay = connection
+            .backoff
+            .lock()
+            .await
+            .next_delay()
+            .unwrap_or(Duration::from_secs(60));
         self.schedule_reconnect(connection.provider.clone(), delay, self.clone());
     }
 
     async fn emit_status(&self, connection: &StreamConnection) {
         if let Ok(status) = self.current_status(connection).await {
-            let _ = connection.event_tx.send(StreamEvent::StatusChange(status.clone()));
-            let _ = self.app_handle.emit_all(
-                "stream_status_change",
-                &status,
-            );
+            let _ = connection
+                .event_tx
+                .send(StreamEvent::StatusChange(status.clone()));
+            let _ = self.app_handle.emit_all("stream_status_change", &status);
         }
     }
 
@@ -397,7 +419,12 @@ impl WebSocketManager {
 
     async fn current_status(&self, connection: &StreamConnection) -> anyhow::Result<StreamStatus> {
         let state = connection.state.read().await.clone();
-        let last_message = connection.last_message.read().await.clone().map(|ts| ts.elapsed().as_millis() as i64);
+        let last_message = connection
+            .last_message
+            .read()
+            .await
+            .clone()
+            .map(|ts| ts.elapsed().as_millis() as i64);
         let subscriptions = connection.subscriptions.read().await.clone();
         let fallback = connection.fallback.read().await.clone();
         let stats = connection.statistics.read().await.clone();
@@ -417,9 +444,10 @@ impl WebSocketManager {
                     .connected_at
                     .map(|ts| ts.elapsed().as_millis() as u64)
                     .unwrap_or_default(),
-                last_connected: stats
-                    .connected_at
-                    .map(|ts| (chrono::Utc::now() - chrono::Duration::from_std(ts.elapsed()).unwrap()).timestamp()),
+                last_connected: stats.connected_at.map(|ts| {
+                    (chrono::Utc::now() - chrono::Duration::from_std(ts.elapsed()).unwrap())
+                        .timestamp()
+                }),
                 average_latency_ms: if stats.latency_samples.is_empty() {
                     0.0
                 } else {
@@ -430,7 +458,10 @@ impl WebSocketManager {
             subscriptions,
             fallback: Some(FallbackStatus {
                 active: fallback.active,
-                last_success: fallback.last_success.map(|ts| (chrono::Utc::now() - chrono::Duration::from_std(ts.elapsed()).unwrap()).timestamp()),
+                last_success: fallback.last_success.map(|ts| {
+                    (chrono::Utc::now() - chrono::Duration::from_std(ts.elapsed()).unwrap())
+                        .timestamp()
+                }),
                 interval_ms: fallback.interval.as_millis() as u64,
                 reason: fallback.reason.clone(),
             }),
@@ -465,7 +496,8 @@ impl WebSocketManager {
                                     volume: price.volume_24h,
                                     ts: chrono::Utc::now().timestamp(),
                                 };
-                                self.enqueue_event(&connection, StreamEvent::PriceUpdate(delta)).await;
+                                self.enqueue_event(&connection, StreamEvent::PriceUpdate(delta))
+                                    .await;
                             }
                         }
                     }
@@ -516,7 +548,10 @@ impl WebSocketManager {
         }
     }
 
-    pub fn subscribe_events(&self, provider: StreamProvider) -> Option<broadcast::Receiver<StreamEvent>> {
+    pub fn subscribe_events(
+        &self,
+        provider: StreamProvider,
+    ) -> Option<broadcast::Receiver<StreamEvent>> {
         self.connections
             .blocking_read()
             .get(&provider)

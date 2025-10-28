@@ -7,10 +7,10 @@ mod market;
 mod portfolio;
 mod security;
 mod sentiment;
+mod stream_commands;
 mod trading;
 mod wallet;
 mod websocket;
-mod stream_commands;
 
 pub use ai::*;
 pub use api::*;
@@ -22,17 +22,19 @@ pub use portfolio::*;
 pub use sentiment::*;
 pub use trading::*;
 pub use wallet::hardware_wallet::*;
-pub use wallet::phantom::*;
 pub use wallet::multi_wallet::*;
+pub use wallet::phantom::*;
 
-use wallet::hardware_wallet::HardwareWalletState;
-use wallet::phantom::{hydrate_wallet_state, WalletState};
-use wallet::multi_wallet::MultiWalletManager;
-use security::keystore::Keystore;
 use auth::session_manager::SessionManager;
 use auth::two_factor::TwoFactorManager;
+use security::keystore::Keystore;
 use std::error::Error;
+use std::sync::Arc;
 use stream_commands::*;
+use tokio::sync::RwLock;
+use wallet::hardware_wallet::HardwareWalletState;
+use wallet::multi_wallet::MultiWalletManager;
+use wallet::phantom::{hydrate_wallet_state, WalletState};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -66,35 +68,38 @@ pub fn run() {
                 Box::new(e) as Box<dyn Error>
             })?;
 
+            let market_state = Arc::new(RwLock::new(market::MarketState::new()));
+
             app.manage(keystore);
             app.manage(multi_wallet_manager);
             app.manage(session_manager);
             app.manage(two_factor_manager);
             app.manage(ws_manager);
+            app.manage(market_state);
 
-             trading::register_trading_state(app);
+            trading::register_trading_state(app);
 
-             let automation_handle = app.handle();
-             tauri::async_runtime::spawn(async move {
-                 if let Err(err) = bots::init_dca(&automation_handle).await {
-                     eprintln!("Failed to initialize DCA bots: {err}");
-                 }
-                 if let Err(err) = trading::init_copy_trading(&automation_handle).await {
-                     eprintln!("Failed to initialize copy trading: {err}");
-                 }
-             });
+            let automation_handle = app.handle();
+            tauri::async_runtime::spawn(async move {
+                if let Err(err) = bots::init_dca(&automation_handle).await {
+                    eprintln!("Failed to initialize DCA bots: {err}");
+                }
+                if let Err(err) = trading::init_copy_trading(&automation_handle).await {
+                    eprintln!("Failed to initialize copy trading: {err}");
+                }
+            });
 
-             let portfolio_data = portfolio::PortfolioDataState::new();
-             let rebalancer_state = portfolio::RebalancerState::default();
-             let tax_lots_state = portfolio::TaxLotsState::default();
+            let portfolio_data = portfolio::PortfolioDataState::new();
+            let rebalancer_state = portfolio::RebalancerState::default();
+            let tax_lots_state = portfolio::TaxLotsState::default();
 
-             app.manage(std::sync::Mutex::new(portfolio_data));
-             app.manage(std::sync::Mutex::new(rebalancer_state));
-             app.manage(std::sync::Mutex::new(tax_lots_state));
+            app.manage(std::sync::Mutex::new(portfolio_data));
+            app.manage(std::sync::Mutex::new(rebalancer_state));
+            app.manage(std::sync::Mutex::new(tax_lots_state));
 
-             Ok(())
-            })
-
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
             // Wallet
             phantom_connect,
             phantom_disconnect,
@@ -108,7 +113,6 @@ pub fn run() {
             get_hardware_wallet_address,
             sign_with_hardware_wallet,
             get_firmware_version,
-            
             // Multi-Wallet
             multi_wallet_add,
             multi_wallet_update,
@@ -123,7 +127,6 @@ pub fn run() {
             multi_wallet_delete_group,
             multi_wallet_list_groups,
             multi_wallet_get_aggregated,
-            
             // Auth
             biometric_get_status,
             biometric_enroll,
@@ -131,7 +134,6 @@ pub fn run() {
             biometric_disable,
             biometric_verify_fallback,
             connect_phantom,
-
             // Session Management
             session_create,
             session_renew,
@@ -140,23 +142,27 @@ pub fn run() {
             session_verify,
             session_update_activity,
             session_configure_timeout,
-
             // 2FA
             two_factor_enroll,
             two_factor_verify,
             two_factor_disable,
             two_factor_status,
             two_factor_regenerate_backup_codes,
-            
             // AI & Sentiment
             assess_risk,
             analyze_text_sentiment,
-            
             // Market Data
             get_coin_price,
             get_price_history,
             search_tokens,
-            
+            get_trending_coins,
+            get_top_coins,
+            get_new_coins,
+            get_coin_safety_score,
+            get_coin_sparkline,
+            add_to_watchlist,
+            remove_from_watchlist,
+            get_watchlist,
             // Portfolio & Analytics
             get_portfolio_metrics,
             get_positions,
@@ -175,7 +181,6 @@ pub fn run() {
             generate_tax_report,
             export_tax_report,
             get_tax_loss_harvesting_suggestions,
-            
             // WebSocket Streams
             subscribe_price_stream,
             unsubscribe_price_stream,
@@ -183,7 +188,6 @@ pub fn run() {
             unsubscribe_wallet_stream,
             get_stream_status,
             reconnect_stream,
-            
             // Jupiter v6 & execution safeguards
             jupiter_quote,
             jupiter_swap,
@@ -191,7 +195,6 @@ pub fn run() {
             get_priority_fee_estimates,
             submit_with_mev_protection,
             validate_trade_thresholds,
-            
             // Trading & Orders
             trading_init,
             create_order,
@@ -201,7 +204,6 @@ pub fn run() {
             get_order,
             acknowledge_order,
             update_order_prices,
-            
             // DCA Bots
             dca_init,
             dca_create,
@@ -212,7 +214,6 @@ pub fn run() {
             dca_delete,
             dca_history,
             dca_performance,
-            
             // Copy Trading
             copy_trading_init,
             copy_trading_create,
