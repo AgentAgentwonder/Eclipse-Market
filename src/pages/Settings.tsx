@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Lock, Fingerprint, AlertCircle, CheckCircle, Eye, EyeOff, Usb, TrendingUp, Zap, FileText } from 'lucide-react';
+import { Shield, Lock, Fingerprint, AlertCircle, AlertTriangle, CheckCircle, Eye, EyeOff, Usb, TrendingUp, Zap, FileText } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { BIOMETRIC_STATUS_EVENT } from '../constants/events';
 import HardwareWalletManager from '../components/wallet/HardwareWalletManager';
 import { useWalletStore } from '../store/walletStore';
 import { useTradingSettingsStore } from '../store/tradingSettingsStore';
+import { usePaperTradingStore } from '../store/paperTradingStore';
 import { ActivityLog } from './Settings/ActivityLog';
 
 interface BiometricStatus {
@@ -47,6 +48,9 @@ function Settings() {
   const [networkLoading, setNetworkLoading] = useState(false);
   const [networkError, setNetworkError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'security' | 'hardware' | 'trading' | 'activity'>('security');
+  const [paperModeDialogOpen, setPaperModeDialogOpen] = useState(false);
+  const [paperModeTarget, setPaperModeTarget] = useState<'paper' | 'live'>('paper');
+  const [acknowledgeLiveTrading, setAcknowledgeLiveTrading] = useState(false);
 
   const { hardwareDevices, activeHardwareDevice, signingMethod } = useWalletStore();
   
@@ -66,6 +70,8 @@ function Settings() {
     tradeHistory,
     updateCongestionData,
   } = useTradingSettingsStore();
+
+  const { isPaperMode, togglePaperMode } = usePaperTradingStore();
 
   useEffect(() => {
     loadStatus();
@@ -500,8 +506,56 @@ function Settings() {
             </div>
             <div>
               <h2 className="text-2xl font-bold">Trading Execution</h2>
-              <p className="text-white/60 text-sm">Slippage, MEV protection, and gas optimization</p>
+              <p className="text-white/60 text-sm">Paper mode, slippage, MEV protection, and gas optimization</p>
             </div>
+          </div>
+
+          {/* Paper Trading Mode */}
+          <div className="mb-6 p-4 bg-slate-900/50 rounded-2xl border border-purple-500/10 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-orange-400" />
+                  Paper Trading Mode
+                </h3>
+                <p className="text-sm text-white/60 mt-1">
+                  Practice trading with virtual balance
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isPaperMode}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setPaperModeTarget('paper');
+                      setPaperModeDialogOpen(true);
+                    } else {
+                      setPaperModeTarget('live');
+                      setPaperModeDialogOpen(true);
+                    }
+                  }}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+              </label>
+            </div>
+
+            {isPaperMode && (
+              <div className="space-y-3 pl-7">
+                <div className="p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-orange-400 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-orange-400">
+                      <p className="font-medium mb-1">Paper Mode Active</p>
+                      <p className="text-orange-400/80">
+                        No real transactions will occur. All trades are simulated with virtual balance.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Slippage Configuration */}
@@ -813,6 +867,155 @@ function Settings() {
 
       <AnimatePresence>
         {showHardwareManager && <HardwareWalletManager onClose={() => setShowHardwareManager(false)} />}
+      </AnimatePresence>
+
+      {/* Paper Mode Confirmation Modal */}
+      <AnimatePresence>
+        {paperModeDialogOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+              onClick={() => {
+                setPaperModeDialogOpen(false);
+                setAcknowledgeLiveTrading(false);
+              }}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md"
+            >
+              <div className={`bg-slate-900 border rounded-2xl shadow-2xl ${
+                paperModeTarget === 'live' 
+                  ? 'border-red-500/30' 
+                  : 'border-orange-500/30'
+              }`}>
+                <div className={`p-6 border-b ${
+                  paperModeTarget === 'live'
+                    ? 'border-red-500/20'
+                    : 'border-orange-500/20'
+                }`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                      paperModeTarget === 'live'
+                        ? 'bg-red-500/20'
+                        : 'bg-orange-500/20'
+                    }`}>
+                      {paperModeTarget === 'live' ? (
+                        <AlertTriangle className="w-5 h-5 text-red-400" />
+                      ) : (
+                        <FileText className="w-5 h-5 text-orange-400" />
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold">
+                        {paperModeTarget === 'paper' ? 'Enable Paper Trading Mode?' : 'Switch to Live Trading?'}
+                      </h3>
+                      <p className="text-sm text-white/60">
+                        {paperModeTarget === 'paper' 
+                          ? 'Practice trading with virtual balance'
+                          : 'Execute real trades with real money'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6 space-y-4">
+                  {paperModeTarget === 'paper' ? (
+                    <>
+                      <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl">
+                        <div className="flex items-start gap-2">
+                          <CheckCircle className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
+                          <div className="text-sm">
+                            <p className="font-medium text-orange-400 mb-2">Paper Trading Features:</p>
+                            <ul className="space-y-1 text-orange-400/80">
+                              <li>• Virtual $10,000 starting balance</li>
+                              <li>• Practice trading strategies safely</li>
+                              <li>• Track performance metrics</li>
+                              <li>• No real money at risk</li>
+                              <li>• Switch back to live anytime</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-sm text-white/60">
+                        All trades will be simulated. No real transactions will occur.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+                        <div className="flex items-start gap-2">
+                          <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                          <div className="text-sm text-red-400">
+                            <p className="font-medium mb-1">Warning: Real Money at Risk</p>
+                            <p className="text-red-400/80">
+                              Switching to live trading will execute real transactions with real money. 
+                              You will be responsible for all trades and fees.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <label className="flex items-start gap-3 cursor-pointer p-3 bg-slate-800/50 rounded-xl">
+                        <input
+                          type="checkbox"
+                          checked={acknowledgeLiveTrading}
+                          onChange={(e) => setAcknowledgeLiveTrading(e.target.checked)}
+                          className="mt-1 w-5 h-5 rounded border-purple-500/30 bg-slate-800 text-purple-500 focus:ring-purple-500"
+                        />
+                        <div className="text-sm">
+                          <p className="font-medium text-white">I understand and acknowledge</p>
+                          <p className="text-white/60 mt-1">
+                            I understand that real trades will execute and I am responsible for all transactions.
+                          </p>
+                        </div>
+                      </label>
+                    </>
+                  )}
+
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      onClick={() => {
+                        setPaperModeDialogOpen(false);
+                        setAcknowledgeLiveTrading(false);
+                      }}
+                      className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-semibold transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => {
+                        togglePaperMode(paperModeTarget === 'paper');
+                        setPaperModeDialogOpen(false);
+                        setAcknowledgeLiveTrading(false);
+                        setSuccess(
+                          paperModeTarget === 'paper'
+                            ? 'Paper trading mode enabled'
+                            : 'Switched to live trading mode'
+                        );
+                        setTimeout(() => setSuccess(null), 3000);
+                      }}
+                      disabled={paperModeTarget === 'live' && !acknowledgeLiveTrading}
+                      className={`flex-1 py-3 rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                        paperModeTarget === 'live'
+                          ? 'bg-red-500 hover:bg-red-600'
+                          : 'bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600'
+                      }`}
+                    >
+                      {paperModeTarget === 'paper' ? 'Enable Paper Mode' : 'Switch to Live Trading'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
       </AnimatePresence>
     </div>
   );
