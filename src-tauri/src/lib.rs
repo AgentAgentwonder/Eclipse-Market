@@ -1,4 +1,5 @@
 mod ai;
+mod alerts;
 mod api;
 mod api_config;
 mod auth;
@@ -18,6 +19,7 @@ mod wallet;
 mod websocket;
 
 pub use ai::*;
+pub use alerts::*;
 pub use api::*;
 pub use api_config::*;
 pub use auth::*;
@@ -37,6 +39,8 @@ pub use wallet::phantom::*;
 
 pub use wallet::multisig::*;
 
+use alerts::{AlertManager, SharedAlertManager};
+use portfolio::{SharedWatchlistManager, WatchlistManager};
 use wallet::hardware_wallet::HardwareWalletState;
 use wallet::ledger::LedgerState;
 use wallet::phantom::{hydrate_wallet_state, WalletState};
@@ -237,6 +241,41 @@ pub fn run() {
              let top_coins_cache: market::SharedTopCoinsCache = Arc::new(RwLock::new(market::TopCoinsCache::new()));
              app.manage(top_coins_cache.clone());
 
+             // Initialize watchlist manager
+             let watchlist_manager = tauri::async_runtime::block_on(async {
+                 WatchlistManager::new(&app.handle()).await
+             }).map_err(|e| {
+                 eprintln!("Failed to initialize watchlist manager: {e}");
+                 Box::new(e) as Box<dyn Error>
+             })?;
+
+             let watchlist_state: SharedWatchlistManager = Arc::new(RwLock::new(watchlist_manager));
+             app.manage(watchlist_state.clone());
+
+             // Initialize alert manager
+             let alert_manager = tauri::async_runtime::block_on(async {
+                 AlertManager::new(&app.handle()).await
+             }).map_err(|e| {
+                 eprintln!("Failed to initialize alert manager: {e}");
+                 Box::new(e) as Box<dyn Error>
+             })?;
+
+             let alert_state: SharedAlertManager = Arc::new(RwLock::new(alert_manager));
+             app.manage(alert_state.clone());
+
+             // Start alert cooldown reset task
+             let alert_reset_state = alert_state.clone();
+             tauri::async_runtime::spawn(async move {
+                 use tokio::time::{sleep, Duration};
+                 loop {
+                     sleep(Duration::from_secs(60)).await; // Check every minute
+                     let mgr = alert_reset_state.read().await;
+                     if let Err(err) = mgr.reset_cooldowns().await {
+                         eprintln!("Failed to reset alert cooldowns: {err}");
+                     }
+                 }
+             });
+
              // Initialize cache manager
              let cache_manager = core::cache_manager::CacheManager::new(100, 1000);
              let shared_cache_manager = Arc::new(RwLock::new(cache_manager));
@@ -384,6 +423,25 @@ pub fn run() {
             generate_tax_report,
             export_tax_report,
             get_tax_loss_harvesting_suggestions,
+            watchlist_create,
+            watchlist_list,
+            watchlist_get,
+            watchlist_update,
+            watchlist_delete,
+            watchlist_add_item,
+            watchlist_remove_item,
+            watchlist_reorder_items,
+            watchlist_export,
+            watchlist_import,
+            // Alerts & Notifications
+            alert_create,
+            alert_list,
+            alert_get,
+            alert_update,
+            alert_delete,
+            alert_test,
+            alert_check_triggers,
+            alert_reset_cooldowns,
             // WebSocket Streams
             subscribe_price_stream,
             unsubscribe_price_stream,
