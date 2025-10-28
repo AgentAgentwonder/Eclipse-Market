@@ -5,6 +5,7 @@ A Vite-powered React 18 + TypeScript desktop application with Tauri backend for 
 ## Features
 
 - **Phantom Wallet Integration**: First-class Phantom wallet connectivity with persistent sessions
+- **Ledger Hardware Wallet Support**: Secure Solana transaction signing via Ledger devices using WebHID
 - **Real-time Market Data**: Live price tickers, charts, and order book data
 - **Trading Tools**: Swap form, automation rules, and risk indicators
 - **Multi-Module Dashboard**: Navigate between Coins, Stocks, Insiders, Trading, and Settings
@@ -102,6 +103,39 @@ The following Tauri commands are available:
 | `VITE_SOLANA_RPC_ENDPOINT` | Custom RPC endpoint URL | Network default |
 | `SOLANA_RPC_ENDPOINT` | Backend RPC endpoint URL | Network default |
 
+## Ledger Hardware Wallet Integration
+
+### Requirements
+
+- Chrome/Chromium, Edge, or Opera with WebHID support
+- Ledger firmware 2.1.0+
+- Solana app installed and opened on the device
+
+### Key Features
+
+- Secure transaction signing through Ledger hardware wallets using WebHID
+- Address derivation with on-device verification
+- Transaction validation and error handling
+- Tauri backend state management for connected devices
+
+### Workflow
+
+1. Open the Hardware Wallet Manager from Settings
+2. Connect the Ledger device via USB and unlock it
+3. Open the Solana app on the Ledger device
+4. Use the "Connect Ledger" flow to pair the device
+5. Derive and verify addresses on the device screen
+6. Sign transactions through the Ledger device during trading
+
+### Core Components
+
+- **Service** (`src/utils/ledger.ts`): Wraps Ledger WebHID and Solana app APIs
+- **Hook** (`src/hooks/useLedger.ts`): React hook for managing connection state
+- **UI** (`src/components/wallet/LedgerConnect.tsx`): Guided connection and signing UI
+- **Backend** (`src-tauri/src/wallet/ledger.rs`): Device registry and validation commands
+
+For implementation details see [LEDGER_INTEGRATION.md](./LEDGER_INTEGRATION.md).
+
 ## Project Structure
 
 ```
@@ -109,12 +143,18 @@ eclipse-market-pro/
 ├── src/
 │   ├── components/
 │   │   ├── wallet/
-│   │   │   └── PhantomConnect.tsx
+│   │   │   ├── PhantomConnect.tsx
+│   │   │   ├── LedgerConnect.tsx
+│   │   │   └── HardwareWalletManager.tsx
 │   │   ├── ApiSettings.tsx
 │   │   ├── LiveChart.tsx
 │   │   └── ...
 │   ├── hooks/
 │   │   ├── useWallet.ts
+│   │   ├── useLedger.ts
+│   │   └── ...
+│   ├── utils/
+│   │   ├── ledger.ts
 │   │   └── ...
 │   ├── pages/
 │   │   ├── Dashboard.tsx
@@ -129,11 +169,14 @@ eclipse-market-pro/
 │   ├── src/
 │   │   ├── wallet/
 │   │   │   ├── mod.rs
-│   │   │   └── phantom.rs
+│   │   │   ├── phantom.rs
+│   │   │   ├── ledger.rs
+│   │   │   └── hardware_wallet.rs
 │   │   ├── lib.rs
 │   │   └── ...
 │   └── Cargo.toml
 ├── package.json
+├── LEDGER_INTEGRATION.md
 └── README.md
 ```
 
@@ -149,8 +192,11 @@ eclipse-market-pro/
 - @solana/wallet-adapter-react
 - @solana/wallet-adapter-phantom
 - @solana/web3.js
+- @ledgerhq/hw-transport-webhid
+- @ledgerhq/hw-app-solana
 - Zustand (state management)
 - Recharts / Lightweight Charts
+
 
 ### Backend (Rust)
 - Tauri

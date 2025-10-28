@@ -27,12 +27,14 @@ pub use portfolio::*;
 pub use sentiment::*;
 pub use trading::*;
 pub use wallet::hardware_wallet::*;
+pub use wallet::ledger::*;
 pub use wallet::multi_wallet::*;
 pub use wallet::phantom::*;
 
 pub use wallet::multisig::*;
 
 use wallet::hardware_wallet::HardwareWalletState;
+use wallet::ledger::LedgerState;
 use wallet::phantom::{hydrate_wallet_state, WalletState};
 use wallet::multi_wallet::MultiWalletManager;
 use wallet::multisig::{MultisigDatabase, SharedMultisigDatabase};
@@ -98,6 +100,7 @@ pub fn run() {
     tauri::Builder::default()
         .manage(WalletState::new())
         .manage(HardwareWalletState::new())
+        .manage(LedgerState::new())
         .setup(|app| {
             if let Err(e) = hydrate_wallet_state(&app.handle()) {
                 eprintln!("Failed to hydrate wallet state: {e}");
@@ -252,6 +255,16 @@ pub fn run() {
             get_hardware_wallet_address,
             sign_with_hardware_wallet,
             get_firmware_version,
+            ledger_register_device,
+            ledger_list_devices,
+            ledger_get_device,
+            ledger_connect_device,
+            ledger_disconnect_device,
+            ledger_update_device_address,
+            ledger_validate_transaction,
+            ledger_get_active_device,
+            ledger_remove_device,
+            ledger_clear_devices,
             // Multi-Wallet
             multi_wallet_add,
             multi_wallet_update,
