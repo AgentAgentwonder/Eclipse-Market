@@ -89,6 +89,56 @@ export interface AggregatedPortfolio {
   wallets: WalletInfo[]
 }
 
+export interface MultisigWallet {
+  id: string
+  name: string
+  address: string
+  threshold: number
+  members: string[]
+  createdAt: string
+  balance: number
+}
+
+export interface MultisigProposal {
+  id: string
+  walletId: string
+  transactionData: string
+  status: 'pending' | 'approved' | 'executed' | 'rejected' | 'cancelled'
+  createdBy: string
+  createdAt: string
+  description?: string
+  signatures: ProposalSignature[]
+  executedAt?: string
+  txSignature?: string
+}
+
+export interface ProposalSignature {
+  id: string
+  proposalId: string
+  signer: string
+  signature: string
+  signedAt: string
+}
+
+export interface CreateMultisigRequest {
+  name: string
+  members: string[]
+  threshold: number
+}
+
+export interface CreateMultisigProposalRequest {
+  walletId: string
+  transactionData: string
+  description?: string | null
+  createdBy: string
+}
+
+export interface SignMultisigProposalRequest {
+  proposalId: string
+  signer: string
+  signature: string
+}
+
 export interface AddWalletRequest {
   publicKey: string
   label: string
@@ -142,6 +192,13 @@ interface WalletStoreState {
   multiWalletLoading: boolean
   multiWalletError: string | null
 
+  multisigWallets: MultisigWallet[]
+  activeMultisigWalletId: string | null
+  multisigProposals: MultisigProposal[]
+  multisigLoading: boolean
+  multisigError: string | null
+  proposalNotifications: ProposalNotificationItem[]
+
   setStatus: (status: WalletStatus) => void
   setPublicKey: (publicKey: string | null) => void
   setBalance: (balance: number) => void
@@ -175,7 +232,28 @@ interface WalletStoreState {
   refreshMultiWallet: () => Promise<void>
   setMultiWalletError: (error: string | null) => void
 
+  listMultisigWallets: () => Promise<void>
+  getMultisigWallet: (walletId: string) => Promise<MultisigWallet | null>
+  createMultisigWallet: (request: CreateMultisigRequest) => Promise<MultisigWallet>
+  setActiveMultisigWallet: (walletId: string | null) => void
+  listProposals: (walletId: string, statusFilter?: string | null) => Promise<void>
+  createMultisigProposal: (request: CreateMultisigProposalRequest) => Promise<void>
+  signMultisigProposal: (request: SignMultisigProposalRequest) => Promise<void>
+  executeMultisigProposal: (proposalId: string) => Promise<string>
+  cancelMultisigProposal: (proposalId: string, userAddress: string) => Promise<void>
+  addProposalNotification: (notification: ProposalNotificationItem) => void
+  dismissProposalNotification: (id: string) => void
+  setMultisigError: (error: string | null) => void
+
   reset: () => void
+}
+
+export interface ProposalNotificationItem {
+  id: string
+  walletName: string
+  proposalDescription?: string
+  createdAt: string
+  status: 'pending' | 'approved' | 'executed' | 'rejected' | 'cancelled'
 }
 
 const memoryStorage = (): StateStorage => {
@@ -241,6 +319,13 @@ export const useWalletStore = create<WalletStoreState>()(
       aggregatedPortfolio: null,
       multiWalletLoading: false,
       multiWalletError: null,
+
+      multisigWallets: [],
+      activeMultisigWalletId: null,
+      multisigProposals: [],
+      multisigLoading: false,
+      multisigError: null,
+      proposalNotifications: [],
 
       setStatus: (status) => set({ status }),
       setPublicKey: (publicKey) => set((state) => ({
@@ -494,6 +579,172 @@ export const useWalletStore = create<WalletStoreState>()(
 
       setMultiWalletError: (multiWalletError) => set({ multiWalletError }),
 
+      listMultisigWallets: async () => {
+        set({ multisigLoading: true, multisigError: null })
+        try {
+          const wallets = await invoke<MultisigWallet[]>('list_multisig_wallets')
+          const currentActiveId = get().activeMultisigWalletId
+          const nextActiveId = currentActiveId && wallets.some((wallet) => wallet.id === currentActiveId)
+            ? currentActiveId
+            : wallets[0]?.id ?? null
+
+          set({
+            multisigWallets: wallets,
+            activeMultisigWalletId: nextActiveId,
+            multisigLoading: false,
+          })
+
+          if (nextActiveId) {
+            await get().listProposals(nextActiveId)
+          } else {
+            set({ multisigProposals: [] })
+          }
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : String(error)
+          set({ multisigError: errorMsg, multisigLoading: false })
+          throw error
+        }
+      },
+
+      getMultisigWallet: async (walletId) => {
+        try {
+          const wallet = await invoke<MultisigWallet | null>('get_multisig_wallet', { walletId })
+          if (wallet) {
+            set((state) => ({
+              multisigWallets: state.multisigWallets.some((w) => w.id === wallet.id)
+                ? state.multisigWallets.map((w) => (w.id === wallet.id ? wallet : w))
+                : [...state.multisigWallets, wallet],
+            }))
+          }
+          return wallet
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : String(error)
+          set({ multisigError: errorMsg })
+          throw error
+        }
+      },
+
+      createMultisigWallet: async (request) => {
+        set({ multisigLoading: true, multisigError: null })
+        try {
+          const wallet = await invoke<MultisigWallet>('create_multisig_wallet', { request })
+          set((state) => ({
+            multisigWallets: [...state.multisigWallets, wallet],
+            activeMultisigWalletId: wallet.id,
+            multisigLoading: false,
+          }))
+          await get().listProposals(wallet.id)
+          return wallet
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : String(error)
+          set({ multisigError: errorMsg, multisigLoading: false })
+          throw error
+        }
+      },
+
+      setActiveMultisigWallet: (walletId) => {
+        set({ activeMultisigWalletId: walletId })
+        if (walletId) {
+          get().listProposals(walletId).catch((error) => {
+            console.error('Failed to load proposals for multisig wallet:', error)
+          })
+        } else {
+          set({ multisigProposals: [] })
+        }
+      },
+
+      listProposals: async (walletId, statusFilter = null) => {
+        set({ multisigLoading: true, multisigError: null })
+        try {
+          const proposals = await invoke<MultisigProposal[]>('list_proposals', { walletId, statusFilter })
+          set({ multisigProposals: proposals, multisigLoading: false })
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : String(error)
+          set({ multisigError: errorMsg, multisigLoading: false })
+          throw error
+        }
+      },
+
+      createMultisigProposal: async (request) => {
+        set({ multisigLoading: true, multisigError: null })
+        try {
+          await invoke('create_proposal', { request })
+          await get().listProposals(request.walletId)
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : String(error)
+          set({ multisigError: errorMsg })
+          throw error
+        } finally {
+          set({ multisigLoading: false })
+        }
+      },
+
+      signMultisigProposal: async (request) => {
+        set({ multisigLoading: true, multisigError: null })
+        try {
+          await invoke('sign_proposal', { request })
+          const walletId = get().activeMultisigWalletId
+          if (walletId) {
+            await get().listProposals(walletId)
+          }
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : String(error)
+          set({ multisigError: errorMsg })
+          throw error
+        } finally {
+          set({ multisigLoading: false })
+        }
+      },
+
+      executeMultisigProposal: async (proposalId) => {
+        set({ multisigLoading: true, multisigError: null })
+        try {
+          const signature = await invoke<string>('execute_proposal', { proposalId })
+          const walletId = get().activeMultisigWalletId
+          if (walletId) {
+            await get().listProposals(walletId)
+          }
+          return signature
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : String(error)
+          set({ multisigError: errorMsg })
+          throw error
+        } finally {
+          set({ multisigLoading: false })
+        }
+      },
+
+      cancelMultisigProposal: async (proposalId, userAddress) => {
+        set({ multisigLoading: true, multisigError: null })
+        try {
+          await invoke('cancel_proposal', { proposalId, userAddress })
+          const walletId = get().activeMultisigWalletId
+          if (walletId) {
+            await get().listProposals(walletId)
+          }
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : String(error)
+          set({ multisigError: errorMsg })
+          throw error
+        } finally {
+          set({ multisigLoading: false })
+        }
+      },
+
+      addProposalNotification: (notification) => {
+        set((state) => ({
+          proposalNotifications: [notification, ...state.proposalNotifications].slice(0, 10),
+        }))
+      },
+
+      dismissProposalNotification: (id) => {
+        set((state) => ({
+          proposalNotifications: state.proposalNotifications.filter((notification) => notification.id !== id),
+        }))
+      },
+
+      setMultisigError: (multisigError) => set({ multisigError }),
+
       reset: () =>
         set((state) => ({
           status: 'disconnected',
@@ -510,6 +761,10 @@ export const useWalletStore = create<WalletStoreState>()(
           groups: state.groups,
           activeWalletId: state.activeWalletId,
           aggregatedPortfolio: state.aggregatedPortfolio,
+          multisigWallets: state.multisigWallets,
+          activeMultisigWalletId: state.activeMultisigWalletId,
+          multisigProposals: state.multisigProposals,
+          proposalNotifications: state.proposalNotifications,
         })),
     }),
     {
