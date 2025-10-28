@@ -1,8 +1,10 @@
 mod ai;
 mod api;
+mod api_config;
 mod auth;
 mod bots;
 mod cache_commands;
+mod chart_stream;
 mod core;
 mod market;
 mod portfolio;
@@ -15,8 +17,10 @@ mod websocket;
 
 pub use ai::*;
 pub use api::*;
+pub use api_config::*;
 pub use auth::*;
 pub use bots::*;
+pub use chart_stream::*;
 pub use core::*;
 pub use market::*;
 pub use portfolio::*;
@@ -130,12 +134,19 @@ pub fn run() {
 
             let cleanup_logger = activity_logger.clone();
 
+            // Initialize API config manager
+            let api_config_manager = api_config::ApiConfigManager::new();
+            if let Err(e) = api_config_manager.initialize(&keystore) {
+                eprintln!("Failed to initialize API config manager: {e}");
+            }
+
             app.manage(keystore);
             app.manage(multi_wallet_manager);
             app.manage(session_manager);
             app.manage(two_factor_manager);
             app.manage(ws_manager);
             app.manage(activity_logger);
+            app.manage(api_config_manager);
 
             tauri::async_runtime::spawn(async move {
                 use tokio::time::{sleep, Duration};
@@ -287,6 +298,12 @@ pub fn run() {
             two_factor_disable,
             two_factor_status,
             two_factor_regenerate_backup_codes,
+            // API Config
+            save_api_key,
+            remove_api_key,
+            set_use_default_key,
+            test_api_connection,
+            get_api_status,
             // AI & Sentiment
             assess_risk,
             analyze_text_sentiment,
@@ -332,6 +349,10 @@ pub fn run() {
             unsubscribe_wallet_stream,
             get_stream_status,
             reconnect_stream,
+            // Chart Streams
+            subscribe_chart_prices,
+            unsubscribe_chart_prices,
+            get_chart_subscriptions,
             // Jupiter v6 & execution safeguards
             jupiter_quote,
             jupiter_swap,
