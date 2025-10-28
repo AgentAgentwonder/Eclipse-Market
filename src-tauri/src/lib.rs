@@ -530,6 +530,10 @@ pub fn run() {
             cache_commands::get_cache_statistics,
             cache_commands::clear_cache,
             cache_commands::warm_cache,
+            cache_commands::get_ttl_config,
+            cache_commands::update_ttl_config,
+            cache_commands::reset_ttl_config,
+            cache_commands::test_cache_performance,
 
             // Event Sourcing & Audit Trail
             data::event_store::get_events_command,
