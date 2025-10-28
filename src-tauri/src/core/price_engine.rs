@@ -166,6 +166,14 @@ struct PooledPayload {
     bytes: Bytes,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CachedPrice {
+    pub price: f64,
+    pub volume: f64,
+    pub change_24h: f64,
+    pub timestamp: u64,
+}
+
 pub struct PriceEngine {
     payload_queue: SegQueue<PooledPayload>,
     memory_pool: MemoryPool,
@@ -173,7 +181,7 @@ pub struct PriceEngine {
     processed: AtomicU64,
     errors: AtomicU64,
     latency: LatencyTracker,
-    prices: RwLock<HashMap<String, f64>>,
+    prices: RwLock<HashMap<String, CachedPrice>>,
     start_time: Mutex<Instant>,
     sys_info: Mutex<System>,
 }
@@ -203,7 +211,15 @@ impl PriceEngine {
 
         {
             let mut prices = self.prices.write();
-            prices.insert(update.symbol.to_string(), update.price);
+            prices.insert(
+                update.symbol.to_string(),
+                CachedPrice {
+                    price: update.price,
+                    volume: update.volume,
+                    change_24h: update.change_24h,
+                    timestamp: update.timestamp,
+                },
+            );
         }
 
         let serialized = match serde_json::to_vec(&update) {
@@ -292,7 +308,12 @@ impl PriceEngine {
 
     pub fn get_price(&self, symbol: &str) -> Option<f64> {
         let prices = self.prices.read();
-        prices.get(symbol).copied()
+        prices.get(symbol).map(|entry| entry.price)
+    }
+
+    pub fn get_cached_price(&self, symbol: &str) -> Option<CachedPrice> {
+        let prices = self.prices.read();
+        prices.get(symbol).cloned()
     }
 
     pub async fn run_performance_test(&self, num_updates: usize) -> PerformanceMetrics {
@@ -362,6 +383,10 @@ mod tests {
         assert_eq!(metrics.messages_processed, 1);
         assert!(metrics.latency.sample_count >= 1);
         assert_eq!(engine.get_price("SOL"), Some(100.25));
+        
+        let cached = engine.get_cached_price("SOL");
+        assert!(cached.is_some());
+        assert_eq!(cached.unwrap().price, 100.25);
     }
 
     #[test]

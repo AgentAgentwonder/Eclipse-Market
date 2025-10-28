@@ -3,6 +3,7 @@ mod api;
 mod api_config;
 mod auth;
 mod bots;
+mod chart_stream;
 mod core;
 mod market;
 mod portfolio;
@@ -18,6 +19,7 @@ pub use api::*;
 pub use api_config::*;
 pub use auth::*;
 pub use bots::*;
+pub use chart_stream::*;
 pub use core::*;
 pub use market::*;
 pub use portfolio::*;
@@ -290,6 +292,10 @@ pub fn run() {
             unsubscribe_wallet_stream,
             get_stream_status,
             reconnect_stream,
+            // Chart Streams
+            subscribe_chart_prices,
+            unsubscribe_chart_prices,
+            get_chart_subscriptions,
             // Jupiter v6 & execution safeguards
             jupiter_quote,
             jupiter_swap,
