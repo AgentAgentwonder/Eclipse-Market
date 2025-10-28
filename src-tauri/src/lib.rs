@@ -2,6 +2,7 @@ mod ai;
 mod api;
 mod auth;
 mod bots;
+mod cache_commands;
 mod core;
 mod market;
 mod portfolio;
@@ -45,6 +46,48 @@ use tokio::sync::RwLock;
 use wallet::hardware_wallet::HardwareWalletState;
 use wallet::multi_wallet::MultiWalletManager;
 use wallet::phantom::{hydrate_wallet_state, WalletState};
+use core::cache_manager::{CacheType, SharedCacheManager};
+
+async fn warm_cache_on_startup(
+    _app_handle: tauri::AppHandle,
+    cache_manager: SharedCacheManager,
+) -> Result<(), String> {
+    use serde_json::json;
+
+    // Define top tokens to warm
+    let top_tokens = vec![
+        "So11111111111111111111111111111111111111112", // SOL
+        "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", // USDC
+        "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB", // USDT
+        "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263", // BONK
+        "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN", // JUP
+        "7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs", // ETH
+        "mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So", // mSOL
+        "7dHbWXmci3dT8UFYWYZweBLXgycu7Y3iL6trKn1Y7ARj", // stSOL
+        "orcaEKTdK7LKz57vaAYr9QeNsVEPfiu6QeMU1kektZE", // ORCA
+        "4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R", // RAY
+    ];
+
+    let manager = cache_manager.read().await;
+    
+    // Warm cache with top tokens
+    let keys: Vec<String> = top_tokens
+        .iter()
+        .map(|addr| format!("token_price_{}", addr))
+        .collect();
+
+    let _ = manager.warm_cache(keys, |key| async move {
+        // Mock data - in real implementation would fetch from API
+        let data = json!({
+            "price": 100.0,
+            "change24h": 5.0,
+            "volume": 1000000.0,
+        });
+        Ok((data, CacheType::TokenPrice))
+    }).await;
+
+    Ok(())
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -167,6 +210,20 @@ pub fn run() {
 
              let top_coins_cache: market::SharedTopCoinsCache = Arc::new(RwLock::new(market::TopCoinsCache::new()));
              app.manage(top_coins_cache.clone());
+
+             // Initialize cache manager
+             let cache_manager = core::cache_manager::CacheManager::new(100, 1000);
+             let shared_cache_manager = Arc::new(RwLock::new(cache_manager));
+             app.manage(shared_cache_manager.clone());
+
+             // Start background cache warming
+             let app_handle = app.handle();
+             let cache_manager_handle = shared_cache_manager.clone();
+             tauri::async_runtime::spawn(async move {
+                 if let Err(err) = warm_cache_on_startup(app_handle, cache_manager_handle).await {
+                     eprintln!("Failed to warm cache on startup: {err}");
+                 }
+             });
 
              Ok(())
              })
@@ -338,6 +395,11 @@ pub fn run() {
             get_performance_metrics,
             run_performance_test,
             reset_performance_stats,
+
+            // Cache Management
+            cache_commands::get_cache_statistics,
+            cache_commands::clear_cache,
+            cache_commands::warm_cache,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
