@@ -24,14 +24,19 @@ pub use trading::*;
 pub use wallet::hardware_wallet::*;
 pub use wallet::phantom::*;
 pub use wallet::multi_wallet::*;
+pub use wallet::multisig::*;
 
 use wallet::hardware_wallet::HardwareWalletState;
 use wallet::phantom::{hydrate_wallet_state, WalletState};
 use wallet::multi_wallet::MultiWalletManager;
+use wallet::multisig::{MultisigDatabase, SharedMultisigDatabase};
 use security::keystore::Keystore;
 use auth::session_manager::SessionManager;
 use auth::two_factor::TwoFactorManager;
 use std::error::Error;
+use std::path::PathBuf;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 use stream_commands::*;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -62,8 +67,8 @@ pub fn run() {
             let ws_manager = WebSocketManager::new(app.handle());
 
             let multi_wallet_manager = MultiWalletManager::initialize(&keystore).map_err(|e| {
-                eprintln!("Failed to initialize multi-wallet manager: {e}");
-                Box::new(e) as Box<dyn Error>
+               eprintln!("Failed to initialize multi-wallet manager: {e}");
+               Box::new(e) as Box<dyn Error>
             })?;
 
             app.manage(keystore);
@@ -72,7 +77,27 @@ pub fn run() {
             app.manage(two_factor_manager);
             app.manage(ws_manager);
 
-             trading::register_trading_state(app);
+            trading::register_trading_state(app);
+
+            // Initialize multisig database
+            let mut multisig_db_path = app
+                .path_resolver()
+                .app_data_dir()
+                .ok_or_else(|| "Unable to resolve app data directory".to_string())?;
+
+            std::fs::create_dir_all(&multisig_db_path)
+                .map_err(|e| format!("Failed to create app data directory: {e}"))?;
+
+            multisig_db_path.push("multisig.db");
+
+            let multisig_db = tauri::async_runtime::block_on(MultisigDatabase::new(multisig_db_path))
+                .map_err(|e| {
+                    eprintln!("Failed to initialize multisig database: {e}");
+                    Box::new(e) as Box<dyn Error>
+                })?;
+
+            let multisig_state: SharedMultisigDatabase = Arc::new(RwLock::new(multisig_db));
+            app.manage(multisig_state.clone());
 
              let automation_handle = app.handle();
              tauri::async_runtime::spawn(async move {
@@ -123,6 +148,16 @@ pub fn run() {
             multi_wallet_delete_group,
             multi_wallet_list_groups,
             multi_wallet_get_aggregated,
+            
+            // Multisig
+            create_multisig_wallet,
+            list_multisig_wallets,
+            get_multisig_wallet,
+            create_proposal,
+            list_proposals,
+            sign_proposal,
+            execute_proposal,
+            cancel_proposal,
             
             // Auth
             biometric_get_status,
