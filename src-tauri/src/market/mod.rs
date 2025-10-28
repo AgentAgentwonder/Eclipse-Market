@@ -1,3 +1,6 @@
+mod trending_coins;
+pub use trending_coins::*;
+
 use serde::{Deserialize, Serialize};
 use reqwest;
 
