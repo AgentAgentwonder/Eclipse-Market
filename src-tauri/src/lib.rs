@@ -6,6 +6,7 @@ mod bots;
 mod cache_commands;
 mod chart_stream;
 mod core;
+mod insiders;
 mod market;
 mod portfolio;
 mod security;
@@ -22,6 +23,7 @@ pub use auth::*;
 pub use bots::*;
 pub use chart_stream::*;
 pub use core::*;
+pub use insiders::*;
 pub use market::*;
 pub use portfolio::*;
 pub use sentiment::*;
@@ -165,6 +167,14 @@ pub fn run() {
 
             trading::register_trading_state(app);
             trading::register_paper_trading_state(app);
+
+            // Initialize wallet monitor
+            let monitor_handle = app.handle();
+            tauri::async_runtime::spawn(async move {
+               if let Err(err) = insiders::init_wallet_monitor(&monitor_handle).await {
+                   eprintln!("Failed to initialize wallet monitor: {err}");
+               }
+            });
 
             // Initialize multisig database
             let mut multisig_db_path = app
@@ -402,6 +412,15 @@ pub fn run() {
             copy_trading_performance,
             copy_trading_process_activity,
             copy_trading_followed_wallets,
+            
+            // Wallet Monitor
+            wallet_monitor_init,
+            wallet_monitor_add_wallet,
+            wallet_monitor_update_wallet,
+            wallet_monitor_remove_wallet,
+            wallet_monitor_list_wallets,
+            wallet_monitor_get_activities,
+            wallet_monitor_get_statistics,
             
             // Activity Logging
             security::activity_log::get_activity_logs,
