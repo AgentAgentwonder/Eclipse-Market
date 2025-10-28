@@ -1,3 +1,4 @@
+use crate::data::event_store::{Event as AuditEvent, SharedEventStore};
 use crate::trading::database::{OrderDatabase, SharedOrderDatabase};
 use crate::trading::types::{
     CreateOrderRequest, Order, OrderFill, OrderSide, OrderStatus, OrderType, OrderUpdate,
@@ -33,14 +34,20 @@ pub struct OrderManager {
     db: SharedOrderDatabase,
     app_handle: AppHandle,
     current_prices: Arc<RwLock<HashMap<String, f64>>>,
+    event_store: Option<SharedEventStore>,
 }
 
 impl OrderManager {
     pub fn new(db: SharedOrderDatabase, app_handle: AppHandle) -> Self {
+        let event_store = app_handle
+            .try_state::<SharedEventStore>()
+            .map(|state| state.inner().clone());
+
         Self {
             db,
             app_handle,
             current_prices: Arc::new(RwLock::new(HashMap::new())),
+            event_store,
         }
     }
 
@@ -79,6 +86,27 @@ impl OrderManager {
             .await
             .map_err(|e| format!("Failed to create order: {}", e))?;
 
+        // Publish event to event store
+        if let Some(ref event_store) = self.event_store {
+            let symbol = if order.side == OrderSide::Buy {
+                &order.output_symbol
+            } else {
+                &order.input_symbol
+            };
+            
+            let event = AuditEvent::OrderPlaced {
+                order_id: order.id.clone(),
+                symbol: symbol.clone(),
+                side: order.side.to_string(),
+                quantity: order.amount,
+                price: order.limit_price.or(order.stop_price),
+                timestamp: Utc::now(),
+            };
+            
+            let aggregate_id = format!("order_{}", order.id);
+            let _ = event_store.read().await.publish_event(event, &aggregate_id).await;
+        }
+
         self.emit_order_update(&order);
 
         Ok(order)
@@ -100,6 +128,18 @@ impl OrderManager {
 
         if let Some(linked_id) = &order.linked_order_id {
             let _ = self.db.write().await.cancel_linked_orders(linked_id).await;
+        }
+
+        // Publish event to event store
+        if let Some(ref event_store) = self.event_store {
+            let event = AuditEvent::OrderCancelled {
+                order_id: order_id.to_string(),
+                reason: "Manual cancellation".to_string(),
+                timestamp: Utc::now(),
+            };
+            
+            let aggregate_id = format!("order_{}", order_id);
+            let _ = event_store.read().await.publish_event(event, &aggregate_id).await;
         }
 
         let mut cancelled_order = order;
@@ -294,9 +334,35 @@ impl OrderManager {
         filled_order.triggered_at = Some(Utc::now());
         filled_order.updated_at = Utc::now();
 
+        // Publish order filled event
+        if let Some(ref event_store) = self.event_store {
+            let event = AuditEvent::OrderFilled {
+                order_id: order.id.clone(),
+                fill_price: trigger_price,
+                filled_quantity: order.amount,
+                timestamp: Utc::now(),
+            };
+            let aggregate_id = format!("order_{}", order.id);
+            let _ = event_store.read().await.publish_event(event, &aggregate_id).await;
+        }
+
         self.emit_order_update(&filled_order);
 
         Ok(())
+    }
+
+    async fn publish_audit_event(&self, aggregate_id: String, event: AuditEvent) {
+        if let Some(store) = &self.event_store {
+            let store = store.clone();
+            let result = {
+                let guard = store.read().await;
+                guard.publish_event(event, &aggregate_id).await
+            };
+
+            if let Err(err) = result {
+                eprintln!("Failed to publish audit event {}: {}", aggregate_id, err);
+            }
+        }
     }
 
     fn emit_order_update(&self, order: &Order) {

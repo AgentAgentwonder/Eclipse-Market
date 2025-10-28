@@ -8,6 +8,7 @@ import { useWalletStore } from '../store/walletStore';
 import { useTradingSettingsStore } from '../store/tradingSettingsStore';
 import { usePaperTradingStore } from '../store/paperTradingStore';
 import { ActivityLog } from './Settings/ActivityLog';
+import { EventAuditLog } from './Settings/EventAuditLog';
 import { PerformanceDashboard } from './Settings/PerformanceDashboard';
 import { CacheSettings } from '../components/CacheSettings';
 import { ApiSettings } from './Settings/ApiSettings';
@@ -856,6 +857,23 @@ function Settings() {
 
           <div className="bg-slate-900/40 border border-purple-500/10 rounded-2xl p-4">
             <ActivityLog />
+          </div>
+        </div>
+
+        {/* Event Sourcing Audit Trail */}
+        <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6 space-y-6">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+              <Zap className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">Event Sourcing Audit Trail</h2>
+              <p className="text-white/60 text-sm">Immutable event log for all state changes with replay capability</p>
+            </div>
+          </div>
+
+          <div className="bg-slate-900/40 border border-purple-500/10 rounded-2xl p-4">
+            <EventAuditLog />
           </div>
         </div>
 

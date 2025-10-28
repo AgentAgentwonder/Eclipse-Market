@@ -6,6 +6,7 @@ mod bots;
 mod cache_commands;
 mod chart_stream;
 mod core;
+mod data;
 mod market;
 mod portfolio;
 mod security;
@@ -22,6 +23,7 @@ pub use auth::*;
 pub use bots::*;
 pub use chart_stream::*;
 pub use core::*;
+pub use data::*;
 pub use market::*;
 pub use portfolio::*;
 pub use sentiment::*;
@@ -40,9 +42,9 @@ use wallet::multi_wallet::MultiWalletManager;
 use wallet::multisig::{MultisigDatabase, SharedMultisigDatabase};
 use security::keystore::Keystore;
 use security::activity_log::ActivityLogger;
+use data::event_store::{EventStore, SharedEventStore};
 use auth::session_manager::SessionManager;
 use auth::two_factor::TwoFactorManager;
-use security::keystore::Keystore;
 use std::error::Error;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -239,6 +241,23 @@ pub fn run() {
                  }
              });
 
+             // Initialize event store
+             let mut event_store_path = app
+                 .path_resolver()
+                 .app_data_dir()
+                 .ok_or_else(|| "Unable to resolve app data directory".to_string())?;
+
+             event_store_path.push("events.db");
+
+             let event_store = tauri::async_runtime::block_on(EventStore::new(event_store_path))
+                 .map_err(|e| {
+                     eprintln!("Failed to initialize event store: {e}");
+                     Box::new(e) as Box<dyn Error>
+                 })?;
+
+             let shared_event_store: SharedEventStore = Arc::new(RwLock::new(event_store));
+             app.manage(shared_event_store.clone());
+
              Ok(())
              })
 
@@ -434,6 +453,14 @@ pub fn run() {
             cache_commands::get_cache_statistics,
             cache_commands::clear_cache,
             cache_commands::warm_cache,
+
+            // Event Sourcing & Audit Trail
+            data::event_store::get_events_command,
+            data::event_store::replay_events_command,
+            data::event_store::get_state_at_time_command,
+            data::event_store::export_audit_trail_command,
+            data::event_store::create_snapshot_command,
+            data::event_store::get_event_stats,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
