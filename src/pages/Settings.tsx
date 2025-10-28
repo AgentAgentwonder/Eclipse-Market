@@ -7,6 +7,7 @@ import HardwareWalletManager from '../components/wallet/HardwareWalletManager';
 import { useWalletStore } from '../store/walletStore';
 import { useTradingSettingsStore } from '../store/tradingSettingsStore';
 import { ActivityLog } from './Settings/ActivityLog';
+import { PerformanceDashboard } from './Settings/PerformanceDashboard';
 
 interface BiometricStatus {
   available: boolean;
@@ -763,6 +764,11 @@ function Settings() {
               </>
             )}
           </div>
+        </div>
+
+        {/* Performance Dashboard */}
+        <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6">
+          <PerformanceDashboard />
         </div>
 
         {/* Activity Logging */}
