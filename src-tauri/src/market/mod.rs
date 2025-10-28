@@ -1,3 +1,7 @@
+pub mod new_coins_scanner;
+
+pub use new_coins_scanner::*;
+
 use serde::{Deserialize, Serialize};
 use reqwest;
 

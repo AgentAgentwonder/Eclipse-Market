@@ -143,8 +143,23 @@ pub fn run() {
              app.manage(std::sync::Mutex::new(rebalancer_state));
              app.manage(std::sync::Mutex::new(tax_lots_state));
 
+             // Initialize new coins scanner
+             let new_coins_scanner = tauri::async_runtime::block_on(async {
+                 market::NewCoinsScanner::new(&app.handle()).await
+             }).map_err(|e| {
+                 eprintln!("Failed to initialize new coins scanner: {e}");
+                 Box::new(e) as Box<dyn Error>
+             })?;
+
+             let scanner_state: market::SharedNewCoinsScanner = Arc::new(RwLock::new(new_coins_scanner));
+             app.manage(scanner_state.clone());
+
+             // Start background scanning task
+             let scanner_for_loop = scanner_state.clone();
+             market::start_new_coins_scanner(scanner_for_loop);
+
              Ok(())
-            })
+             })
 
             // Wallet
             phantom_connect,
@@ -217,6 +232,11 @@ pub fn run() {
             get_coin_price,
             get_price_history,
             search_tokens,
+            
+            // New Coins Scanner
+            get_new_coins,
+            get_coin_safety_report,
+            scan_for_new_coins,
             
             // Portfolio & Analytics
             get_portfolio_metrics,
