@@ -9,6 +9,7 @@ import { useTradingSettingsStore } from '../store/tradingSettingsStore';
 import { usePaperTradingStore } from '../store/paperTradingStore';
 import { ActivityLog } from './Settings/ActivityLog';
 import { PerformanceDashboard } from './Settings/PerformanceDashboard';
+import { CacheSettings } from '../components/CacheSettings';
 import { ApiSettings } from './Settings/ApiSettings';
 
 interface BiometricStatus {
@@ -1039,6 +1040,11 @@ function Settings() {
           </>
         )}
       </AnimatePresence>
+
+      {/* Cache Management */}
+      <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6">
+        <CacheSettings />
+      </div>
     </div>
   );
 }
