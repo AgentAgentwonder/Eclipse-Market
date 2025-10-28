@@ -158,13 +158,16 @@ pub fn run() {
              let scanner_for_loop = scanner_state.clone();
              market::start_new_coins_scanner(scanner_for_loop);
 
+             let top_coins_cache: market::SharedTopCoinsCache = Arc::new(RwLock::new(market::TopCoinsCache::new()));
+             app.manage(top_coins_cache.clone());
+
              Ok(())
              })
 
-            // Wallet
-            phantom_connect,
-            phantom_disconnect,
-            phantom_session,
+             // Wallet
+             phantom_connect,
+             phantom_disconnect,
+
             phantom_sign_message,
             phantom_sign_transaction,
             phantom_balance,
@@ -237,6 +240,10 @@ pub fn run() {
             get_new_coins,
             get_coin_safety_report,
             scan_for_new_coins,
+            
+            // Top Coins
+            get_top_coins,
+            refresh_top_coins,
             
             // Portfolio & Analytics
             get_portfolio_metrics,
