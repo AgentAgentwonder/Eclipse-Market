@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, Home, TrendingUp, BarChart3, Users, Bell, Settings, Briefcase, Loader2 } from 'lucide-react'
+import { Menu, X, Home, TrendingUp, BarChart3, Users, Bell, Settings, Briefcase, Loader2, FileText } from 'lucide-react'
 import { invoke } from '@tauri-apps/api/tauri'
 import { PhantomConnect } from './components/wallet/PhantomConnect'
 import { WalletSwitcher } from './components/wallet/WalletSwitcher'
@@ -9,15 +9,19 @@ import { GroupManagementModal } from './components/wallet/GroupManagementModal'
 import { WalletSettingsModal } from './components/wallet/WalletSettingsModal'
 import { LockScreen } from './components/auth/LockScreen'
 import { ConnectionStatus } from './components/common/ConnectionStatus'
+import { PaperModeIndicator } from './components/trading/PaperModeIndicator'
+import { PaperTradingTutorial } from './components/trading/PaperTradingTutorial'
 import Dashboard from './pages/Dashboard'
 import Coins from './pages/Coins'
 import Stocks from './pages/Stocks'
 import Insiders from './pages/Insiders'
 import Trading from './pages/Trading'
 import Portfolio from './pages/Portfolio'
+import { PaperTradingDashboard } from './pages/PaperTrading/Dashboard'
 import SettingsPage from './pages/Settings'
 import { BIOMETRIC_STATUS_EVENT } from './constants/events'
 import { useWalletStore } from './store/walletStore'
+import { usePaperTradingStore } from './store/paperTradingStore'
 
 type BiometricStatus = {
   available: boolean
@@ -39,6 +43,7 @@ function App() {
 
   const wallets = useWalletStore((state) => state.wallets)
   const refreshMultiWallet = useWalletStore((state) => state.refreshMultiWallet)
+  const { isPaperMode, togglePaperMode } = usePaperTradingStore()
 
   useEffect(() => {
     const hydrate = async () => {
@@ -95,25 +100,54 @@ function App() {
     }
   }, [])
 
-  const pages = useMemo(
-    () => [
+  useEffect(() => {
+    if (!isPaperMode && currentPage === 'paper-trading') {
+      setCurrentPage('trading')
+    }
+  }, [isPaperMode, currentPage])
+
+  const pages = useMemo(() => {
+    const basePages = [
       { id: 'dashboard', label: 'Dashboard', icon: Home, component: Dashboard },
       { id: 'coins', label: 'Coins', icon: TrendingUp, component: Coins },
       { id: 'portfolio', label: 'Portfolio', icon: Briefcase, component: Portfolio },
       { id: 'stocks', label: 'Stocks', icon: BarChart3, component: Stocks },
       { id: 'insiders', label: 'Insiders', icon: Users, component: Insiders },
-      { id: 'trading', label: 'Trading', icon: Bell, component: Trading },
+      {
+        id: 'trading',
+        label: isPaperMode ? 'Live Trading' : 'Trading',
+        icon: Bell,
+        component: Trading,
+      },
       { id: 'settings', label: 'Settings', icon: Settings, component: SettingsPage },
-    ],
-    []
-  )
+    ];
+
+    if (isPaperMode) {
+      basePages.splice(5, 0, {
+        id: 'paper-trading',
+        label: 'Paper Trading',
+        icon: FileText,
+        component: PaperTradingDashboard,
+      });
+    }
+
+    return basePages;
+  }, [isPaperMode])
 
   const CurrentPageComponent = pages.find(p => p.id === currentPage)?.component || Dashboard
 
+  const handleSwitchToLive = () => {
+    setCurrentPage('settings')
+    // Let the user switch in Settings
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+      {/* Paper Mode Indicator Banner */}
+      <PaperModeIndicator onSwitchToLive={handleSwitchToLive} />
+      
       {/* Top Bar */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-slate-900/80 border-b border-purple-500/20">
+      <header className={`sticky z-40 backdrop-blur-xl bg-slate-900/80 border-b border-purple-500/20 ${isPaperMode ? 'top-[52px]' : 'top-0'}`}>
         <div className="max-w-[1800px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-8">
@@ -215,6 +249,9 @@ function App() {
       {!initializingLock && lockVisible && (
         <LockScreen onUnlock={() => setLockVisible(false)} />
       )}
+
+      {/* Paper Trading Tutorial */}
+      <PaperTradingTutorial />
 
       {/* Multi-Wallet Modals */}
       <AddWalletModal

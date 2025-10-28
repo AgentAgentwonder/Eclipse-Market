@@ -104,6 +104,7 @@ pub fn run() {
             });
 
             trading::register_trading_state(app);
+            trading::register_paper_trading_state(app);
 
             // Initialize multisig database
             let mut multisig_db_path = app
@@ -143,13 +144,31 @@ pub fn run() {
              app.manage(std::sync::Mutex::new(rebalancer_state));
              app.manage(std::sync::Mutex::new(tax_lots_state));
 
-             Ok(())
-            })
+             // Initialize new coins scanner
+             let new_coins_scanner = tauri::async_runtime::block_on(async {
+                 market::NewCoinsScanner::new(&app.handle()).await
+             }).map_err(|e| {
+                 eprintln!("Failed to initialize new coins scanner: {e}");
+                 Box::new(e) as Box<dyn Error>
+             })?;
 
-            // Wallet
-            phantom_connect,
-            phantom_disconnect,
-            phantom_session,
+             let scanner_state: market::SharedNewCoinsScanner = Arc::new(RwLock::new(new_coins_scanner));
+             app.manage(scanner_state.clone());
+
+             // Start background scanning task
+             let scanner_for_loop = scanner_state.clone();
+             market::start_new_coins_scanner(scanner_for_loop);
+
+             let top_coins_cache: market::SharedTopCoinsCache = Arc::new(RwLock::new(market::TopCoinsCache::new()));
+             app.manage(top_coins_cache.clone());
+
+             Ok(())
+             })
+
+             // Wallet
+             phantom_connect,
+             phantom_disconnect,
+
             phantom_sign_message,
             phantom_sign_transaction,
             phantom_balance,
@@ -221,6 +240,15 @@ pub fn run() {
             get_coin_sentiment,
             refresh_trending,
             
+            // New Coins Scanner
+            get_new_coins,
+            get_coin_safety_report,
+            scan_for_new_coins,
+            
+            // Top Coins
+            get_top_coins,
+            refresh_top_coins,
+            
             // Portfolio & Analytics
             get_portfolio_metrics,
             get_positions,
@@ -266,6 +294,16 @@ pub fn run() {
             acknowledge_order,
             update_order_prices,
             
+            // Paper Trading Simulation
+            paper_trading_init,
+            get_paper_account,
+            reset_paper_account,
+            execute_paper_trade,
+            get_paper_positions,
+            get_paper_trade_history,
+            get_paper_performance,
+            update_paper_position_prices,
+            
             // DCA Bots
             dca_init,
             dca_create,
@@ -298,6 +336,11 @@ pub fn run() {
             security::activity_log::cleanup_activity_logs,
             security::activity_log::get_activity_retention,
             security::activity_log::set_activity_retention,
+
+            // Performance & Diagnostics
+            get_performance_metrics,
+            run_performance_test,
+            reset_performance_stats,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

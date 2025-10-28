@@ -7,10 +7,11 @@ const CACHE_TTL = 30_000
 
 interface PriceDelta {
   symbol: string
-  price: number
-  change: number
-  volume: number | null
+  price?: number | null
+  change?: number | null
+  volume?: number | null
   ts: number
+  snapshot: boolean
 }
 
 interface PriceData {
@@ -110,15 +111,41 @@ export function usePriceStream(symbols: string[]) {
         const updated = new Map(prev)
         entries.forEach(([symbol, delta]) => {
           const last = lastUpdateRef.current.get(symbol) ?? 0
-          if (now - last < throttleRef.current) {
+          if (!delta.snapshot && now - last < throttleRef.current) {
             requeue.push([symbol, delta])
             return
           }
 
+          const existing = prev.get(symbol)
+          const base: PriceData = existing ?? {
+            price: 0,
+            change: 0,
+            volume: null,
+            timestamp: 0,
+          }
+
+          const nextPrice = delta.snapshot
+            ? delta.price ?? base.price
+            : delta.price !== undefined
+              ? delta.price ?? base.price
+              : base.price
+
+          const nextChange = delta.snapshot
+            ? delta.change ?? base.change
+            : delta.change !== undefined
+              ? delta.change ?? base.change
+              : base.change
+
+          const nextVolume = delta.snapshot
+            ? (delta.volume !== undefined ? delta.volume ?? null : base.volume)
+            : delta.volume !== undefined
+              ? delta.volume
+              : base.volume
+
           updated.set(symbol, {
-            price: delta.price,
-            change: delta.change,
-            volume: delta.volume,
+            price: nextPrice,
+            change: nextChange,
+            volume: nextVolume,
             timestamp: delta.ts,
           })
           lastUpdateRef.current.set(symbol, now)

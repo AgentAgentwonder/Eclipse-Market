@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/tauri';
+import { AlertCircle } from 'lucide-react';
 import { OrderBook } from '../components/OrderBook';
 import { SwapForm } from '../components/SwapForm';
 import { EnhancedTradeHistory } from '../components/trading/EnhancedTradeHistory';
@@ -12,6 +13,7 @@ import { RiskRewardCalculator } from '../components/trading/RiskRewardCalculator
 import { useJupiter } from '../hooks/useJupiter';
 import { useWallet } from '../hooks/useWallet';
 import { useOrderNotifications } from '../hooks/useOrderNotifications';
+import { usePaperTradingStore } from '../store/paperTradingStore';
 
 const COMMON_TOKENS = [
   { symbol: 'SOL', mint: 'So11111111111111111111111111111111111111112', decimals: 9 },
@@ -21,6 +23,7 @@ const COMMON_TOKENS = [
 function Trading() {
   const jupiter = useJupiter();
   const wallet = useWallet();
+  const { isPaperMode } = usePaperTradingStore();
   
   useOrderNotifications();
 
@@ -38,6 +41,19 @@ function Trading() {
 
   return (
     <div className="space-y-4 p-4">
+      {isPaperMode && (
+        <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-orange-400">
+              <p className="font-medium mb-1">Live Trading Disabled in Paper Mode</p>
+              <p className="text-orange-400/80">
+                You are currently in paper trading mode. Live trading functions are disabled. Switch to live mode in Settings to execute real trades.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="flex gap-2 flex-wrap">
         <QuickTradeButton
           fromToken={COMMON_TOKENS[0]}

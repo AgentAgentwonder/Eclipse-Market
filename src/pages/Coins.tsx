@@ -3,6 +3,11 @@ import { Search, TrendingUp, Zap, BarChart3, X, Loader2 } from 'lucide-react'
 import { invoke } from '@tauri-apps/api/tauri'
 import TrendingCoins, { TrendingCoinData } from './Coins/TrendingCoins'
 import PriceChart from '../components/PriceChart'
+import { useState } from 'react'
+import { motion } from 'framer-motion'
+import { Search, TrendingUp, Zap, BarChart3 } from 'lucide-react'
+import NewCoins from './Coins/NewCoins'
+import TopCoins from './Coins/TopCoins'
 
 interface PricePoint {
   timestamp: number
@@ -51,24 +56,53 @@ export default function Coins() {
     fetchHistory()
   }, [selectedCoin, timeframe, apiKey])
 
+  const filteredCoins = mockCoins.filter((coin) => {
+    if (!searchQuery.trim()) return true
+    const query = searchQuery.toLowerCase()
+    return coin.symbol.toLowerCase().includes(query) || coin.name.toLowerCase().includes(query)
+  })
+
+  const displayedCoins = filteredCoins
+
+  const tabMeta = {
+    trending: {
+      title: 'Coins Market',
+      subtitle: 'Real-time cryptocurrency tracking and analysis',
+    },
+    new: {
+      title: 'Coin Discovery',
+      subtitle: 'New Solana token launches with safety insights',
+    },
+    top: {
+      title: 'Top Coins by Market Cap',
+      subtitle: 'Top 100 Solana tokens ranked by market capitalization',
+    },
+  } as const
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Coins Market</h1>
-          <p className="text-gray-400">Real-time cryptocurrency tracking and analysis</p>
+          <h1 className="text-3xl font-bold mb-2">
+            {tabMeta[activeTab as keyof typeof tabMeta].title}
+          </h1>
+          <p className="text-gray-400">
+            {tabMeta[activeTab as keyof typeof tabMeta].subtitle}
+          </p>
         </div>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search coins..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 pr-4 py-2 w-80 rounded-xl bg-slate-800/50 border border-purple-500/30 outline-none focus:border-purple-500 transition-all"
-          />
-        </div>
+        {activeTab === 'trending' && (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search coins..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 pr-4 py-2 w-80 rounded-xl bg-slate-800/50 border border-purple-500/30 outline-none focus:border-purple-500 transition-all"
+            />
+          </div>
+        )}
       </div>
 
       {/* Tabs */}
@@ -163,6 +197,54 @@ export default function Coins() {
               )}
             </div>
           </div>
+      {activeTab === 'new' ? (
+        <NewCoins />
+      ) : activeTab === 'top' ? (
+        <TopCoins />
+      ) : (
+        /* Coins Grid */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {displayedCoins.map((coin, idx) => (
+            <motion.div
+              key={coin.address}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: idx * 0.05 }}
+              whileHover={{ scale: 1.02 }}
+              className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-500/20 shadow-xl hover:shadow-purple-500/20 transition-all cursor-pointer"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <div className="text-2xl font-bold">{coin.symbol}</div>
+                  <div className="text-sm text-gray-400">{coin.name}</div>
+                </div>
+                <div className={`px-3 py-1 rounded-lg text-sm font-semibold ${
+                  coin.price_change_24h > 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                }`}>
+                  {coin.price_change_24h > 0 ? '+' : ''}{coin.price_change_24h.toFixed(2)}%
+                </div>
+              </div>
+              
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Price</span>
+                  <span className="font-bold">${coin.price.toFixed(6)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Market Cap</span>
+                  <span className="font-bold">${(coin.market_cap / 1_000_000).toFixed(1)}M</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Volume 24h</span>
+                  <span className="font-bold">${(coin.volume_24h / 1_000).toFixed(1)}K</span>
+                </div>
+              </div>
+
+              <button className="w-full mt-4 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 font-medium transition-all">
+                View Chart
+              </button>
+            </motion.div>
+          ))}
         </div>
       )}
     </div>
