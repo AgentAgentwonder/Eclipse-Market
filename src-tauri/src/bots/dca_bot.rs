@@ -257,11 +257,9 @@ impl DcaDatabase {
     }
 
     pub async fn get_active_configs(&self) -> Result<Vec<DcaConfig>, sqlx::Error> {
-        sqlx::query_as::<_, DcaConfig>(
-            "SELECT * FROM dca_configs WHERE is_active = 1",
-        )
-        .fetch_all(&self.pool)
-        .await
+        sqlx::query_as::<_, DcaConfig>("SELECT * FROM dca_configs WHERE is_active = 1")
+            .fetch_all(&self.pool)
+            .await
     }
 
     pub async fn get_due_configs(
@@ -310,7 +308,11 @@ impl DcaDatabase {
         Ok(())
     }
 
-    pub async fn update_spent_amount(&self, id: &str, spent_amount: f64) -> Result<(), sqlx::Error> {
+    pub async fn update_spent_amount(
+        &self,
+        id: &str,
+        spent_amount: f64,
+    ) -> Result<(), sqlx::Error> {
         let now = Utc::now().to_rfc3339();
 
         sqlx::query("UPDATE dca_configs SET spent_amount = ?1, updated_at = ?2 WHERE id = ?3")
@@ -366,7 +368,10 @@ impl DcaDatabase {
         .await
     }
 
-    pub async fn execution_summary(&self, dca_id: &str) -> Result<DcaExecutionSummary, sqlx::Error> {
+    pub async fn execution_summary(
+        &self,
+        dca_id: &str,
+    ) -> Result<DcaExecutionSummary, sqlx::Error> {
         let row = sqlx::query(
             r#"
             SELECT
@@ -390,7 +395,11 @@ impl DcaDatabase {
         })
     }
 
-    pub async fn spend_since(&self, dca_id: &str, since: DateTime<Utc>) -> Result<f64, sqlx::Error> {
+    pub async fn spend_since(
+        &self,
+        dca_id: &str,
+        since: DateTime<Utc>,
+    ) -> Result<f64, sqlx::Error> {
         let row = sqlx::query(
             r#"
             SELECT COALESCE(SUM(total_cost), 0) as spent
@@ -431,7 +440,9 @@ impl DcaManager {
             return Err("Amount per execution must be greater than zero".into());
         }
         if request.total_budget < request.amount_per_execution {
-            return Err("Total budget must be greater than or equal to amount per execution".into());
+            return Err(
+                "Total budget must be greater than or equal to amount per execution".into(),
+            );
         }
         if request.slippage_bps < 0 {
             return Err("Slippage bps must be non-negative".into());
@@ -768,7 +779,14 @@ impl DcaManager {
             .map_err(|e| format!("Failed to update spent amount: {e}"))?;
 
         self.schedule_next(config, Some(&quote_result)).await?;
-        self.emit_execution_event(config, input_amount, output_amount, price, "success", execution_time);
+        self.emit_execution_event(
+            config,
+            input_amount,
+            output_amount,
+            price,
+            "success",
+            execution_time,
+        );
 
         Ok(())
     }
@@ -880,9 +898,7 @@ fn to_base_units(amount: f64, decimals: i32) -> Result<u64, String> {
 }
 
 fn parse_amount(raw: &str, decimals: i32) -> f64 {
-    raw.parse::<f64>()
-        .unwrap_or_default()
-        / 10f64.powi(decimals)
+    raw.parse::<f64>().unwrap_or_default() / 10f64.powi(decimals)
 }
 
 fn start_of_day_utc(now: DateTime<Utc>) -> DateTime<Utc> {

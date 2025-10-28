@@ -84,7 +84,10 @@ pub async fn get_active_orders(wallet_address: String) -> Result<Vec<Order>, Str
 }
 
 #[tauri::command]
-pub async fn get_order_history(wallet_address: String, limit: Option<i64>) -> Result<Vec<Order>, String> {
+pub async fn get_order_history(
+    wallet_address: String,
+    limit: Option<i64>,
+) -> Result<Vec<Order>, String> {
     let state = require_state()?;
     state
         .manager

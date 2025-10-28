@@ -13,10 +13,10 @@ impl OrderDatabase {
     pub async fn new(db_path: PathBuf) -> Result<Self, sqlx::Error> {
         let db_url = format!("sqlite:{}?mode=rwc", db_path.display());
         let pool = SqlitePool::connect(&db_url).await?;
-        
+
         let db = Self { pool };
         db.initialize().await?;
-        
+
         Ok(db)
     }
 
@@ -116,12 +116,10 @@ impl OrderDatabase {
     }
 
     pub async fn get_order(&self, id: &str) -> Result<Option<Order>, sqlx::Error> {
-        let order = sqlx::query_as::<_, Order>(
-            "SELECT * FROM orders WHERE id = ?1"
-        )
-        .bind(id)
-        .fetch_optional(&self.pool)
-        .await?;
+        let order = sqlx::query_as::<_, Order>("SELECT * FROM orders WHERE id = ?1")
+            .bind(id)
+            .fetch_optional(&self.pool)
+            .await?;
 
         Ok(order)
     }
@@ -133,7 +131,7 @@ impl OrderDatabase {
             WHERE wallet_address = ?1 
             AND status IN ('pending', 'partially_filled')
             ORDER BY created_at DESC
-            "#
+            "#,
         )
         .bind(wallet_address)
         .fetch_all(&self.pool)
@@ -148,7 +146,7 @@ impl OrderDatabase {
             SELECT * FROM orders 
             WHERE status IN ('pending', 'partially_filled')
             ORDER BY created_at ASC
-            "#
+            "#,
         )
         .fetch_all(&self.pool)
         .await?;
@@ -167,7 +165,7 @@ impl OrderDatabase {
             WHERE wallet_address = ?1 
             ORDER BY created_at DESC
             LIMIT ?2
-            "#
+            "#,
         )
         .bind(wallet_address)
         .bind(limit)
@@ -184,13 +182,13 @@ impl OrderDatabase {
         error_message: Option<String>,
     ) -> Result<(), sqlx::Error> {
         let now = Utc::now().to_rfc3339();
-        
+
         sqlx::query(
             r#"
             UPDATE orders 
             SET status = ?1, updated_at = ?2, error_message = ?3
             WHERE id = ?4
-            "#
+            "#,
         )
         .bind(status.to_string())
         .bind(now)
@@ -210,14 +208,14 @@ impl OrderDatabase {
         tx_signature: Option<String>,
     ) -> Result<(), sqlx::Error> {
         let now = Utc::now().to_rfc3339();
-        
+
         sqlx::query(
             r#"
             UPDATE orders 
             SET filled_amount = ?1, status = ?2, updated_at = ?3,
                 triggered_at = ?4, tx_signature = ?5
             WHERE id = ?6
-            "#
+            "#,
         )
         .bind(filled_amount)
         .bind(status.to_string())
@@ -239,13 +237,13 @@ impl OrderDatabase {
         stop_price: Option<f64>,
     ) -> Result<(), sqlx::Error> {
         let now = Utc::now().to_rfc3339();
-        
+
         sqlx::query(
             r#"
             UPDATE orders 
             SET highest_price = ?1, lowest_price = ?2, stop_price = ?3, updated_at = ?4
             WHERE id = ?5
-            "#
+            "#,
         )
         .bind(highest_price)
         .bind(lowest_price)
@@ -259,18 +257,19 @@ impl OrderDatabase {
     }
 
     pub async fn cancel_order(&self, id: &str) -> Result<(), sqlx::Error> {
-        self.update_order_status(id, OrderStatus::Cancelled, None).await
+        self.update_order_status(id, OrderStatus::Cancelled, None)
+            .await
     }
 
     pub async fn cancel_linked_orders(&self, linked_id: &str) -> Result<(), sqlx::Error> {
         let now = Utc::now().to_rfc3339();
-        
+
         sqlx::query(
             r#"
             UPDATE orders 
             SET status = 'cancelled', updated_at = ?1
             WHERE linked_order_id = ?2 AND status IN ('pending', 'partially_filled')
-            "#
+            "#,
         )
         .bind(now)
         .bind(linked_id)

@@ -98,8 +98,7 @@ pub fn disable() -> Result<BiometricStatus, BiometricError> {
 
 pub fn verify_fallback(password: String) -> Result<(), BiometricError> {
     let mut password = password;
-    let stored = read_entry(FALLBACK_HASH_KEY)?
-        .ok_or(BiometricError::NotEnrolled)?;
+    let stored = read_entry(FALLBACK_HASH_KEY)?.ok_or(BiometricError::NotEnrolled)?;
 
     let result = verify_fallback_internal(password.as_bytes(), stored.as_str());
     password.zeroize();
@@ -168,8 +167,7 @@ fn delete_entry(key: &str) -> Result<(), BiometricError> {
 }
 
 fn keyring_entry(key: &str) -> Result<Entry, BiometricError> {
-    Entry::new(KEYRING_SERVICE, key)
-        .map_err(|err| BiometricError::Storage(err.to_string()))
+    Entry::new(KEYRING_SERVICE, key).map_err(|err| BiometricError::Storage(err.to_string()))
 }
 
 fn platform_kind() -> BiometricPlatform {
@@ -227,7 +225,9 @@ async fn platform_require_presence() -> Result<(), BiometricError> {
 
 #[cfg(target_os = "windows")]
 fn windows_available() -> Result<bool, BiometricError> {
-    use windows::Security::Credentials::UI::{UserConsentVerifier, UserConsentVerifierAvailability};
+    use windows::Security::Credentials::UI::{
+        UserConsentVerifier, UserConsentVerifierAvailability,
+    };
 
     let future = UserConsentVerifier::CheckAvailabilityAsync()
         .map_err(|err| BiometricError::Failed(err.to_string()))?;
@@ -236,7 +236,10 @@ fn windows_available() -> Result<bool, BiometricError> {
         let availability = future
             .await
             .map_err(|err| BiometricError::Failed(err.to_string()))?;
-        Ok(matches!(availability, UserConsentVerifierAvailability::Available))
+        Ok(matches!(
+            availability,
+            UserConsentVerifierAvailability::Available
+        ))
     })
 }
 
@@ -244,9 +247,7 @@ fn windows_available() -> Result<bool, BiometricError> {
 async fn windows_verify() -> Result<(), BiometricError> {
     use windows::{
         core::HSTRING,
-        Security::Credentials::UI::{
-            UserConsentVerifier, UserConsentVerificationResult,
-        },
+        Security::Credentials::UI::{UserConsentVerificationResult, UserConsentVerifier},
     };
 
     let future = UserConsentVerifier::RequestVerificationAsync(&HSTRING::from(PLATFORM_REASON))
@@ -282,7 +283,7 @@ async fn windows_verify() -> Result<(), BiometricError> {
 #[cfg(target_os = "macos")]
 fn macos_available() -> Result<bool, BiometricError> {
     use security_framework::os::macos::keychain::SecKeychain;
-    
+
     match SecKeychain::default() {
         Ok(_) => Ok(true),
         Err(_) => Ok(false),

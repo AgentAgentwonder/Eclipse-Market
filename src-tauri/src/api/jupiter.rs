@@ -1,4 +1,7 @@
-use reqwest::{header::{HeaderMap, HeaderValue, AUTHORIZATION}, Client, StatusCode};
+use reqwest::{
+    header::{HeaderMap, HeaderValue, AUTHORIZATION},
+    Client, StatusCode,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::time::Duration;
@@ -311,7 +314,9 @@ pub async fn jupiter_swap(input: SwapCommandInput) -> Result<SwapResult, String>
     }
 
     let client = JupiterClient::default();
-    let response = client.execute_swap(&input, input.simulate.unwrap_or(false)).await?;
+    let response = client
+        .execute_swap(&input, input.simulate.unwrap_or(false))
+        .await?;
     let swap_transaction = response
         .swap_transaction
         .ok_or_else(|| JupiterError::InvalidResponse("missing transaction".into()))?;
@@ -341,16 +346,8 @@ fn parse_route_plan(quote: &QuoteResponse) -> ParsedRoutePlan {
             percent: step.percent,
             input_mint: step.swap_info.input_mint.clone(),
             output_mint: step.swap_info.output_mint.clone(),
-            in_amount: step
-                .swap_info
-                .in_amount
-                .parse::<f64>()
-                .unwrap_or_default(),
-            out_amount: step
-                .swap_info
-                .out_amount
-                .parse::<f64>()
-                .unwrap_or_default(),
+            in_amount: step.swap_info.in_amount.parse::<f64>().unwrap_or_default(),
+            out_amount: step.swap_info.out_amount.parse::<f64>().unwrap_or_default(),
             fee_bps: step.swap_info.fee_bps,
         })
         .collect();
@@ -383,7 +380,11 @@ fn decode_versioned_transaction(encoded: &str) -> Result<EncodedTransaction, Str
     let version_str = match version {
         solana_sdk::transaction::TransactionVersion::Legacy(_) => "legacy",
         solana_sdk::transaction::TransactionVersion::Number(n) => {
-            if n == 0 { "v0" } else { "unknown" }
+            if n == 0 {
+                "v0"
+            } else {
+                "unknown"
+            }
         }
     };
 
@@ -560,7 +561,10 @@ mod tests {
 
         assert_eq!(result.price_impact_pct, 0.23);
         assert_eq!(result.route_plan.len(), 1);
-        assert_eq!(result.route_plan[0].swap_info.label.as_deref(), Some("Raydium"));
+        assert_eq!(
+            result.route_plan[0].swap_info.label.as_deref(),
+            Some("Raydium")
+        );
     }
 
     #[tokio::test]

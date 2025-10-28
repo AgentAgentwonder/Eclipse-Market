@@ -6,7 +6,8 @@ use serde::Deserialize;
 use tauri::State;
 
 use super::types::{
-    AllocationTarget, PortfolioMetrics, Position, RebalanceAction, RebalanceHistory, RebalanceProfile,
+    AllocationTarget, PortfolioMetrics, Position, RebalanceAction, RebalanceHistory,
+    RebalanceProfile,
 };
 
 #[derive(Debug)]
@@ -309,8 +310,11 @@ fn map_actions(
     positions: &[Position],
     metrics: &PortfolioMetrics,
 ) -> Vec<RebalanceAction> {
-    let mut target_lookup: HashMap<String, &AllocationTarget> =
-        profile.targets.iter().map(|t| (t.symbol.clone(), t)).collect();
+    let mut target_lookup: HashMap<String, &AllocationTarget> = profile
+        .targets
+        .iter()
+        .map(|t| (t.symbol.clone(), t))
+        .collect();
 
     let mut actions = Vec::new();
     for position in positions.iter() {
@@ -405,7 +409,11 @@ pub fn check_rebalance_triggers_internal(
             continue;
         }
 
-        let actions = map_actions(&profile_state.profile, &portfolio.positions, &portfolio.metrics);
+        let actions = map_actions(
+            &profile_state.profile,
+            &portfolio.positions,
+            &portfolio.metrics,
+        );
         if actions.is_empty() {
             continue;
         }
@@ -423,13 +431,12 @@ pub fn check_rebalance_triggers_internal(
             }
         }
 
-        let trigger_type = if deviation_triggered { "deviation" } else { "time" };
-        let history = create_history(
-            &profile_state.profile.id,
-            trigger_type,
-            actions,
-            false,
-        );
+        let trigger_type = if deviation_triggered {
+            "deviation"
+        } else {
+            "time"
+        };
+        let history = create_history(&profile_state.profile.id, trigger_type, actions, false);
 
         profile_state.last_notification_at = Some(now);
         rebalancer.record_history(history.clone());
@@ -440,7 +447,9 @@ pub fn check_rebalance_triggers_internal(
 }
 
 #[tauri::command]
-pub fn get_portfolio_metrics(data: State<'_, SharedPortfolioData>) -> Result<PortfolioMetrics, String> {
+pub fn get_portfolio_metrics(
+    data: State<'_, SharedPortfolioData>,
+) -> Result<PortfolioMetrics, String> {
     data.lock()
         .map_err(|_| "Portfolio data locked".to_string())
         .map(|guard| guard.metrics())
@@ -539,7 +548,11 @@ pub fn execute_rebalance(
         .find_profile_mut(&profile_id)
         .ok_or_else(|| "Profile not found".to_string())?;
 
-    let actions = map_actions(&profile_state.profile, &portfolio.positions, &portfolio.metrics);
+    let actions = map_actions(
+        &profile_state.profile,
+        &portfolio.positions,
+        &portfolio.metrics,
+    );
 
     if actions.is_empty() {
         return Err("Portfolio already aligned with targets".to_string());
@@ -585,7 +598,10 @@ pub fn check_rebalance_triggers(
         .lock()
         .map_err(|_| "Portfolio data locked".to_string())?;
 
-    Ok(check_rebalance_triggers_internal(&mut rebalancer, &portfolio))
+    Ok(check_rebalance_triggers_internal(
+        &mut rebalancer,
+        &portfolio,
+    ))
 }
 
 #[cfg(test)]
@@ -647,14 +663,8 @@ mod tests {
         data.apply_rebalance(&actions);
         let positions_after = data.positions();
 
-        let sol_after = positions_after
-            .iter()
-            .find(|p| p.symbol == "SOL")
-            .unwrap();
-        let btc_after = positions_after
-            .iter()
-            .find(|p| p.symbol == "BTC")
-            .unwrap();
+        let sol_after = positions_after.iter().find(|p| p.symbol == "SOL").unwrap();
+        let btc_after = positions_after.iter().find(|p| p.symbol == "BTC").unwrap();
 
         assert!((sol_after.allocation - 20.0).abs() < 5.0);
         assert!((btc_after.allocation - 40.0).abs() < 5.0);

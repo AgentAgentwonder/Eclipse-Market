@@ -26,7 +26,9 @@ pub async fn biometric_get_status() -> Result<BiometricStatus, String> {
 
 #[tauri::command]
 pub async fn biometric_enroll(fallback_password: String) -> Result<BiometricStatus, String> {
-    biometric::enroll(fallback_password).await.map_err(|e| e.into())
+    biometric::enroll(fallback_password)
+        .await
+        .map_err(|e| e.into())
 }
 
 #[tauri::command]

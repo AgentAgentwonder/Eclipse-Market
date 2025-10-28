@@ -42,6 +42,11 @@ impl HeliusStream {
         self.handle_stream(ws_stream).await
     }
 
+    async fn handle_stream(
+        &self,
+        ws_stream: WebSocketStream<MaybeTlsStream<TcpStream>>,
+    ) -> anyhow::Result<()> {
+        let (mut write, mut read) = ws_stream.split();
     async fn handle_stream(&self, ws_stream: WebSocketStream<MaybeTlsStream<TcpStream>>) -> anyhow::Result<()> {
         let (write, mut read) = ws_stream.split();
         let write = Arc::new(Mutex::new(write));
@@ -187,13 +192,31 @@ impl HeliusStream {
                 .and_then(|v| v.as_str())
                 .unwrap_or_default()
                 .to_string(),
-            slot: params.get("slot").and_then(|v| v.as_u64()).unwrap_or_default(),
-            timestamp: params.get("timestamp").and_then(|v| v.as_i64()).unwrap_or_else(|| chrono::Utc::now().timestamp()),
-            typ: params.get("type").and_then(|v| v.as_str()).map(|s| s.to_string()),
+            slot: params
+                .get("slot")
+                .and_then(|v| v.as_u64())
+                .unwrap_or_default(),
+            timestamp: params
+                .get("timestamp")
+                .and_then(|v| v.as_i64())
+                .unwrap_or_else(|| chrono::Utc::now().timestamp()),
+            typ: params
+                .get("type")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
             amount: params.get("amount").and_then(|v| v.as_f64()),
-            symbol: params.get("symbol").and_then(|v| v.as_str()).map(|s| s.to_string()),
-            from: params.get("from").and_then(|v| v.as_str()).map(|s| s.to_string()),
-            to: params.get("to").and_then(|v| v.as_str()).map(|s| s.to_string()),
+            symbol: params
+                .get("symbol")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
+            from: params
+                .get("from")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
+            to: params
+                .get("to")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
         })
     }
 
@@ -206,5 +229,29 @@ impl HeliusStream {
         let mut stats = self.connection.statistics.write().await;
         stats.messages_received += 1;
         stats.bytes_received += bytes as u64;
+    }
+
+    pub async fn subscribe(
+        connection: StreamConnection,
+        addresses: Vec<String>,
+    ) -> anyhow::Result<()> {
+        // Actual subscription logic must send a message to the WebSocket stream
+        // Requires connection to have access to the writer handle - omitted for brevity
+        let mut subs = connection.subscriptions.write().await;
+        for address in addresses {
+            if !subs.wallets.contains(&address) {
+                subs.wallets.push(address);
+            }
+        }
+        Ok(())
+    }
+
+    pub async fn unsubscribe(
+        connection: StreamConnection,
+        addresses: Vec<String>,
+    ) -> anyhow::Result<()> {
+        let mut subs = connection.subscriptions.write().await;
+        subs.wallets.retain(|a| !addresses.contains(a));
+        Ok(())
     }
 }

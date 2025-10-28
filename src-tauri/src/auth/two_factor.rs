@@ -162,11 +162,7 @@ impl TwoFactorManager {
         })
     }
 
-    pub fn verify(
-        &self,
-        code: &str,
-        keystore: &Keystore,
-    ) -> Result<bool, TwoFactorError> {
+    pub fn verify(&self, code: &str, keystore: &Keystore) -> Result<bool, TwoFactorError> {
         let trimmed = code.trim().to_uppercase();
         if trimmed.is_empty() {
             return Err(TwoFactorError::InvalidCode);
@@ -211,11 +207,7 @@ impl TwoFactorManager {
         Ok(new_codes)
     }
 
-    fn verify_totp(
-        &self,
-        code: &str,
-        keystore: &Keystore,
-    ) -> Result<bool, TwoFactorError> {
+    fn verify_totp(&self, code: &str, keystore: &Keystore) -> Result<bool, TwoFactorError> {
         let config = self.lock_config()?;
         if !config.enrolled {
             return Err(TwoFactorError::NotEnrolled);
@@ -250,11 +242,7 @@ impl TwoFactorManager {
         Ok(valid)
     }
 
-    fn verify_backup_code(
-        &self,
-        code: &str,
-        keystore: &Keystore,
-    ) -> Result<bool, TwoFactorError> {
+    fn verify_backup_code(&self, code: &str, keystore: &Keystore) -> Result<bool, TwoFactorError> {
         let mut config = self.lock_config()?;
         if !config.enrolled {
             return Err(TwoFactorError::NotEnrolled);
@@ -262,7 +250,9 @@ impl TwoFactorManager {
 
         let hash = hash_code(code);
         if config.backup_code_hashes.contains(&hash) {
-            config.backup_code_hashes.retain(|existing| existing != &hash);
+            config
+                .backup_code_hashes
+                .retain(|existing| existing != &hash);
             config.used_backup_code_hashes.push(hash);
             self.persist_config(keystore, &config)?;
             Ok(true)
@@ -323,11 +313,11 @@ impl TwoFactorManager {
 
         let mut svg = String::new();
         svg.push_str(&format!(
-            r#"<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 {size} {size}" stroke="none">"#,
-            size = total_size
+            "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" viewBox=\"0 0 {} {}\" stroke=\"none\">",
+            total_size, total_size
         ));
-        svg.push_str(r#"<rect width="100%" height="100%" fill="#ffffff"/>"#);
-        svg.push_str(r#"<path d=""#);
+        svg.push_str("<rect width=\"100%\" height=\"100%\" fill=\"#ffffff\"/>");
+        svg.push_str("<path d=\"");
 
         for y in 0..size {
             for x in 0..size {
@@ -339,7 +329,7 @@ impl TwoFactorManager {
             }
         }
 
-        svg.push_str(r#"" fill="#000000"/></svg>"#);
+        svg.push_str("\" fill=\"#000000\"/></svg>");
         Ok(svg)
     }
 }
@@ -352,17 +342,17 @@ fn hash_code(code: &str) -> String {
 
 fn generate_totp(secret: &[u8], counter: u64) -> Result<u32, TwoFactorError> {
     let counter_bytes = counter.to_be_bytes();
-    
+
     let mut mac = HmacSha1::new_from_slice(secret).map_err(|_| TwoFactorError::Internal)?;
     mac.update(&counter_bytes);
     let result = mac.finalize().into_bytes();
-    
+
     let offset = (result[19] & 0xf) as usize;
     let truncated_hash: u32 = ((result[offset] & 0x7f) as u32) << 24
         | (result[offset + 1] as u32) << 16
         | (result[offset + 2] as u32) << 8
         | result[offset + 3] as u32;
-    
+
     let code = truncated_hash % 10u32.pow(TOTP_DIGITS);
     Ok(code)
 }
@@ -394,9 +384,7 @@ pub async fn two_factor_disable(
     state: State<'_, TwoFactorManager>,
     keystore: State<'_, Keystore>,
 ) -> Result<(), String> {
-    state
-        .disable(keystore.inner())
-        .map_err(|e| e.to_string())
+    state.disable(keystore.inner()).map_err(|e| e.to_string())
 }
 
 #[tauri::command]

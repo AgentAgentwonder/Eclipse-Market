@@ -5,18 +5,12 @@ use std::{
     sync::{Mutex, MutexGuard},
 };
 
+use aes_gcm::aead::generic_array::GenericArray;
 use aes_gcm::{
     aead::{Aead, KeyInit, OsRng},
     Aes256Gcm,
 };
-use aes_gcm::aead::generic_array::GenericArray;
-use argon2::{
-    password_hash::SaltString,
-    Algorithm,
-    Argon2,
-    Params,
-    Version,
-};
+use argon2::{password_hash::SaltString, Algorithm, Argon2, Params, Version};
 use base64::{engine::general_purpose::STANDARD as BASE64_ENGINE, Engine};
 use chrono::{DateTime, Utc};
 use keyring::Entry;
@@ -148,10 +142,7 @@ impl Keystore {
 
     pub fn retrieve_secret(&self, key: &str) -> Result<Zeroizing<Vec<u8>>, KeystoreError> {
         let guard = self.lock_document()?;
-        let entry = guard
-            .secrets
-            .get(key)
-            .ok_or(KeystoreError::NotFound)?;
+        let entry = guard.secrets.get(key).ok_or(KeystoreError::NotFound)?;
 
         let salt = BASE64_ENGINE
             .decode(entry.salt.as_bytes())
@@ -209,7 +200,11 @@ impl Keystore {
         })
     }
 
-    pub fn import_backup(&self, password: &str, backup: KeystoreBackup) -> Result<(), KeystoreError> {
+    pub fn import_backup(
+        &self,
+        password: &str,
+        backup: KeystoreBackup,
+    ) -> Result<(), KeystoreError> {
         if backup.version != KEYSTORE_VERSION {
             return Err(KeystoreError::Decryption);
         }
@@ -308,9 +303,7 @@ impl Keystore {
     }
 
     fn lock_document(&self) -> Result<MutexGuard<'_, KeystoreDocument>, KeystoreError> {
-        self.document
-            .lock()
-            .map_err(|_| KeystoreError::Internal)
+        self.document.lock().map_err(|_| KeystoreError::Internal)
     }
 
     fn master_key() -> Result<Zeroizing<Vec<u8>>, KeystoreError> {

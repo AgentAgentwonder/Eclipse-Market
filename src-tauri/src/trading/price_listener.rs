@@ -17,7 +17,7 @@ pub async fn start_price_listener(_app_handle: AppHandle) {
 #[tauri::command]
 pub async fn update_order_prices(symbol: String, price: f64) -> Result<(), String> {
     use crate::trading::limit_orders::require_state;
-    
+
     let state = require_state()?;
     state.manager.update_price(&symbol, price).await;
     Ok(())

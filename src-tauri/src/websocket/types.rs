@@ -103,7 +103,10 @@ pub enum StreamEvent {
     PriceUpdate(PriceDelta),
     TransactionUpdate(TransactionUpdate),
     StatusChange(StreamStatus),
-    Error { provider: StreamProvider, message: String },
+    Error {
+        provider: StreamProvider,
+        message: String,
+    },
 }
 
 #[derive(Debug, Clone)]

@@ -5,10 +5,10 @@ use serde_json::json;
 use std::sync::Arc;
 use std::time::Instant;
 use tauri::{AppHandle, Manager};
+use tokio::net::TcpStream;
 use tokio::sync::{mpsc, Mutex};
 use tokio_tungstenite::tungstenite::Message;
 use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
-use tokio::net::TcpStream;
 
 const BIRDEYE_WS_URL: &str = "wss://public-api.birdeye.so/socket";
 
@@ -52,6 +52,11 @@ impl BirdeyeStream {
         self.handle_stream(ws_stream).await
     }
 
+    async fn handle_stream(
+        &self,
+        ws_stream: WebSocketStream<MaybeTlsStream<TcpStream>>,
+    ) -> anyhow::Result<()> {
+        let (mut write, mut read) = ws_stream.split();
     async fn handle_stream(&self, ws_stream: WebSocketStream<MaybeTlsStream<TcpStream>>) -> anyhow::Result<()> {
         let (write, mut read) = ws_stream.split();
         let write = Arc::new(Mutex::new(write));
@@ -268,6 +273,17 @@ impl BirdeyeStream {
             .and_then(|v| v.as_str())
             .ok_or_else(|| anyhow::anyhow!("Missing symbol"))?
             .to_string();
+        let price = value
+            .get("price")
+            .and_then(|v| v.as_f64())
+            .ok_or_else(|| anyhow::anyhow!("Missing price"))?;
+        let change = value
+            .get("change_24h")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0);
+        let volume = value.get("volume_24h").and_then(|v| v.as_f64());
+
+        Ok(PriceDelta {
         let price = data.get("price").and_then(|v| v.as_f64());
         let change = data.get("change_24h").and_then(|v| v.as_f64());
         let volume = data.get("volume_24h").and_then(|v| v.as_f64());
@@ -309,5 +325,33 @@ impl BirdeyeStream {
         }
 
         let _ = self.connection.event_tx.send(event);
+    }
+
+    pub async fn subscribe(
+        connection: StreamConnection,
+        symbols: Vec<String>,
+    ) -> anyhow::Result<()> {
+        let mut subs = connection.subscriptions.write().await;
+        subs.prices.extend(symbols.clone());
+        drop(subs);
+
+        // Birdeye subscription message format:
+        // {"type": "subscribe", "symbols": ["SOL", "BONK", ...]}
+        // This is a placeholder - actual implementation depends on Birdeye API docs
+        Ok(())
+    }
+
+    pub async fn unsubscribe(
+        connection: StreamConnection,
+        symbols: Vec<String>,
+    ) -> anyhow::Result<()> {
+        let mut subs = connection.subscriptions.write().await;
+        subs.prices.retain(|s| !symbols.contains(s));
+        drop(subs);
+
+        // Birdeye unsubscribe message format:
+        // {"type": "unsubscribe", "symbols": ["SOL", "BONK", ...]}
+        // This is a placeholder - actual implementation depends on Birdeye API docs
+        Ok(())
     }
 }

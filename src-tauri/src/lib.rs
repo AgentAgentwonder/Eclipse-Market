@@ -7,10 +7,10 @@ mod market;
 mod portfolio;
 mod security;
 mod sentiment;
+mod stream_commands;
 mod trading;
 mod wallet;
 mod websocket;
-mod stream_commands;
 
 pub use ai::*;
 pub use api::*;
@@ -22,8 +22,9 @@ pub use portfolio::*;
 pub use sentiment::*;
 pub use trading::*;
 pub use wallet::hardware_wallet::*;
-pub use wallet::phantom::*;
 pub use wallet::multi_wallet::*;
+pub use wallet::phantom::*;
+
 pub use wallet::multisig::*;
 
 use wallet::hardware_wallet::HardwareWalletState;
@@ -34,11 +35,16 @@ use security::keystore::Keystore;
 use security::activity_log::ActivityLogger;
 use auth::session_manager::SessionManager;
 use auth::two_factor::TwoFactorManager;
+use security::keystore::Keystore;
 use std::error::Error;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use stream_commands::*;
+use tokio::sync::RwLock;
+use wallet::hardware_wallet::HardwareWalletState;
+use wallet::multi_wallet::MultiWalletManager;
+use wallet::phantom::{hydrate_wallet_state, WalletState};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -178,7 +184,6 @@ pub fn run() {
             get_hardware_wallet_address,
             sign_with_hardware_wallet,
             get_firmware_version,
-            
             // Multi-Wallet
             multi_wallet_add,
             multi_wallet_update,
@@ -211,7 +216,6 @@ pub fn run() {
             biometric_disable,
             biometric_verify_fallback,
             connect_phantom,
-
             // Session Management
             session_create,
             session_renew,
@@ -220,18 +224,15 @@ pub fn run() {
             session_verify,
             session_update_activity,
             session_configure_timeout,
-
             // 2FA
             two_factor_enroll,
             two_factor_verify,
             two_factor_disable,
             two_factor_status,
             two_factor_regenerate_backup_codes,
-            
             // AI & Sentiment
             assess_risk,
             analyze_text_sentiment,
-            
             // Market Data
             get_coin_price,
             get_price_history,
@@ -267,7 +268,6 @@ pub fn run() {
             generate_tax_report,
             export_tax_report,
             get_tax_loss_harvesting_suggestions,
-            
             // WebSocket Streams
             subscribe_price_stream,
             unsubscribe_price_stream,
@@ -275,7 +275,6 @@ pub fn run() {
             unsubscribe_wallet_stream,
             get_stream_status,
             reconnect_stream,
-            
             // Jupiter v6 & execution safeguards
             jupiter_quote,
             jupiter_swap,
@@ -283,7 +282,6 @@ pub fn run() {
             get_priority_fee_estimates,
             submit_with_mev_protection,
             validate_trade_thresholds,
-            
             // Trading & Orders
             trading_init,
             create_order,
@@ -314,7 +312,6 @@ pub fn run() {
             dca_delete,
             dca_history,
             dca_performance,
-            
             // Copy Trading
             copy_trading_init,
             copy_trading_create,

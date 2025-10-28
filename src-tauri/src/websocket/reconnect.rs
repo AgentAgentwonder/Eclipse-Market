@@ -27,7 +27,9 @@ impl ExponentialBackoff {
         let delay = if self.attempts == 0 {
             self.config.initial_delay
         } else {
-            let exponential = self.config.initial_delay
+            let exponential = self
+                .config
+                .initial_delay
                 .checked_mul(2u32.pow(self.attempts - 1))
                 .unwrap_or(self.config.max_delay);
             std::cmp::min(exponential, self.config.max_delay)

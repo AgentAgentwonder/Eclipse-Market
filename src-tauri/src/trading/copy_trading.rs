@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, Pool, Row, Sqlite, SqlitePool};
-use std::collections::{HashSet};
+use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tauri::{AppHandle, Manager};
@@ -244,7 +244,10 @@ impl CopyTradeDatabase {
             .await
     }
 
-    pub async fn list_configs(&self, wallet_address: &str) -> Result<Vec<CopyTradeConfig>, sqlx::Error> {
+    pub async fn list_configs(
+        &self,
+        wallet_address: &str,
+    ) -> Result<Vec<CopyTradeConfig>, sqlx::Error> {
         sqlx::query_as::<_, CopyTradeConfig>(
             "SELECT * FROM copy_trade_configs WHERE wallet_address = ?1 ORDER BY created_at DESC",
         )
@@ -254,11 +257,9 @@ impl CopyTradeDatabase {
     }
 
     pub async fn get_active_configs(&self) -> Result<Vec<CopyTradeConfig>, sqlx::Error> {
-        sqlx::query_as::<_, CopyTradeConfig>(
-            "SELECT * FROM copy_trade_configs WHERE is_active = 1",
-        )
-        .fetch_all(&self.pool)
-        .await
+        sqlx::query_as::<_, CopyTradeConfig>("SELECT * FROM copy_trade_configs WHERE is_active = 1")
+            .fetch_all(&self.pool)
+            .await
     }
 
     pub async fn update_config_status(&self, id: &str, is_active: bool) -> Result<(), sqlx::Error> {
@@ -280,7 +281,10 @@ impl CopyTradeDatabase {
         Ok(())
     }
 
-    pub async fn create_execution(&self, execution: &CopyTradeExecution) -> Result<(), sqlx::Error> {
+    pub async fn create_execution(
+        &self,
+        execution: &CopyTradeExecution,
+    ) -> Result<(), sqlx::Error> {
         sqlx::query(
             r#"
             INSERT INTO copy_trade_executions (
@@ -314,7 +318,10 @@ impl CopyTradeDatabase {
         Ok(())
     }
 
-    pub async fn get_executions(&self, config_id: &str) -> Result<Vec<CopyTradeExecution>, sqlx::Error> {
+    pub async fn get_executions(
+        &self,
+        config_id: &str,
+    ) -> Result<Vec<CopyTradeExecution>, sqlx::Error> {
         sqlx::query_as::<_, CopyTradeExecution>(
             "SELECT * FROM copy_trade_executions WHERE config_id = ?1 ORDER BY executed_at DESC",
         )
@@ -454,7 +461,10 @@ impl CopyTradeManager {
             .ok_or_else(|| "Copy trade config not found".to_string())
     }
 
-    pub async fn list_copy_trades(&self, wallet_address: &str) -> Result<Vec<CopyTradeConfig>, String> {
+    pub async fn list_copy_trades(
+        &self,
+        wallet_address: &str,
+    ) -> Result<Vec<CopyTradeConfig>, String> {
         self.db
             .read()
             .await
@@ -587,30 +597,16 @@ impl CopyTradeManager {
                     .ok();
                 }
                 TradeDecision::Skip(reason) => {
-                    self.log_execution(
-                        &config,
-                        &activity,
-                        0.0,
-                        "skipped",
-                        Some(reason),
-                        None,
-                    )
-                    .await
-                    .ok();
+                    self.log_execution(&config, &activity, 0.0, "skipped", Some(reason), None)
+                        .await
+                        .ok();
                 }
                 TradeDecision::Proceed => {
                     if let Err(err) = self.execute_copy_trade(&config, &activity).await {
                         eprintln!("Failed to execute copy trade: {err}");
-                        self.log_execution(
-                            &config,
-                            &activity,
-                            0.0,
-                            "error",
-                            Some(err),
-                            None,
-                        )
-                        .await
-                        .ok();
+                        self.log_execution(&config, &activity, 0.0, "error", Some(err), None)
+                            .await
+                            .ok();
                     }
                 }
             }
@@ -643,9 +639,7 @@ impl CopyTradeManager {
             }
         }
 
-        let pnl = activity
-            .pnl
-            .unwrap_or_default()
+        let pnl = activity.pnl.unwrap_or_default()
             * (config.allocation_percentage / 100.0)
             * config.multiplier;
 
@@ -688,7 +682,8 @@ impl CopyTradeManager {
         config: &CopyTradeConfig,
         activity: &WalletActivity,
     ) -> Result<TradeDecision, String> {
-        let allocation_amount = activity.amount * (config.allocation_percentage / 100.0) * config.multiplier;
+        let allocation_amount =
+            activity.amount * (config.allocation_percentage / 100.0) * config.multiplier;
 
         let daily_trade_count = if config.max_daily_trades.is_some() {
             Some(
@@ -750,9 +745,7 @@ impl CopyTradeManager {
             } else {
                 0.0
             },
-            pnl: activity
-                .pnl
-                .unwrap_or_default()
+            pnl: activity.pnl.unwrap_or_default()
                 * (config.allocation_percentage / 100.0)
                 * config.multiplier,
             executed_at: Utc::now(),
@@ -848,10 +841,7 @@ fn evaluate_trade_decision(
     if let Some(performance) = activity.performance_pct {
         if let Some(stop_loss) = config.stop_loss_percentage {
             if performance <= -stop_loss {
-                return TradeDecision::Stop(format!(
-                    "Stop loss triggered at {:.2}%",
-                    performance
-                ));
+                return TradeDecision::Stop(format!("Stop loss triggered at {:.2}%", performance));
             }
         }
 
@@ -925,7 +915,10 @@ pub async fn init_copy_trading(app_handle: &AppHandle) -> Result<(), String> {
     let handle = app_handle.clone();
     tauri::async_runtime::spawn(async move {
         CopyTradeManager::start_monitoring(manager.clone()).await;
-        let _ = handle.emit_all("copy_trading_monitor_stopped", "Copy trading monitor stopped");
+        let _ = handle.emit_all(
+            "copy_trading_monitor_stopped",
+            "Copy trading monitor stopped",
+        );
     });
 
     COPY_TRADING_STATE
@@ -950,7 +943,9 @@ pub async fn copy_trading_init(handle: AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn copy_trading_create(request: CreateCopyTradeRequest) -> Result<CopyTradeConfig, String> {
+pub async fn copy_trading_create(
+    request: CreateCopyTradeRequest,
+) -> Result<CopyTradeConfig, String> {
     let state = require_state()?;
     state.manager.create_copy_trade(request).await
 }
@@ -1056,7 +1051,8 @@ mod tests {
     fn test_stop_loss_triggers_stop_decision() {
         let config = sample_config();
         let activity = sample_activity(Some(-6.0));
-        let allocation = activity.amount * (config.allocation_percentage / 100.0) * config.multiplier;
+        let allocation =
+            activity.amount * (config.allocation_percentage / 100.0) * config.multiplier;
 
         let decision = evaluate_trade_decision(&config, &activity, allocation, Some(0), Some(0.0));
         assert!(matches!(decision, TradeDecision::Stop(_)));
@@ -1067,7 +1063,8 @@ mod tests {
         let mut config = sample_config();
         config.min_trade_amount = Some(60.0);
         let activity = sample_activity(Some(2.0));
-        let allocation = activity.amount * (config.allocation_percentage / 100.0) * config.multiplier;
+        let allocation =
+            activity.amount * (config.allocation_percentage / 100.0) * config.multiplier;
 
         let decision = evaluate_trade_decision(&config, &activity, allocation, None, None);
         assert!(matches!(decision, TradeDecision::Skip(_)));

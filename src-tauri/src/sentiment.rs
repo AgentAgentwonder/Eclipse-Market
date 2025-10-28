@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct SentimentResult {
@@ -9,17 +9,34 @@ pub struct SentimentResult {
 
 #[tauri::command]
 pub fn analyze_sentiment(text: &str) -> SentimentResult {
-    let positive_words = ["good", "great", "excellent", "bullish", "moon", "pump", "profit", "gain", "win", "rocket"];
-    let negative_words = ["bad", "terrible", "bearish", "dump", "crash", "loss", "scam", "rug", "fail", "dead"];
+    let positive_words = [
+        "good",
+        "great",
+        "excellent",
+        "bullish",
+        "moon",
+        "pump",
+        "profit",
+        "gain",
+        "win",
+        "rocket",
+    ];
+    let negative_words = [
+        "bad", "terrible", "bearish", "dump", "crash", "loss", "scam", "rug", "fail", "dead",
+    ];
 
     let text_lower = text.to_lowercase();
     let mut score: f32 = 0.0;
-    
+
     for word in positive_words.iter() {
-        if text_lower.contains(word) { score += 0.15; }
+        if text_lower.contains(word) {
+            score += 0.15;
+        }
     }
     for word in negative_words.iter() {
-        if text_lower.contains(word) { score -= 0.15; }
+        if text_lower.contains(word) {
+            score -= 0.15;
+        }
     }
 
     SentimentResult {

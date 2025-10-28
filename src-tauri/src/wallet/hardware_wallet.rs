@@ -214,9 +214,10 @@ pub async fn list_hardware_wallets(
 
     if is_simulated {
         let devices = create_simulated_devices();
-        let mut devices_guard = state.devices.lock().map_err(|e| {
-            HardwareWalletError::Internal(format!("Failed to lock devices: {}", e))
-        })?;
+        let mut devices_guard = state
+            .devices
+            .lock()
+            .map_err(|e| HardwareWalletError::Internal(format!("Failed to lock devices: {}", e)))?;
         *devices_guard = devices.clone();
         return Ok(devices);
     }
@@ -229,9 +230,10 @@ pub async fn connect_hardware_wallet(
     device_id: String,
     state: State<'_, HardwareWalletState>,
 ) -> Result<HardwareWalletDevice, HardwareWalletError> {
-    let mut devices_guard = state.devices.lock().map_err(|e| {
-        HardwareWalletError::Internal(format!("Failed to lock devices: {}", e))
-    })?;
+    let mut devices_guard = state
+        .devices
+        .lock()
+        .map_err(|e| HardwareWalletError::Internal(format!("Failed to lock devices: {}", e)))?;
 
     if let Some(device) = devices_guard.iter_mut().find(|d| d.device_id == device_id) {
         device.connected = true;
@@ -246,9 +248,10 @@ pub async fn disconnect_hardware_wallet(
     device_id: String,
     state: State<'_, HardwareWalletState>,
 ) -> Result<(), HardwareWalletError> {
-    let mut devices_guard = state.devices.lock().map_err(|e| {
-        HardwareWalletError::Internal(format!("Failed to lock devices: {}", e))
-    })?;
+    let mut devices_guard = state
+        .devices
+        .lock()
+        .map_err(|e| HardwareWalletError::Internal(format!("Failed to lock devices: {}", e)))?;
 
     if let Some(device) = devices_guard.iter_mut().find(|d| d.device_id == device_id) {
         device.connected = false;
@@ -263,9 +266,10 @@ pub async fn get_hardware_wallet_address(
     request: GetAddressRequest,
     state: State<'_, HardwareWalletState>,
 ) -> Result<GetAddressResponse, HardwareWalletError> {
-    let devices_guard = state.devices.lock().map_err(|e| {
-        HardwareWalletError::Internal(format!("Failed to lock devices: {}", e))
-    })?;
+    let devices_guard = state
+        .devices
+        .lock()
+        .map_err(|e| HardwareWalletError::Internal(format!("Failed to lock devices: {}", e)))?;
 
     let device = devices_guard
         .iter()
@@ -284,7 +288,10 @@ pub async fn get_hardware_wallet_address(
         &request.derivation_path,
     );
 
-    Ok(GetAddressResponse { address, public_key })
+    Ok(GetAddressResponse {
+        address,
+        public_key,
+    })
 }
 
 #[tauri::command]
@@ -292,9 +299,10 @@ pub async fn sign_with_hardware_wallet(
     request: SignTransactionRequest,
     state: State<'_, HardwareWalletState>,
 ) -> Result<SignTransactionResponse, HardwareWalletError> {
-    let devices_guard = state.devices.lock().map_err(|e| {
-        HardwareWalletError::Internal(format!("Failed to lock devices: {}", e))
-    })?;
+    let devices_guard = state
+        .devices
+        .lock()
+        .map_err(|e| HardwareWalletError::Internal(format!("Failed to lock devices: {}", e)))?;
 
     let device = devices_guard
         .iter()
@@ -331,9 +339,10 @@ pub async fn get_firmware_version(
     device_id: String,
     state: State<'_, HardwareWalletState>,
 ) -> Result<FirmwareVersion, HardwareWalletError> {
-    let devices_guard = state.devices.lock().map_err(|e| {
-        HardwareWalletError::Internal(format!("Failed to lock devices: {}", e))
-    })?;
+    let devices_guard = state
+        .devices
+        .lock()
+        .map_err(|e| HardwareWalletError::Internal(format!("Failed to lock devices: {}", e)))?;
 
     let device = devices_guard
         .iter()
@@ -357,14 +366,14 @@ pub async fn get_firmware_version(
     }
 
     Ok(FirmwareVersion {
-        major: parts[0]
-            .parse()
-            .map_err(|_| HardwareWalletError::InvalidResponse("Invalid major version".to_string()))?,
-        minor: parts[1]
-            .parse()
-            .map_err(|_| HardwareWalletError::InvalidResponse("Invalid minor version".to_string()))?,
-        patch: parts[2]
-            .parse()
-            .map_err(|_| HardwareWalletError::InvalidResponse("Invalid patch version".to_string()))?,
+        major: parts[0].parse().map_err(|_| {
+            HardwareWalletError::InvalidResponse("Invalid major version".to_string())
+        })?,
+        minor: parts[1].parse().map_err(|_| {
+            HardwareWalletError::InvalidResponse("Invalid minor version".to_string())
+        })?,
+        patch: parts[2].parse().map_err(|_| {
+            HardwareWalletError::InvalidResponse("Invalid patch version".to_string())
+        })?,
     })
 }

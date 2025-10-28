@@ -5,7 +5,7 @@ use chrono::{DateTime, Datelike, Duration, Utc};
 use serde::Deserialize;
 use tauri::State;
 
-use super::types::{LotStrategy, TaxLot, TaxLossHarvestingSuggestion, TaxReport};
+use super::types::{LotStrategy, TaxLossHarvestingSuggestion, TaxLot, TaxReport};
 
 #[derive(Debug)]
 pub struct TaxLotsState {
@@ -239,8 +239,12 @@ impl TaxLotsState {
             .collect();
 
         match format {
-            "turbotax" => export_turbotax_format(&disposed_in_year, tax_year, self.strategy.clone()),
-            "cointracker" => export_cointracker_format(&disposed_in_year, tax_year, self.strategy.clone()),
+            "turbotax" => {
+                export_turbotax_format(&disposed_in_year, tax_year, self.strategy.clone())
+            }
+            "cointracker" => {
+                export_cointracker_format(&disposed_in_year, tax_year, self.strategy.clone())
+            }
             "csv" => export_csv_format(&disposed_in_year, tax_year, self.strategy.clone()),
             other => Err(format!("Unsupported export format: {}", other)),
         }
@@ -250,14 +254,10 @@ impl TaxLotsState {
         let open_lots = self.open_lots();
         let mut suggestions = Vec::new();
 
-        let mock_prices: HashMap<&str, f64> = [
-            ("SOL", 175.4),
-            ("BTC", 64000.0),
-            ("ETH", 3400.0),
-        ]
-        .iter()
-        .cloned()
-        .collect();
+        let mock_prices: HashMap<&str, f64> = [("SOL", 175.4), ("BTC", 64000.0), ("ETH", 3400.0)]
+            .iter()
+            .cloned()
+            .collect();
 
         for lot in open_lots.iter() {
             let current_price = mock_prices.get(lot.symbol.as_str()).cloned().unwrap_or(0.0);
@@ -398,14 +398,19 @@ pub fn export_tax_report(
         .and_then(|guard| guard.export(params.tax_year, &format))
 }
 
-fn export_turbotax_format(lots: &[TaxLot], tax_year: i32, strategy: LotStrategy) -> Result<String, String> {
+fn export_turbotax_format(
+    lots: &[TaxLot],
+    tax_year: i32,
+    strategy: LotStrategy,
+) -> Result<String, String> {
     let mut lines = Vec::new();
     lines.push(format!(
         "TurboTax Tax Report {} (Strategy: {:?})",
         tax_year, strategy
     ));
     lines.push(String::new());
-    lines.push("Description,Date Acquired,Date Sold,Proceeds,Cost Basis,Gain/Loss,Term".to_string());
+    lines
+        .push("Description,Date Acquired,Date Sold,Proceeds,Cost Basis,Gain/Loss,Term".to_string());
 
     for lot in lots {
         let acquired_date = lot.acquired_at.split('T').next().unwrap_or("");
@@ -417,9 +422,8 @@ fn export_turbotax_format(lots: &[TaxLot], tax_year: i32, strategy: LotStrategy)
         let disposed_amount = lot.disposed_amount.unwrap_or(0.0);
         let unit_cost = lot.cost_basis / lot.amount;
         let cost = disposed_amount * unit_cost;
-        let proceeds = disposed_amount
-            * (lot.realized_gain.unwrap_or(0.0) + cost)
-            / disposed_amount.max(1.0);
+        let proceeds =
+            disposed_amount * (lot.realized_gain.unwrap_or(0.0) + cost) / disposed_amount.max(1.0);
         let gain = lot.realized_gain.unwrap_or(0.0);
 
         let days = days_between(&lot.acquired_at, lot.disposed_at.as_deref());
@@ -438,7 +442,11 @@ fn export_turbotax_format(lots: &[TaxLot], tax_year: i32, strategy: LotStrategy)
     Ok(lines.join("\n"))
 }
 
-fn export_cointracker_format(lots: &[TaxLot], tax_year: i32, strategy: LotStrategy) -> Result<String, String> {
+fn export_cointracker_format(
+    lots: &[TaxLot],
+    tax_year: i32,
+    strategy: LotStrategy,
+) -> Result<String, String> {
     let mut lines = Vec::new();
     lines.push(format!(
         "CoinTracker Tax Report {} (Strategy: {:?})",
@@ -451,9 +459,8 @@ fn export_cointracker_format(lots: &[TaxLot], tax_year: i32, strategy: LotStrate
         let disposed_amount = lot.disposed_amount.unwrap_or(0.0);
         let unit_cost = lot.cost_basis / lot.amount;
         let cost = disposed_amount * unit_cost;
-        let proceeds = disposed_amount
-            * (lot.realized_gain.unwrap_or(0.0) + cost)
-            / disposed_amount.max(1.0);
+        let proceeds =
+            disposed_amount * (lot.realized_gain.unwrap_or(0.0) + cost) / disposed_amount.max(1.0);
 
         let acquired_date = lot.acquired_at.split('T').next().unwrap_or("");
         let sold_date = lot
@@ -469,18 +476,32 @@ fn export_cointracker_format(lots: &[TaxLot], tax_year: i32, strategy: LotStrate
 
         lines.push(format!(
             "{},Sell,{},{:.6},{:.2},0.00,{:.2}",
-            sold_date, lot.symbol, disposed_amount, proceeds / disposed_amount.max(1.0), proceeds
+            sold_date,
+            lot.symbol,
+            disposed_amount,
+            proceeds / disposed_amount.max(1.0),
+            proceeds
         ));
     }
 
     Ok(lines.join("\n"))
 }
 
-fn export_csv_format(lots: &[TaxLot], tax_year: i32, strategy: LotStrategy) -> Result<String, String> {
+fn export_csv_format(
+    lots: &[TaxLot],
+    tax_year: i32,
+    strategy: LotStrategy,
+) -> Result<String, String> {
     let mut lines = Vec::new();
-    lines.push(format!("Tax Report {} (Strategy: {:?})", tax_year, strategy));
+    lines.push(format!(
+        "Tax Report {} (Strategy: {:?})",
+        tax_year, strategy
+    ));
     lines.push(String::new());
-    lines.push("Lot ID,Symbol,Acquired Date,Disposed Date,Amount,Cost Basis,Sale Price,Realized Gain".to_string());
+    lines.push(
+        "Lot ID,Symbol,Acquired Date,Disposed Date,Amount,Cost Basis,Sale Price,Realized Gain"
+            .to_string(),
+    );
 
     for lot in lots {
         let acquired_date = lot.acquired_at.split('T').next().unwrap_or("");
@@ -492,9 +513,8 @@ fn export_csv_format(lots: &[TaxLot], tax_year: i32, strategy: LotStrategy) -> R
         let disposed_amount = lot.disposed_amount.unwrap_or(0.0);
         let unit_cost = lot.cost_basis / lot.amount;
         let cost = disposed_amount * unit_cost;
-        let proceeds = disposed_amount
-            * (lot.realized_gain.unwrap_or(0.0) + cost)
-            / disposed_amount.max(1.0);
+        let proceeds =
+            disposed_amount * (lot.realized_gain.unwrap_or(0.0) + cost) / disposed_amount.max(1.0);
 
         lines.push(format!(
             "{},{},{},{},{:.6},{:.2},{:.2},{:.2}",
@@ -531,10 +551,7 @@ mod tests {
         let state = TaxLotsState::default();
         let lots = state.open_lots();
 
-        let sol_lots: Vec<_> = lots
-            .iter()
-            .filter(|l| l.symbol == "SOL")
-            .collect();
+        let sol_lots: Vec<_> = lots.iter().filter(|l| l.symbol == "SOL").collect();
 
         assert!(sol_lots.len() >= 2);
 
@@ -562,9 +579,7 @@ mod tests {
         let expected_proceeds = dispose_amount * sale_price;
         let expected_gain = expected_proceeds - expected_cost;
 
-        let result = state
-            .dispose(&lot.id, dispose_amount, sale_price)
-            .unwrap();
+        let result = state.dispose(&lot.id, dispose_amount, sale_price).unwrap();
 
         assert_eq!(result.disposed_amount, Some(dispose_amount));
         assert!(result.disposed_at.is_some());

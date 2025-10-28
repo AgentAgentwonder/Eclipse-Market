@@ -2,6 +2,7 @@ use base64::engine::general_purpose::STANDARD as BASE64_ENGINE;
 use base64::Engine;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
+use solana_sdk::{pubkey::Pubkey, signature::Signature, transaction::VersionedTransaction};
 use serde_json::json;
 use solana_sdk::{
     pubkey::Pubkey,
@@ -116,7 +117,12 @@ impl PhantomError {
 
 impl std::fmt::Display for PhantomError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}: {}", serde_json::to_string(&self.code).unwrap_or_else(|_| "unknown".to_string()), self.message)
+        write!(
+            f,
+            "{}: {}",
+            serde_json::to_string(&self.code).unwrap_or_else(|_| "unknown".to_string()),
+            self.message
+        )
     }
 }
 
@@ -133,7 +139,9 @@ impl WalletState {
     }
 }
 
-fn lock_session<'a>(state: &'a State<'_, WalletState>) -> Result<MutexGuard<'a, Option<PhantomSession>>, PhantomError> {
+fn lock_session<'a>(
+    state: &'a State<'_, WalletState>,
+) -> Result<MutexGuard<'a, Option<PhantomSession>>, PhantomError> {
     state
         .session
         .lock()
@@ -157,8 +165,9 @@ fn session_path(app: &AppHandle) -> Result<PathBuf, PhantomError> {
         .app_data_dir()
         .ok_or_else(|| PhantomError::storage("Unable to resolve app data directory"))?;
     if !path.exists() {
-        fs::create_dir_all(&path)
-            .map_err(|err| PhantomError::storage(format!("Failed to create app data directory: {err}")))?;
+        fs::create_dir_all(&path).map_err(|err| {
+            PhantomError::storage(format!("Failed to create app data directory: {err}"))
+        })?;
     }
     path.push(SESSION_FILE);
     Ok(path)
@@ -166,9 +175,11 @@ fn session_path(app: &AppHandle) -> Result<PathBuf, PhantomError> {
 
 fn persist_session(app: &AppHandle, session: &PhantomSession) -> Result<(), PhantomError> {
     let path = session_path(app)?;
-    let data = serde_json::to_string(session)
-        .map_err(|err| PhantomError::serialization(format!("Failed to serialize session: {err}")))?;
-    fs::write(&path, data).map_err(|err| PhantomError::storage(format!("Failed to persist session: {err}")))
+    let data = serde_json::to_string(session).map_err(|err| {
+        PhantomError::serialization(format!("Failed to serialize session: {err}"))
+    })?;
+    fs::write(&path, data)
+        .map_err(|err| PhantomError::storage(format!("Failed to persist session: {err}")))
 }
 
 fn remove_persisted_session(app: &AppHandle) -> Result<(), PhantomError> {
@@ -331,7 +342,9 @@ pub async fn phantom_disconnect(
 }
 
 #[tauri::command]
-pub async fn phantom_session(state: State<'_, WalletState>) -> Result<Option<PhantomSession>, PhantomError> {
+pub async fn phantom_session(
+    state: State<'_, WalletState>,
+) -> Result<Option<PhantomSession>, PhantomError> {
     let guard = lock_session(&state)?;
     Ok(guard.clone())
 }
@@ -344,6 +357,9 @@ pub async fn phantom_sign_message(
 ) -> Result<PhantomSignMessageResponse, PhantomError> {
     let logger = app.state::<ActivityLogger>();
     let guard = lock_session(&state)?;
+    let session = guard.as_ref().ok_or_else(|| {
+        PhantomError::new(PhantomErrorCode::NotConnected, "Wallet is not connected")
+    })?;
     let session_opt = guard.clone();
     drop(guard);
 
@@ -437,27 +453,29 @@ pub async fn phantom_sign_transaction(
     state: State<'_, WalletState>,
 ) -> Result<PhantomSignTransactionResponse, PhantomError> {
     let guard = lock_session(&state)?;
-    let session = guard
-        .as_ref()
-        .ok_or_else(|| PhantomError::new(PhantomErrorCode::NotConnected, "Wallet is not connected"))?;
+    let session = guard.as_ref().ok_or_else(|| {
+        PhantomError::new(PhantomErrorCode::NotConnected, "Wallet is not connected")
+    })?;
 
     let bytes = BASE64_ENGINE
         .decode(request.transaction.as_bytes())
-        .map_err(|err| PhantomError::new(PhantomErrorCode::InvalidInput, format!("Invalid transaction encoding: {err}")))?;
-
-    let transaction: VersionedTransaction = bincode::deserialize(&bytes)
-        .map_err(|err| PhantomError::serialization(format!("Failed to decode transaction: {err}")))?;
-
-    let signature = transaction
-        .signatures
-        .first()
-        .cloned()
-        .ok_or_else(|| {
+        .map_err(|err| {
             PhantomError::new(
                 PhantomErrorCode::InvalidInput,
-                "Transaction does not contain any signatures",
+                format!("Invalid transaction encoding: {err}"),
             )
         })?;
+
+    let transaction: VersionedTransaction = bincode::deserialize(&bytes).map_err(|err| {
+        PhantomError::serialization(format!("Failed to decode transaction: {err}"))
+    })?;
+
+    let signature = transaction.signatures.first().cloned().ok_or_else(|| {
+        PhantomError::new(
+            PhantomErrorCode::InvalidInput,
+            "Transaction does not contain any signatures",
+        )
+    })?;
 
     let message_bytes = transaction.message.serialize();
     let pubkey = Pubkey::from_str(&session.public_key).map_err(|err| {
@@ -518,6 +536,8 @@ pub async fn phantom_balance(
 
     match client.get_balance(&pubkey) {
         Ok(lamports) => Ok(lamports as f64 / 1_000_000_000.0),
-        Err(err) => Err(PhantomError::internal(format!("Failed to fetch balance: {err}"))),
+        Err(err) => Err(PhantomError::internal(format!(
+            "Failed to fetch balance: {err}"
+        ))),
     }
 }

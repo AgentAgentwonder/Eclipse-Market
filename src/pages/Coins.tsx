@@ -1,3 +1,44 @@
+import { useEffect, useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
+import { Search, TrendingUp, Zap, BarChart3 } from 'lucide-react';
+import { invoke } from '@tauri-apps/api/tauri';
+import { TrendingCoins } from './Coins/TrendingCoins';
+import { NewCoins } from './Coins/NewCoins';
+import { TopMarketCap } from './Coins/TopMarketCap';
+import { useWalletStore } from '../store/walletStore';
+
+export default function Coins() {
+  const [activeTab, setActiveTab] = useState('trending');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [apiKey] = useState<string | null>(null);
+  const [watchlist, setWatchlist] = useState<string[]>([]);
+  const activeWallet = useWalletStore((state) => state.activeWallet);
+
+  useEffect(() => {
+    invoke<string[]>('get_watchlist')
+      .then((result) => setWatchlist(result))
+      .catch((error) => console.error('Failed to load watchlist:', error));
+  }, []);
+
+  const handleToggleWatchlist = async (address: string) => {
+    try {
+      if (watchlist.includes(address)) {
+        await invoke('remove_from_watchlist', { address });
+        setWatchlist((prev) => prev.filter((item) => item !== address));
+      } else {
+        await invoke('add_to_watchlist', { address });
+        setWatchlist((prev) => [...prev, address]);
+      }
+    } catch (error) {
+      console.error('Failed to update watchlist:', error);
+    }
+  };
+
+  const handleNavigateToDetails = (address: string) => {
+    console.log('Navigate to details:', address);
+  };
+
+  const watchlistSet = useMemo(() => new Set(watchlist), [watchlist]);
 import { useEffect, useMemo, useState } from 'react'
 import { Search, TrendingUp, Zap, BarChart3, X, Loader2 } from 'lucide-react'
 import { invoke } from '@tauri-apps/api/tauri'
@@ -110,8 +151,8 @@ export default function Coins() {
         {[
           { id: 'trending', label: 'Trending', icon: TrendingUp },
           { id: 'new', label: 'New Coins', icon: Zap },
-          { id: 'top', label: 'Top Coins', icon: BarChart3 },
-        ].map(tab => (
+          { id: 'top', label: 'Top Market Cap', icon: BarChart3 },
+        ].map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
@@ -127,6 +168,41 @@ export default function Coins() {
         ))}
       </div>
 
+      {/* Content */}
+      <motion.div
+        key={activeTab}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+      >
+        {activeTab === 'trending' && (
+          <TrendingCoins
+            apiKey={apiKey || undefined}
+            walletAddress={activeWallet?.address}
+            onAddToWatchlist={handleToggleWatchlist}
+            onNavigateToDetails={handleNavigateToDetails}
+            watchlist={watchlistSet}
+          />
+        )}
+        {activeTab === 'new' && (
+          <NewCoins
+            apiKey={apiKey || undefined}
+            walletAddress={activeWallet?.address}
+            onAddToWatchlist={handleToggleWatchlist}
+            onNavigateToDetails={handleNavigateToDetails}
+            watchlist={watchlistSet}
+          />
+        )}
+        {activeTab === 'top' && (
+          <TopMarketCap
+            apiKey={apiKey || undefined}
+            walletAddress={activeWallet?.address}
+            onAddToWatchlist={handleToggleWatchlist}
+            onNavigateToDetails={handleNavigateToDetails}
+            watchlist={watchlistSet}
+          />
+        )}
+      </motion.div>
       {/* Tab Content */}
       {activeTab === 'trending' && <TrendingCoins searchQuery={searchQuery} onSelectCoin={setSelectedCoin} />}
       
@@ -248,5 +324,5 @@ export default function Coins() {
         </div>
       )}
     </div>
-  )
+  );
 }
