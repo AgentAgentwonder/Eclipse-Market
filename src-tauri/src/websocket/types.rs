@@ -65,13 +65,25 @@ pub struct StreamSubscriptions {
     pub wallets: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PriceDelta {
-    pub symbol: String,
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct PriceSnapshot {
     pub price: f64,
     pub change: f64,
     pub volume: Option<f64>,
     pub ts: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PriceDelta {
+    pub symbol: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub price: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub change: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub volume: Option<f64>,
+    pub ts: i64,
+    pub snapshot: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -95,6 +107,16 @@ pub enum StreamEvent {
         provider: StreamProvider,
         message: String,
     },
+}
+
+#[derive(Debug, Clone)]
+pub enum StreamCommand {
+    SubscribePrices(Vec<String>),
+    UnsubscribePrices(Vec<String>),
+    SubscribeWallets(Vec<String>),
+    UnsubscribeWallets(Vec<String>),
+    Ping,
+    Close,
 }
 
 #[derive(Debug, Clone)]

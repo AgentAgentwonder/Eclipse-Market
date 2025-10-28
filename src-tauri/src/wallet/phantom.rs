@@ -3,6 +3,12 @@ use base64::Engine;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use solana_sdk::{pubkey::Pubkey, signature::Signature, transaction::VersionedTransaction};
+use serde_json::json;
+use solana_sdk::{
+    pubkey::Pubkey,
+    signature::Signature,
+    transaction::VersionedTransaction,
+};
 use std::{
     fs,
     path::PathBuf,
@@ -10,6 +16,7 @@ use std::{
     sync::{Mutex, MutexGuard},
 };
 use tauri::{AppHandle, Manager, State};
+use crate::security::activity_log::ActivityLogger;
 
 const SESSION_FILE: &str = "phantom_session.json";
 const DEFAULT_NETWORK: &str = "devnet";
@@ -203,8 +210,19 @@ pub async fn phantom_connect(
     state: State<'_, WalletState>,
     app: AppHandle,
 ) -> Result<PhantomSession, PhantomError> {
-    let public_key = payload.public_key.trim();
+    let logger = app.state::<ActivityLogger>();
+    let public_key = payload.public_key.trim().to_string();
+
     if public_key.is_empty() {
+        let _ = logger
+            .log_connect(
+                "unknown",
+                json!({ "error": "Public key is required", "source": "phantom" }),
+                false,
+                None,
+            )
+            .await;
+
         return Err(PhantomError::new(
             PhantomErrorCode::InvalidInput,
             "Public key is required",
@@ -213,13 +231,60 @@ pub async fn phantom_connect(
 
     let network = payload
         .network
+        .clone()
         .unwrap_or_else(|| DEFAULT_NETWORK.to_string());
+    let label = payload.label.clone();
 
-    let session = PhantomSession::new(public_key.to_string(), network, payload.label);
-    persist_session(&app, &session)?;
+    let session = PhantomSession::new(public_key.clone(), network.clone(), label.clone());
 
-    let mut guard = lock_session(&state)?;
-    *guard = Some(session.clone());
+    if let Err(err) = persist_session(&app, &session) {
+        let _ = logger
+            .log_connect(
+                &public_key,
+                json!({
+                    "network": network.clone(),
+                    "label": label.clone(),
+                    "error": err.to_string(),
+                    "source": "phantom"
+                }),
+                false,
+                None,
+            )
+            .await;
+        return Err(err);
+    }
+
+    if let Err(err) = lock_session(&state).map(|mut guard| {
+        *guard = Some(session.clone());
+    }) {
+        let _ = logger
+            .log_connect(
+                &public_key,
+                json!({
+                    "network": network.clone(),
+                    "label": label.clone(),
+                    "error": err.to_string(),
+                    "source": "phantom"
+                }),
+                false,
+                None,
+            )
+            .await;
+        return Err(err);
+    }
+
+    let _ = logger
+        .log_connect(
+            &public_key,
+            json!({
+                "network": network,
+                "label": label,
+                "source": "phantom"
+            }),
+            true,
+            None,
+        )
+        .await;
 
     Ok(session)
 }
@@ -229,9 +294,51 @@ pub async fn phantom_disconnect(
     state: State<'_, WalletState>,
     app: AppHandle,
 ) -> Result<(), PhantomError> {
-    let mut guard = lock_session(&state)?;
-    *guard = None;
-    remove_persisted_session(&app)
+    let logger = app.state::<ActivityLogger>();
+    let wallet_address = {
+        let guard = lock_session(&state)?;
+        guard.as_ref().map(|s| s.public_key.clone())
+    };
+
+    let had_session = wallet_address.is_some();
+    let wallet_addr = wallet_address.unwrap_or_else(|| "unknown".to_string());
+    
+    {
+        let mut guard = lock_session(&state)?;
+        *guard = None;
+    }
+
+    match remove_persisted_session(&app) {
+        Ok(_) => {
+            let _ = logger
+                .log_disconnect(
+                    &wallet_addr,
+                    json!({
+                        "source": "phantom",
+                        "hadSession": had_session
+                    }),
+                    had_session,
+                    None,
+                )
+                .await;
+            Ok(())
+        }
+        Err(err) => {
+            let _ = logger
+                .log_disconnect(
+                    &wallet_addr,
+                    json!({
+                        "error": err.to_string(),
+                        "source": "phantom",
+                        "hadSession": had_session
+                    }),
+                    false,
+                    None,
+                )
+                .await;
+            Err(err)
+        }
+    }
 }
 
 #[tauri::command]
@@ -246,27 +353,96 @@ pub async fn phantom_session(
 pub async fn phantom_sign_message(
     request: PhantomSignMessageRequest,
     state: State<'_, WalletState>,
+    app: AppHandle,
 ) -> Result<PhantomSignMessageResponse, PhantomError> {
+    let logger = app.state::<ActivityLogger>();
     let guard = lock_session(&state)?;
     let session = guard.as_ref().ok_or_else(|| {
         PhantomError::new(PhantomErrorCode::NotConnected, "Wallet is not connected")
     })?;
+    let session_opt = guard.clone();
+    drop(guard);
 
-    let pubkey = Pubkey::from_str(&session.public_key).map_err(|err| {
-        PhantomError::new(
-            PhantomErrorCode::InvalidInput,
-            format!("Invalid session public key: {err}"),
-        )
-    })?;
+    let session = match session_opt {
+        Some(session) => session,
+        None => {
+            let _ = logger
+                .log_sign(
+                    "unknown",
+                    json!({
+                        "error": "Wallet is not connected",
+                        "source": "phantom"
+                    }),
+                    false,
+                    None,
+                )
+                .await;
+            return Err(PhantomError::new(
+                PhantomErrorCode::NotConnected,
+                "Wallet is not connected",
+            ));
+        }
+    };
 
-    let signature = Signature::from_str(&request.signature).map_err(|err| {
-        PhantomError::new(
-            PhantomErrorCode::InvalidInput,
-            format!("Invalid signature: {err}"),
-        )
-    })?;
+    let wallet_address = session.public_key.clone();
+    let pubkey = match Pubkey::from_str(&session.public_key) {
+        Ok(value) => value,
+        Err(err) => {
+            let err_msg = err.to_string();
+            let _ = logger
+                .log_sign(
+                    &wallet_address,
+                    json!({
+                        "error": err_msg,
+                        "source": "phantom"
+                    }),
+                    false,
+                    None,
+                )
+                .await;
+            return Err(PhantomError::new(
+                PhantomErrorCode::InvalidInput,
+                format!("Invalid session public key: {err}"),
+            ));
+        }
+    };
+
+    let signature = match Signature::from_str(&request.signature) {
+        Ok(value) => value,
+        Err(err) => {
+            let err_msg = err.to_string();
+            let _ = logger
+                .log_sign(
+                    &wallet_address,
+                    json!({
+                        "error": err_msg,
+                        "source": "phantom"
+                    }),
+                    false,
+                    None,
+                )
+                .await;
+            return Err(PhantomError::new(
+                PhantomErrorCode::InvalidInput,
+                format!("Invalid signature: {err}"),
+            ));
+        }
+    };
 
     let valid = signature.verify(pubkey.as_ref(), request.message.as_bytes());
+
+    let _ = logger
+        .log_sign(
+            &wallet_address,
+            json!({
+                "messageLength": request.message.len(),
+                "signatureValid": valid,
+                "source": "phantom"
+            }),
+            valid,
+            None,
+        )
+        .await;
 
     Ok(PhantomSignMessageResponse { valid })
 }

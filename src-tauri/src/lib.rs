@@ -25,11 +25,21 @@ pub use wallet::hardware_wallet::*;
 pub use wallet::multi_wallet::*;
 pub use wallet::phantom::*;
 
+pub use wallet::multisig::*;
+
+use wallet::hardware_wallet::HardwareWalletState;
+use wallet::phantom::{hydrate_wallet_state, WalletState};
+use wallet::multi_wallet::MultiWalletManager;
+use wallet::multisig::{MultisigDatabase, SharedMultisigDatabase};
+use security::keystore::Keystore;
+use security::activity_log::ActivityLogger;
 use auth::session_manager::SessionManager;
 use auth::two_factor::TwoFactorManager;
 use security::keystore::Keystore;
 use std::error::Error;
+use std::path::PathBuf;
 use std::sync::Arc;
+use tokio::sync::RwLock;
 use stream_commands::*;
 use tokio::sync::RwLock;
 use wallet::hardware_wallet::HardwareWalletState;
@@ -64,46 +74,107 @@ pub fn run() {
             let ws_manager = WebSocketManager::new(app.handle());
 
             let multi_wallet_manager = MultiWalletManager::initialize(&keystore).map_err(|e| {
-                eprintln!("Failed to initialize multi-wallet manager: {e}");
+               eprintln!("Failed to initialize multi-wallet manager: {e}");
+               Box::new(e) as Box<dyn Error>
+            })?;
+
+            let activity_logger = tauri::async_runtime::block_on(async {
+                ActivityLogger::new(&app.handle()).await
+            }).map_err(|e| {
+                eprintln!("Failed to initialize activity logger: {e}");
                 Box::new(e) as Box<dyn Error>
             })?;
 
-            let market_state = Arc::new(RwLock::new(market::MarketState::new()));
+            let cleanup_logger = activity_logger.clone();
 
             app.manage(keystore);
             app.manage(multi_wallet_manager);
             app.manage(session_manager);
             app.manage(two_factor_manager);
             app.manage(ws_manager);
-            app.manage(market_state);
+            app.manage(activity_logger);
 
-            trading::register_trading_state(app);
-
-            let automation_handle = app.handle();
             tauri::async_runtime::spawn(async move {
-                if let Err(err) = bots::init_dca(&automation_handle).await {
-                    eprintln!("Failed to initialize DCA bots: {err}");
+                use tokio::time::{sleep, Duration};
+
+                if let Err(err) = cleanup_logger.cleanup_old_logs(None).await {
+                    eprintln!("Failed to run initial activity log cleanup: {err}");
                 }
-                if let Err(err) = trading::init_copy_trading(&automation_handle).await {
-                    eprintln!("Failed to initialize copy trading: {err}");
+
+                loop {
+                    sleep(Duration::from_secs(24 * 60 * 60)).await;
+                    if let Err(err) = cleanup_logger.cleanup_old_logs(None).await {
+                        eprintln!("Failed to run scheduled activity log cleanup: {err}");
+                    }
                 }
             });
 
-            let portfolio_data = portfolio::PortfolioDataState::new();
-            let rebalancer_state = portfolio::RebalancerState::default();
-            let tax_lots_state = portfolio::TaxLotsState::default();
+            trading::register_trading_state(app);
+            trading::register_paper_trading_state(app);
 
-            app.manage(std::sync::Mutex::new(portfolio_data));
-            app.manage(std::sync::Mutex::new(rebalancer_state));
-            app.manage(std::sync::Mutex::new(tax_lots_state));
+            // Initialize multisig database
+            let mut multisig_db_path = app
+                .path_resolver()
+                .app_data_dir()
+                .ok_or_else(|| "Unable to resolve app data directory".to_string())?;
 
-            Ok(())
-        })
-        .invoke_handler(tauri::generate_handler![
-            // Wallet
-            phantom_connect,
-            phantom_disconnect,
-            phantom_session,
+            std::fs::create_dir_all(&multisig_db_path)
+                .map_err(|e| format!("Failed to create app data directory: {e}"))?;
+
+            multisig_db_path.push("multisig.db");
+
+            let multisig_db = tauri::async_runtime::block_on(MultisigDatabase::new(multisig_db_path))
+                .map_err(|e| {
+                    eprintln!("Failed to initialize multisig database: {e}");
+                    Box::new(e) as Box<dyn Error>
+                })?;
+
+            let multisig_state: SharedMultisigDatabase = Arc::new(RwLock::new(multisig_db));
+            app.manage(multisig_state.clone());
+
+             let automation_handle = app.handle();
+             tauri::async_runtime::spawn(async move {
+                 if let Err(err) = bots::init_dca(&automation_handle).await {
+                     eprintln!("Failed to initialize DCA bots: {err}");
+                 }
+                 if let Err(err) = trading::init_copy_trading(&automation_handle).await {
+                     eprintln!("Failed to initialize copy trading: {err}");
+                 }
+             });
+
+             let portfolio_data = portfolio::PortfolioDataState::new();
+             let rebalancer_state = portfolio::RebalancerState::default();
+             let tax_lots_state = portfolio::TaxLotsState::default();
+
+             app.manage(std::sync::Mutex::new(portfolio_data));
+             app.manage(std::sync::Mutex::new(rebalancer_state));
+             app.manage(std::sync::Mutex::new(tax_lots_state));
+
+             // Initialize new coins scanner
+             let new_coins_scanner = tauri::async_runtime::block_on(async {
+                 market::NewCoinsScanner::new(&app.handle()).await
+             }).map_err(|e| {
+                 eprintln!("Failed to initialize new coins scanner: {e}");
+                 Box::new(e) as Box<dyn Error>
+             })?;
+
+             let scanner_state: market::SharedNewCoinsScanner = Arc::new(RwLock::new(new_coins_scanner));
+             app.manage(scanner_state.clone());
+
+             // Start background scanning task
+             let scanner_for_loop = scanner_state.clone();
+             market::start_new_coins_scanner(scanner_for_loop);
+
+             let top_coins_cache: market::SharedTopCoinsCache = Arc::new(RwLock::new(market::TopCoinsCache::new()));
+             app.manage(top_coins_cache.clone());
+
+             Ok(())
+             })
+
+             // Wallet
+             phantom_connect,
+             phantom_disconnect,
+
             phantom_sign_message,
             phantom_sign_transaction,
             phantom_balance,
@@ -127,6 +198,17 @@ pub fn run() {
             multi_wallet_delete_group,
             multi_wallet_list_groups,
             multi_wallet_get_aggregated,
+            
+            // Multisig
+            create_multisig_wallet,
+            list_multisig_wallets,
+            get_multisig_wallet,
+            create_proposal,
+            list_proposals,
+            sign_proposal,
+            execute_proposal,
+            cancel_proposal,
+            
             // Auth
             biometric_get_status,
             biometric_enroll,
@@ -156,13 +238,18 @@ pub fn run() {
             get_price_history,
             search_tokens,
             get_trending_coins,
-            get_top_coins,
+            get_coin_sentiment,
+            refresh_trending,
+            
+            // New Coins Scanner
             get_new_coins,
-            get_coin_safety_score,
-            get_coin_sparkline,
-            add_to_watchlist,
-            remove_from_watchlist,
-            get_watchlist,
+            get_coin_safety_report,
+            scan_for_new_coins,
+            
+            // Top Coins
+            get_top_coins,
+            refresh_top_coins,
+            
             // Portfolio & Analytics
             get_portfolio_metrics,
             get_positions,
@@ -204,6 +291,17 @@ pub fn run() {
             get_order,
             acknowledge_order,
             update_order_prices,
+            
+            // Paper Trading Simulation
+            paper_trading_init,
+            get_paper_account,
+            reset_paper_account,
+            execute_paper_trade,
+            get_paper_positions,
+            get_paper_trade_history,
+            get_paper_performance,
+            update_paper_position_prices,
+            
             // DCA Bots
             dca_init,
             dca_create,
@@ -226,6 +324,20 @@ pub fn run() {
             copy_trading_performance,
             copy_trading_process_activity,
             copy_trading_followed_wallets,
+            
+            // Activity Logging
+            security::activity_log::get_activity_logs,
+            security::activity_log::export_activity_logs,
+            security::activity_log::get_activity_stats,
+            security::activity_log::check_suspicious_activity,
+            security::activity_log::cleanup_activity_logs,
+            security::activity_log::get_activity_retention,
+            security::activity_log::set_activity_retention,
+
+            // Performance & Diagnostics
+            get_performance_metrics,
+            run_performance_test,
+            reset_performance_stats,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -4,7 +4,6 @@ use crate::websocket::helius::HeliusStream;
 use crate::websocket::reconnect::ExponentialBackoff;
 use crate::websocket::types::*;
 use rand::Rng;
-use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -26,13 +25,15 @@ pub struct StreamConnection {
     pub state: Arc<RwLock<ConnectionStateInternal>>,
     pub subscriptions: Arc<RwLock<StreamSubscriptions>>,
     pub queue: Arc<Mutex<MessageQueue<StreamEvent>>>,
-    pub delta_prices: Arc<Mutex<DeltaState<Value>>>,
+    pub delta_prices: Arc<Mutex<DeltaState<PriceSnapshot>>>,
     pub last_message: Arc<RwLock<Option<Instant>>>,
     pub backoff: Arc<Mutex<ExponentialBackoff>>,
     pub fallback: Arc<RwLock<FallbackState>>,
     pub statistics: Arc<RwLock<StreamStatisticsInternal>>,
     pub event_tx: broadcast::Sender<StreamEvent>,
+    pub command_tx: Arc<Mutex<Option<mpsc::UnboundedSender<StreamCommand>>>>,
 }
+
 
 #[derive(Clone)]
 pub struct WebSocketManager {
@@ -134,6 +135,7 @@ impl WebSocketManager {
             })),
             statistics: Arc::new(RwLock::new(StreamStatisticsInternal::default())),
             event_tx: tx,
+            command_tx: Arc::new(Mutex::new(None)),
         };
 
         self.connections
@@ -190,6 +192,12 @@ impl WebSocketManager {
             fallback.reason = Some(error.to_string());
         }
         self.emit_status(connection).await;
+
+        let manager = self.clone();
+        let provider = connection.provider.clone();
+        tauri::async_runtime::spawn(async move {
+            manager.start_polling_fallback(provider.clone()).await;
+        });
 
         if let Some(delay) = connection.backoff.lock().await.next_delay() {
             let manager = self.clone();
@@ -266,6 +274,7 @@ impl WebSocketManager {
             fallback.reason = Some(reason.to_string());
         }
         self.emit_status(connection).await;
+        self.start_polling_fallback(connection.provider.clone()).await;
 
         let delay = connection
             .backoff
@@ -302,17 +311,28 @@ impl WebSocketManager {
 
         let mut subs = connection.subscriptions.write().await;
         let mut unique_symbols: HashSet<String> = subs.prices.iter().cloned().collect();
+        let mut new_symbols: Vec<String> = Vec::new();
+
+        for symbol in symbols {
+            if unique_symbols.insert(symbol.clone()) {
+                new_symbols.push(symbol.clone());
+                subs.prices.push(symbol);
+            }
+        }
+        drop(subs);
+
+        if new_symbols.is_empty() {
+            return Ok(());
+        }
 
         let mut batches: Vec<Vec<String>> = Vec::new();
         let mut current_batch: Vec<String> = Vec::new();
 
-        for symbol in symbols {
-            if unique_symbols.insert(symbol.clone()) {
-                current_batch.push(symbol);
-                if current_batch.len() >= MAX_SYMBOL_BATCH {
-                    batches.push(current_batch);
-                    current_batch = Vec::new();
-                }
+        for symbol in new_symbols {
+            current_batch.push(symbol);
+            if current_batch.len() >= MAX_SYMBOL_BATCH {
+                batches.push(current_batch);
+                current_batch = Vec::new();
             }
         }
 
@@ -324,7 +344,11 @@ impl WebSocketManager {
             if batch.is_empty() {
                 continue;
             }
-            BirdeyeStream::subscribe(connection.clone(), batch).await?;
+            
+            let command_tx = connection.command_tx.lock().await;
+            if let Some(ref tx) = *command_tx {
+                let _ = tx.send(StreamCommand::SubscribePrices(batch));
+            }
         }
 
         Ok(())
@@ -345,8 +369,13 @@ impl WebSocketManager {
         }
 
         if !to_remove.is_empty() {
-            BirdeyeStream::unsubscribe(connection.clone(), to_remove.clone()).await?;
             subs.prices.retain(|s| !to_remove.contains(s));
+            drop(subs);
+
+            let command_tx = connection.command_tx.lock().await;
+            if let Some(ref tx) = *command_tx {
+                let _ = tx.send(StreamCommand::UnsubscribePrices(to_remove));
+            }
         }
 
         Ok(())
@@ -368,7 +397,11 @@ impl WebSocketManager {
         }
 
         if !new_addresses.is_empty() {
-            HeliusStream::subscribe(connection.clone(), new_addresses).await?;
+            drop(subs);
+            let command_tx = connection.command_tx.lock().await;
+            if let Some(ref tx) = *command_tx {
+                let _ = tx.send(StreamCommand::SubscribeWallets(new_addresses));
+            }
         }
 
         Ok(())
@@ -389,8 +422,13 @@ impl WebSocketManager {
         }
 
         if !to_remove.is_empty() {
-            HeliusStream::unsubscribe(connection.clone(), to_remove.clone()).await?;
             subs.wallets.retain(|a| !to_remove.contains(a));
+            drop(subs);
+
+            let command_tx = connection.command_tx.lock().await;
+            if let Some(ref tx) = *command_tx {
+                let _ = tx.send(StreamCommand::UnsubscribeWallets(to_remove));
+            }
         }
 
         Ok(())
@@ -468,6 +506,21 @@ impl WebSocketManager {
         })
     }
 
+    pub async fn start_polling_fallback(&self, provider: StreamProvider) {
+        if let Some(connection) = self.get_connection(&provider).await {
+            {
+                let mut state = connection.state.write().await;
+                *state = ConnectionStateInternal::Fallback;
+            }
+            self.emit_status(&connection).await;
+
+            let manager = self.clone();
+            tauri::async_runtime::spawn(async move {
+                manager.process_polling(provider).await;
+            });
+        }
+    }
+
     pub async fn process_polling(&self, provider: StreamProvider) {
         if let Some(connection) = self.get_connection(&provider).await {
             let fallback_active = connection.fallback.read().await.active;
@@ -475,7 +528,6 @@ impl WebSocketManager {
                 return;
             }
 
-            let subs = connection.subscriptions.read().await.clone();
             let mut interval = tokio::time::interval(connection.fallback.read().await.interval);
 
             loop {
@@ -485,16 +537,19 @@ impl WebSocketManager {
                     break;
                 }
 
+                let subs = connection.subscriptions.read().await.clone();
+
                 match provider {
                     StreamProvider::Birdeye => {
                         for symbol in &subs.prices {
                             if let Ok(price) = get_coin_price(symbol.clone()).await {
                                 let delta = PriceDelta {
                                     symbol: symbol.clone(),
-                                    price: price.price.unwrap_or_default(),
-                                    change: price.change_24h.unwrap_or_default(),
+                                    price: price.price,
+                                    change: price.change_24h,
                                     volume: price.volume_24h,
                                     ts: chrono::Utc::now().timestamp(),
+                                    snapshot: true,
                                 };
                                 self.enqueue_event(&connection, StreamEvent::PriceUpdate(delta))
                                     .await;
