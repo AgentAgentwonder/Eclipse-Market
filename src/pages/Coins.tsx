@@ -5,6 +5,7 @@ import { invoke } from '@tauri-apps/api/tauri';
 import { TrendingCoins } from './Coins/TrendingCoins';
 import { NewCoins } from './Coins/NewCoins';
 import { TopMarketCap } from './Coins/TopMarketCap';
+import TokenDetail from './TokenDetail';
 import { useWalletStore } from '../store/walletStore';
 
 const tabMeta = {
@@ -27,6 +28,7 @@ export default function Coins() {
   const [searchQuery, setSearchQuery] = useState('');
   const [apiKey] = useState<string | null>(null);
   const [watchlist, setWatchlist] = useState<string[]>([]);
+  const [selectedToken, setSelectedToken] = useState<string | null>(null);
   const activeWallet = useWalletStore(state => state.activeWallet);
 
   useEffect(() => {
@@ -50,10 +52,19 @@ export default function Coins() {
   };
 
   const handleNavigateToDetails = (address: string) => {
-    console.log('Navigate to details:', address);
+    setSelectedToken(address);
+  };
+
+  const handleBackToList = () => {
+    setSelectedToken(null);
   };
 
   const watchlistSet = useMemo(() => new Set(watchlist), [watchlist]);
+
+  // If a token is selected, show the detail view
+  if (selectedToken) {
+    return <TokenDetail tokenAddress={selectedToken} onBack={handleBackToList} />;
+  }
 
   return (
     <div className="space-y-6">

@@ -2,9 +2,11 @@ mod trending_coins;
 pub use trending_coins::*;
 pub mod new_coins_scanner;
 pub mod top_coins;
+pub mod holders;
 
 pub use new_coins_scanner::*;
 pub use top_coins::*;
+pub use holders::*;
 
 use serde::{Deserialize, Serialize};
 use reqwest;
