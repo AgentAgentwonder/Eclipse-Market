@@ -1,9 +1,10 @@
-use super::types::*;
+use super::{AlertManager, SmartMoneyDetector, types::*};
 use crate::core::WebSocketManager;
 use crate::websocket::types::{StreamEvent, TransactionUpdate};
 use chrono::Utc;
+use serde_json::json;
 use sqlx::SqlitePool;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tauri::{AppHandle, Manager};
@@ -16,6 +17,8 @@ pub struct WalletMonitor {
     db: Arc<RwLock<WalletMonitorDatabase>>,
     app_handle: AppHandle,
     ws_manager: WebSocketManager,
+    smart_money_detector: Arc<SmartMoneyDetector>,
+    alert_manager: Arc<AlertManager>,
     monitored_wallets: Arc<RwLock<HashSet<String>>>,
     processed_transactions: Arc<RwLock<HashSet<String>>>,
     event_handler: Arc<tokio::sync::Mutex<Option<tauri::EventHandler>>>,
@@ -27,11 +30,15 @@ impl WalletMonitor {
         db: Arc<RwLock<WalletMonitorDatabase>>,
         app_handle: AppHandle,
         ws_manager: WebSocketManager,
+        smart_money_detector: Arc<SmartMoneyDetector>,
+        alert_manager: Arc<AlertManager>,
     ) -> Self {
         Self {
             db,
             app_handle,
             ws_manager,
+            smart_money_detector,
+            alert_manager,
             monitored_wallets: Arc::new(RwLock::new(HashSet::new())),
             processed_transactions: Arc::new(RwLock::new(HashSet::new())),
             event_handler: Arc::new(tokio::sync::Mutex::new(None)),
@@ -348,7 +355,16 @@ impl WalletMonitor {
 
             let wallets = self.list_wallets().await?;
             let wallet_info = wallets.iter().find(|w| w.wallet_address == wallet_address);
-            
+
+            let whale_threshold = 50_000.0;
+            let is_whale_flag = wallet_info
+                .map(|w| w.is_whale)
+                .unwrap_or(false)
+                || activity
+                    .amount_usd
+                    .unwrap_or(0.0)
+                    .ge(&whale_threshold);
+
             let wallet_activity = WalletActivity {
                 id: activity.id.clone(),
                 wallet_address: wallet_address.clone(),
@@ -362,11 +378,61 @@ impl WalletMonitor {
                 amount: activity.amount,
                 amount_usd: activity.amount_usd,
                 price: activity.price,
-                is_whale: wallet_info.map(|w| w.is_whale).unwrap_or(false),
+                is_whale: is_whale_flag,
                 timestamp: activity.timestamp,
             };
 
             let _ = self.app_handle.emit_all("wallet_activity", &wallet_activity);
+
+            if let Err(err) = self
+                .alert_manager
+                .process_whale_transaction(&wallet_activity)
+                .await
+            {
+                eprintln!("Failed to process whale alert: {err}");
+            }
+
+            match self
+                .smart_money_detector
+                .classify_wallet(&wallet_address)
+                .await
+            {
+                Ok(classification) => {
+                    if let Err(err) = self
+                        .smart_money_detector
+                        .update_smart_money_wallet(
+                            &classification,
+                            wallet_activity.wallet_label.as_deref(),
+                        )
+                        .await
+                    {
+                        eprintln!(
+                            "Failed to update smart money wallet {}: {}",
+                            wallet_address, err
+                        );
+                    }
+
+                    let _ = self
+                        .app_handle
+                        .emit_all("smart_money_classification", &classification);
+
+                    if classification.is_smart_money {
+                        if let Err(err) = self
+                            .alert_manager
+                            .process_smart_money_activity(&wallet_activity, true)
+                            .await
+                        {
+                            eprintln!(
+                                "Failed to dispatch smart money alert for {}: {}",
+                                wallet_address, err
+                            );
+                        }
+                    }
+                }
+                Err(err) => {
+                    eprintln!("Failed to classify smart money wallet {}: {}", wallet_address, err);
+                }
+            }
 
             if let Some(amount_usd) = wallet_activity.amount_usd {
                 if let Some(info) = wallet_info {
@@ -398,6 +464,8 @@ impl WalletMonitor {
 pub struct WalletMonitorState {
     pub db: Arc<RwLock<WalletMonitorDatabase>>,
     pub monitor: Arc<WalletMonitor>,
+    pub smart_money_detector: Arc<SmartMoneyDetector>,
+    pub alert_manager: Arc<AlertManager>,
 }
 
 static WALLET_MONITOR_STATE: OnceCell<WalletMonitorState> = OnceCell::const_new();
@@ -422,7 +490,7 @@ pub async fn init_wallet_monitor(app_handle: &AppHandle) -> Result<(), String> {
         .await
         .map_err(|e| format!("Failed to connect to database: {e}"))?;
 
-    let db = WalletMonitorDatabase::new(pool)
+    let db = WalletMonitorDatabase::new(pool.clone())
         .await
         .map_err(|e| format!("Failed to initialize wallet monitor database: {e}"))?;
 
@@ -433,10 +501,17 @@ pub async fn init_wallet_monitor(app_handle: &AppHandle) -> Result<(), String> {
         .inner()
         .clone();
 
+    let pool_for_detector = pool.clone();
+    let smart_money_detector = Arc::new(SmartMoneyDetector::new(pool_for_detector));
+
+    let alert_manager = Arc::new(AlertManager::new(pool.clone(), app_handle.clone()));
+
     let monitor = Arc::new(WalletMonitor::new(
         shared_db.clone(),
         app_handle.clone(),
         ws_manager,
+        smart_money_detector.clone(),
+        alert_manager.clone(),
     ));
 
     monitor.initialize().await?;
@@ -455,13 +530,15 @@ pub async fn init_wallet_monitor(app_handle: &AppHandle) -> Result<(), String> {
         .set(WalletMonitorState {
             db: shared_db,
             monitor: monitor.clone(),
+            smart_money_detector: smart_money_detector.clone(),
+            alert_manager: alert_manager.clone(),
         })
         .map_err(|_| "Wallet monitor state already initialized".to_string())?;
 
     Ok(())
 }
 
-fn require_state<'a>() -> Result<&'a WalletMonitorState, String> {
+pub(crate) fn require_state<'a>() -> Result<&'a WalletMonitorState, String> {
     WALLET_MONITOR_STATE
         .get()
         .ok_or_else(|| "Wallet monitor not initialized".to_string())

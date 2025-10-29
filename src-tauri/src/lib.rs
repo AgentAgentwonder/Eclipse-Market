@@ -46,6 +46,7 @@ pub use wallet::phantom::*;
 pub use webhooks::*;
 
 pub use wallet::multisig::*;
+pub use wallet::performance::*;
 
 use alerts::{AlertManager, SharedAlertManager};
 use api::{ApiHealthMonitor, SharedApiHealthMonitor};
@@ -57,6 +58,7 @@ use wallet::ledger::LedgerState;
 use wallet::phantom::{hydrate_wallet_state, WalletState};
 use wallet::multi_wallet::MultiWalletManager;
 use wallet::multisig::{MultisigDatabase, SharedMultisigDatabase};
+use wallet::performance::{PerformanceDatabase, SharedPerformanceDatabase};
 use security::keystore::Keystore;
 use security::activity_log::ActivityLogger;
 use data::event_store::{EventStore, SharedEventStore};
@@ -72,6 +74,7 @@ use wallet::hardware_wallet::HardwareWalletState;
 use wallet::multi_wallet::MultiWalletManager;
 use wallet::phantom::{hydrate_wallet_state, WalletState};
 use core::cache_manager::{CacheType, SharedCacheManager};
+use market::{HolderAnalyzer, SharedHolderAnalyzer};
 
 async fn warm_cache_on_startup(
     _app_handle: tauri::AppHandle,
@@ -237,6 +240,26 @@ pub fn run() {
             let multisig_state: SharedMultisigDatabase = Arc::new(RwLock::new(multisig_db));
             app.manage(multisig_state.clone());
 
+            // Initialize performance database
+            let mut performance_db_path = app
+                .path_resolver()
+                .app_data_dir()
+                .ok_or_else(|| "Unable to resolve app data directory".to_string())?;
+
+            std::fs::create_dir_all(&performance_db_path)
+                .map_err(|e| format!("Failed to create app data directory: {e}"))?;
+
+            performance_db_path.push("performance.db");
+
+            let performance_db = tauri::async_runtime::block_on(PerformanceDatabase::new(performance_db_path))
+                .map_err(|e| {
+                    eprintln!("Failed to initialize performance database: {e}");
+                    Box::new(e) as Box<dyn Error>
+                })?;
+
+            let performance_state: SharedPerformanceDatabase = Arc::new(RwLock::new(performance_db));
+            app.manage(performance_state.clone());
+
              let automation_handle = app.handle();
              tauri::async_runtime::spawn(async move {
                  if let Err(err) = bots::init_dca(&automation_handle).await {
@@ -381,6 +404,17 @@ pub fn run() {
              let shared_compression_manager: SharedCompressionManager = Arc::new(RwLock::new(compression_manager));
              app.manage(shared_compression_manager.clone());
 
+             // Initialize holder analyzer
+             let holder_analyzer = tauri::async_runtime::block_on(async {
+                 HolderAnalyzer::new(&app.handle()).await
+             }).map_err(|e| {
+                 eprintln!("Failed to initialize holder analyzer: {e}");
+                 Box::new(e) as Box<dyn Error>
+             })?;
+
+             let shared_holder_analyzer: SharedHolderAnalyzer = Arc::new(RwLock::new(holder_analyzer));
+             app.manage(shared_holder_analyzer.clone());
+
              // Start background compression job (runs daily at 3 AM)
              let compression_job = shared_compression_manager.clone();
              tauri::async_runtime::spawn(async move {
@@ -462,6 +496,17 @@ pub fn run() {
             multi_wallet_delete_group,
             multi_wallet_list_groups,
             multi_wallet_get_aggregated,
+            
+            // Wallet Performance
+            record_trade,
+            calculate_wallet_performance,
+            get_wallet_performance_data,
+            get_performance_score_history,
+            get_token_performance_breakdown,
+            get_timing_analysis_data,
+            get_best_worst_trades_data,
+            get_benchmark_comparison_data,
+            get_performance_alerts,
             
             // Multisig
             create_multisig_wallet,
@@ -666,6 +711,16 @@ pub fn run() {
             wallet_monitor_get_activities,
             wallet_monitor_get_statistics,
             
+            // Smart Money & Whale Alerts
+            classify_smart_money_wallet,
+            get_smart_money_wallets,
+            get_smart_money_consensus,
+            get_sentiment_comparison,
+            get_alert_configs,
+            update_alert_config,
+            get_recent_whale_alerts,
+            scan_wallets_for_smart_money,
+            
             // Activity Logging
             security::activity_log::get_activity_logs,
             security::activity_log::export_activity_logs,
@@ -736,6 +791,14 @@ pub fn run() {
             token_flow::commands::list_cluster_subscriptions,
             token_flow::commands::upsert_cluster_subscription,
             token_flow::commands::remove_cluster_subscription,
+            // Holder Analysis & Metadata
+            market::holders::get_holder_distribution,
+            market::holders::get_holder_trends,
+            market::holders::get_large_transfers,
+            market::holders::get_token_metadata,
+            market::holders::get_verification_status,
+            market::holders::export_holder_data,
+            market::holders::export_metadata_snapshot,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
