@@ -17,10 +17,7 @@ interface TradeReportingState {
   deleteSchedule: (id: string) => void;
   toggleSchedule: (id: string) => void;
   getSchedule: (id: string) => ExportSchedule | undefined;
-  createDefaultExportConfig: (
-    preset: ExportPreset,
-    format: ExportFormat
-  ) => ExportConfig;
+  createDefaultExportConfig: (preset: ExportPreset, format: ExportFormat) => ExportConfig;
   recordScheduleRun: (id: string, runDate: Date, nextRun?: Date | null) => void;
 }
 
@@ -29,7 +26,7 @@ export const useTradeReportingStore = create<TradeReportingState>()(
     (set, get) => ({
       schedules: [],
 
-      addSchedule: (scheduleData) => {
+      addSchedule: scheduleData => {
         const generateId = () =>
           `${Math.random().toString(36).slice(2, 10)}-${Date.now().toString(36)}`;
 
@@ -41,37 +38,35 @@ export const useTradeReportingStore = create<TradeReportingState>()(
 
         newSchedule = initializeSchedule(newSchedule);
 
-        set((state) => ({
+        set(state => ({
           schedules: [...state.schedules, newSchedule],
         }));
       },
 
       updateSchedule: (id, updates) => {
-        set((state) => ({
-          schedules: state.schedules.map((schedule) =>
+        set(state => ({
+          schedules: state.schedules.map(schedule =>
             schedule.id === id ? { ...schedule, ...updates } : schedule
           ),
         }));
       },
 
-      deleteSchedule: (id) => {
-        set((state) => ({
-          schedules: state.schedules.filter((schedule) => schedule.id !== id),
+      deleteSchedule: id => {
+        set(state => ({
+          schedules: state.schedules.filter(schedule => schedule.id !== id),
         }));
       },
 
-      toggleSchedule: (id) => {
-        set((state) => ({
-          schedules: state.schedules.map((schedule) =>
-            schedule.id === id
-              ? { ...schedule, enabled: !schedule.enabled }
-              : schedule
+      toggleSchedule: id => {
+        set(state => ({
+          schedules: state.schedules.map(schedule =>
+            schedule.id === id ? { ...schedule, enabled: !schedule.enabled } : schedule
           ),
         }));
       },
 
-      getSchedule: (id) => {
-        return get().schedules.find((schedule) => schedule.id === id);
+      getSchedule: id => {
+        return get().schedules.find(schedule => schedule.id === id);
       },
 
       createDefaultExportConfig: (preset, format) => {
@@ -85,8 +80,8 @@ export const useTradeReportingStore = create<TradeReportingState>()(
       },
 
       recordScheduleRun: (id, runDate, nextRun) => {
-        set((state) => ({
-          schedules: state.schedules.map((schedule) =>
+        set(state => ({
+          schedules: state.schedules.map(schedule =>
             schedule.id === id
               ? {
                   ...schedule,

@@ -12,7 +12,7 @@ import {
 import { calculateExecutionQuality } from './tradeFilters';
 
 export function getColumnsForPreset(preset: string): ExportColumn[] {
-  const cloneColumns = (columns: ExportColumn[]) => columns.map((col) => ({ ...col }));
+  const cloneColumns = (columns: ExportColumn[]) => columns.map(col => ({ ...col }));
 
   switch (preset) {
     case 'tax_report':
@@ -57,11 +57,7 @@ export function formatTradeValue(
     return formatter.format(date);
   }
 
-  if (
-    key === 'slippage' ||
-    key === 'priceImpact' ||
-    key === 'pnlPercent'
-  ) {
+  if (key === 'slippage' || key === 'priceImpact' || key === 'pnlPercent') {
     return typeof value === 'number' ? value.toFixed(2) : value;
   }
 
@@ -82,24 +78,21 @@ export function formatTradeValue(
   return value;
 }
 
-export function exportToCSV(
-  trades: EnhancedTradeMetrics[],
-  config: ExportConfig
-): string {
-  const enabledColumns = config.columns.filter((col) => col.enabled);
+export function exportToCSV(trades: EnhancedTradeMetrics[], config: ExportConfig): string {
+  const enabledColumns = config.columns.filter(col => col.enabled);
 
   let csv = '';
 
   if (config.includeHeaders) {
-    csv += enabledColumns.map((col) => col.label).join(',') + '\n';
+    csv += enabledColumns.map(col => col.label).join(',') + '\n';
   }
 
-  trades.forEach((trade) => {
+  trades.forEach(trade => {
     const row = enabledColumns
-      .map((col) => {
+      .map(col => {
         const value = formatTradeValue(trade, col.key, config.timezone);
         const stringValue = String(value);
-        
+
         if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
           return `"${stringValue.replace(/"/g, '""')}"`;
         }
@@ -112,28 +105,23 @@ export function exportToCSV(
   return csv;
 }
 
-export function exportToXLSX(
-  trades: EnhancedTradeMetrics[],
-  config: ExportConfig
-): ArrayBuffer {
-  const enabledColumns = config.columns.filter((col) => col.enabled);
+export function exportToXLSX(trades: EnhancedTradeMetrics[], config: ExportConfig): ArrayBuffer {
+  const enabledColumns = config.columns.filter(col => col.enabled);
 
   const data: any[] = [];
 
   if (config.includeHeaders) {
-    data.push(enabledColumns.map((col) => col.label));
+    data.push(enabledColumns.map(col => col.label));
   }
 
-  trades.forEach((trade) => {
-    const row = enabledColumns.map((col) =>
-      formatTradeValue(trade, col.key, config.timezone)
-    );
+  trades.forEach(trade => {
+    const row = enabledColumns.map(col => formatTradeValue(trade, col.key, config.timezone));
     data.push(row);
   });
 
   const worksheet = XLSX.utils.aoa_to_sheet(data);
 
-  const columnWidths = enabledColumns.map((col) => ({
+  const columnWidths = enabledColumns.map(col => ({
     wch: Math.max(col.label.length, 20),
   }));
   worksheet['!cols'] = columnWidths;
@@ -144,11 +132,7 @@ export function exportToXLSX(
   return XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
 }
 
-export function downloadFile(
-  content: string | ArrayBuffer,
-  filename: string,
-  mimeType: string
-) {
+export function downloadFile(content: string | ArrayBuffer, filename: string, mimeType: string) {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -167,10 +151,7 @@ export function generateExportFilename(config: ExportConfig): string {
   return `${preset}_${timestamp}.${extension}`;
 }
 
-export function exportTrades(
-  trades: EnhancedTradeMetrics[],
-  config: ExportConfig
-): void {
+export function exportTrades(trades: EnhancedTradeMetrics[], config: ExportConfig): void {
   const filename = generateExportFilename(config);
 
   if (config.format === 'csv') {

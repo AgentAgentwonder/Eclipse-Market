@@ -27,12 +27,8 @@ describe('Ledger Integration', () => {
     });
 
     it('should handle multiple account paths', () => {
-      const paths = [
-        "m/44'/501'/0'/0'",
-        "m/44'/501'/1'/0'",
-        "m/44'/501'/2'/0'",
-      ];
-      
+      const paths = ["m/44'/501'/0'/0'", "m/44'/501'/1'/0'", "m/44'/501'/2'/0'"];
+
       paths.forEach(path => {
         expect(path.startsWith("m/44'/501'/")).toBe(true);
       });

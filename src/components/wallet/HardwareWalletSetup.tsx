@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Usb, ChevronRight, ChevronLeft, CheckCircle, AlertCircle, Loader2, Fingerprint } from 'lucide-react';
+import {
+  Usb,
+  ChevronRight,
+  ChevronLeft,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
+  Fingerprint,
+} from 'lucide-react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { useWalletStore, HardwareWalletDevice, DeviceType } from '../../store/walletStore';
 
@@ -27,7 +35,8 @@ function HardwareWalletSetup({ onClose, onComplete }: HardwareWalletSetupProps) 
   const [error, setError] = useState<string | null>(null);
   const [testAddress, setTestAddress] = useState<string | null>(null);
 
-  const { setActiveHardwareDevice, setHardwareDevices, setSigningMethod, defaultDerivationPath } = useWalletStore();
+  const { setActiveHardwareDevice, setHardwareDevices, setSigningMethod, defaultDerivationPath } =
+    useWalletStore();
 
   const steps: Array<{ id: SetupStep; title: string; description: string }> = [
     { id: 'select', title: 'Select Device', description: 'Choose your hardware wallet type' },
@@ -38,7 +47,7 @@ function HardwareWalletSetup({ onClose, onComplete }: HardwareWalletSetupProps) 
     { id: 'complete', title: 'Complete', description: 'Setup successful!' },
   ];
 
-  const getCurrentStepIndex = () => steps.findIndex((s) => s.id === currentStep);
+  const getCurrentStepIndex = () => steps.findIndex(s => s.id === currentStep);
 
   const handleSelectType = (type: DeviceType) => {
     setSelectedType(type);
@@ -81,7 +90,7 @@ function HardwareWalletSetup({ onClose, onComplete }: HardwareWalletSetupProps) 
     setError(null);
     try {
       const devices = await invoke<HardwareWalletDevice[]>('list_hardware_wallets');
-      const filtered = devices.filter((d) => d.deviceType === selectedType);
+      const filtered = devices.filter(d => d.deviceType === selectedType);
       setDetectedDevices(filtered);
       setHardwareDevices(devices);
 
@@ -250,7 +259,7 @@ function HardwareWalletSetup({ onClose, onComplete }: HardwareWalletSetupProps) 
             ) : detectedDevices.length > 0 ? (
               <div className="space-y-3">
                 <p className="text-white/60 text-sm">Found {detectedDevices.length} device(s):</p>
-                {detectedDevices.map((device) => (
+                {detectedDevices.map(device => (
                   <div
                     key={device.deviceId}
                     className={`p-4 rounded-xl border-2 transition-all ${

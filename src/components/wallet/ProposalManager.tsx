@@ -1,90 +1,100 @@
-import React, { useEffect, useState } from 'react'
-import { invoke } from '@tauri-apps/api/tauri'
-import { FileText, Plus, Check, X, Clock, PlayCircle, XCircle, Filter, RefreshCw } from 'lucide-react'
-import { motion } from 'framer-motion'
+import React, { useEffect, useState } from 'react';
+import { invoke } from '@tauri-apps/api/tauri';
+import {
+  FileText,
+  Plus,
+  Check,
+  X,
+  Clock,
+  PlayCircle,
+  XCircle,
+  Filter,
+  RefreshCw,
+} from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface MultisigWallet {
-  id: string
-  name: string
-  address: string
-  threshold: number
-  members: string[]
-  createdAt: string
-  balance: number
+  id: string;
+  name: string;
+  address: string;
+  threshold: number;
+  members: string[];
+  createdAt: string;
+  balance: number;
 }
 
 interface MultisigProposal {
-  id: string
-  walletId: string
-  transactionData: string
-  status: 'pending' | 'approved' | 'executed' | 'rejected' | 'cancelled'
-  createdBy: string
-  createdAt: string
-  description?: string
-  signatures: ProposalSignature[]
-  executedAt?: string
-  txSignature?: string
+  id: string;
+  walletId: string;
+  transactionData: string;
+  status: 'pending' | 'approved' | 'executed' | 'rejected' | 'cancelled';
+  createdBy: string;
+  createdAt: string;
+  description?: string;
+  signatures: ProposalSignature[];
+  executedAt?: string;
+  txSignature?: string;
 }
 
 interface ProposalSignature {
-  id: string
-  proposalId: string
-  signer: string
-  signature: string
-  signedAt: string
+  id: string;
+  proposalId: string;
+  signer: string;
+  signature: string;
+  signedAt: string;
 }
 
 interface ProposalManagerProps {
-  wallet: MultisigWallet
-  currentUserAddress?: string
+  wallet: MultisigWallet;
+  currentUserAddress?: string;
 }
 
-type StatusFilter = 'all' | 'pending' | 'approved' | 'executed' | 'rejected' | 'cancelled'
+type StatusFilter = 'all' | 'pending' | 'approved' | 'executed' | 'rejected' | 'cancelled';
 
 const ProposalManager: React.FC<ProposalManagerProps> = ({ wallet, currentUserAddress }) => {
-  const [proposals, setProposals] = useState<MultisigProposal[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
-  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [proposals, setProposals] = useState<MultisigProposal[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [newProposal, setNewProposal] = useState({
     description: '',
     transactionData: '',
-  })
+  });
 
   useEffect(() => {
-    loadProposals()
-  }, [wallet.id, statusFilter])
+    loadProposals();
+  }, [wallet.id, statusFilter]);
 
   const loadProposals = async () => {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     try {
       const result = await invoke<MultisigProposal[]>('list_proposals', {
         walletId: wallet.id,
         statusFilter: statusFilter === 'all' ? null : statusFilter,
-      })
-      setProposals(result)
+      });
+      setProposals(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleCreateProposal = async () => {
     if (!currentUserAddress) {
-      setError('User address not available')
-      return
+      setError('User address not available');
+      return;
     }
 
     if (!newProposal.transactionData.trim()) {
-      setError('Transaction data is required')
-      return
+      setError('Transaction data is required');
+      return;
     }
 
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     try {
       await invoke('create_proposal', {
         request: {
@@ -93,30 +103,30 @@ const ProposalManager: React.FC<ProposalManagerProps> = ({ wallet, currentUserAd
           description: newProposal.description || null,
           createdBy: currentUserAddress,
         },
-      })
+      });
 
-      setNewProposal({ description: '', transactionData: '' })
-      setShowCreateForm(false)
-      await loadProposals()
+      setNewProposal({ description: '', transactionData: '' });
+      setShowCreateForm(false);
+      await loadProposals();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleSignProposal = async (proposalId: string) => {
     if (!currentUserAddress) {
-      setError('User address not available')
-      return
+      setError('User address not available');
+      return;
     }
 
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     try {
       // Generate a mock signature for demo purposes
       // In production, this would sign the transaction with the user's wallet
-      const signature = `sig_${Math.random().toString(36).substring(7)}`
+      const signature = `sig_${Math.random().toString(36).substring(7)}`;
 
       await invoke('sign_proposal', {
         request: {
@@ -124,111 +134,111 @@ const ProposalManager: React.FC<ProposalManagerProps> = ({ wallet, currentUserAd
           signer: currentUserAddress,
           signature,
         },
-      })
+      });
 
-      await loadProposals()
+      await loadProposals();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleExecuteProposal = async (proposalId: string) => {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     try {
       await invoke('execute_proposal', {
         proposalId,
-      })
+      });
 
-      await loadProposals()
+      await loadProposals();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleCancelProposal = async (proposalId: string) => {
     if (!currentUserAddress) {
-      setError('User address not available')
-      return
+      setError('User address not available');
+      return;
     }
 
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     try {
       await invoke('cancel_proposal', {
         proposalId,
         userAddress: currentUserAddress,
-      })
+      });
 
-      await loadProposals()
+      await loadProposals();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const canSign = (proposal: MultisigProposal): boolean => {
-    if (!currentUserAddress) return false
-    if (proposal.status !== 'pending' && proposal.status !== 'approved') return false
-    if (!wallet.members.includes(currentUserAddress)) return false
-    return !proposal.signatures.some(sig => sig.signer === currentUserAddress)
-  }
+    if (!currentUserAddress) return false;
+    if (proposal.status !== 'pending' && proposal.status !== 'approved') return false;
+    if (!wallet.members.includes(currentUserAddress)) return false;
+    return !proposal.signatures.some(sig => sig.signer === currentUserAddress);
+  };
 
   const canExecute = (proposal: MultisigProposal): boolean => {
-    return proposal.status === 'approved' && proposal.signatures.length >= wallet.threshold
-  }
+    return proposal.status === 'approved' && proposal.signatures.length >= wallet.threshold;
+  };
 
   const canCancel = (proposal: MultisigProposal): boolean => {
-    if (!currentUserAddress) return false
-    return proposal.status === 'pending' && proposal.createdBy === currentUserAddress
-  }
+    if (!currentUserAddress) return false;
+    return proposal.status === 'pending' && proposal.createdBy === currentUserAddress;
+  };
 
   const formatAddress = (address: string) => {
-    if (address.length < 12) return address
-    return `${address.slice(0, 6)}...${address.slice(-4)}`
-  }
+    if (address.length < 12) return address;
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
-    const diffHours = Math.floor(diffMs / 3600000)
-    const diffDays = Math.floor(diffMs / 86400000)
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 60) return `${diffMins}m ago`
-    if (diffHours < 24) return `${diffHours}h ago`
-    if (diffDays < 7) return `${diffDays}d ago`
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  }
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Clock size={16} className="text-yellow-400" />
+        return <Clock size={16} className="text-yellow-400" />;
       case 'approved':
-        return <Check size={16} className="text-green-400" />
+        return <Check size={16} className="text-green-400" />;
       case 'executed':
-        return <PlayCircle size={16} className="text-blue-400" />
+        return <PlayCircle size={16} className="text-blue-400" />;
       case 'cancelled':
       case 'rejected':
-        return <XCircle size={16} className="text-red-400" />
+        return <XCircle size={16} className="text-red-400" />;
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   const filterButtons: { value: StatusFilter; label: string; color: string }[] = [
     { value: 'all', label: 'All', color: 'bg-gray-700' },
     { value: 'pending', label: 'Pending', color: 'bg-yellow-900/30 text-yellow-400' },
     { value: 'approved', label: 'Approved', color: 'bg-green-900/30 text-green-400' },
     { value: 'executed', label: 'Executed', color: 'bg-blue-900/30 text-blue-400' },
-  ]
+  ];
 
   return (
     <div className="space-y-6">
@@ -271,7 +281,7 @@ const ProposalManager: React.FC<ProposalManagerProps> = ({ wallet, currentUserAd
               <input
                 type="text"
                 value={newProposal.description}
-                onChange={(e) => setNewProposal({ ...newProposal, description: e.target.value })}
+                onChange={e => setNewProposal({ ...newProposal, description: e.target.value })}
                 placeholder="e.g., Transfer 100 SOL to treasury"
                 className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
               />
@@ -280,7 +290,7 @@ const ProposalManager: React.FC<ProposalManagerProps> = ({ wallet, currentUserAd
               <label className="text-gray-400 text-sm mb-2 block">Transaction Data</label>
               <textarea
                 value={newProposal.transactionData}
-                onChange={(e) => setNewProposal({ ...newProposal, transactionData: e.target.value })}
+                onChange={e => setNewProposal({ ...newProposal, transactionData: e.target.value })}
                 placeholder="Enter base64 encoded transaction data"
                 rows={4}
                 className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white font-mono text-sm focus:outline-none focus:border-blue-500"
@@ -289,8 +299,8 @@ const ProposalManager: React.FC<ProposalManagerProps> = ({ wallet, currentUserAd
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => {
-                  setShowCreateForm(false)
-                  setNewProposal({ description: '', transactionData: '' })
+                  setShowCreateForm(false);
+                  setNewProposal({ description: '', transactionData: '' });
                 }}
                 className="px-4 py-2 text-gray-400 hover:text-white"
               >
@@ -310,7 +320,7 @@ const ProposalManager: React.FC<ProposalManagerProps> = ({ wallet, currentUserAd
 
       <div className="flex items-center gap-2 flex-wrap">
         <Filter size={20} className="text-gray-400" />
-        {filterButtons.map((filter) => (
+        {filterButtons.map(filter => (
           <button
             key={filter.value}
             onClick={() => setStatusFilter(filter.value)}
@@ -337,7 +347,7 @@ const ProposalManager: React.FC<ProposalManagerProps> = ({ wallet, currentUserAd
         </div>
       ) : (
         <div className="space-y-4">
-          {proposals.map((proposal) => (
+          {proposals.map(proposal => (
             <motion.div
               key={proposal.id}
               initial={{ opacity: 0, y: 20 }}
@@ -353,7 +363,8 @@ const ProposalManager: React.FC<ProposalManagerProps> = ({ wallet, currentUserAd
                     </h4>
                   </div>
                   <p className="text-gray-400 text-sm">
-                    Created by {formatAddress(proposal.createdBy)} • {formatDate(proposal.createdAt)}
+                    Created by {formatAddress(proposal.createdBy)} •{' '}
+                    {formatDate(proposal.createdAt)}
                   </p>
                 </div>
                 <span
@@ -361,10 +372,10 @@ const ProposalManager: React.FC<ProposalManagerProps> = ({ wallet, currentUserAd
                     proposal.status === 'pending'
                       ? 'bg-yellow-900/30 text-yellow-400'
                       : proposal.status === 'approved'
-                      ? 'bg-green-900/30 text-green-400'
-                      : proposal.status === 'executed'
-                      ? 'bg-blue-900/30 text-blue-400'
-                      : 'bg-gray-900/30 text-gray-400'
+                        ? 'bg-green-900/30 text-green-400'
+                        : proposal.status === 'executed'
+                          ? 'bg-blue-900/30 text-blue-400'
+                          : 'bg-gray-900/30 text-gray-400'
                   }`}
                 >
                   {proposal.status}
@@ -397,7 +408,7 @@ const ProposalManager: React.FC<ProposalManagerProps> = ({ wallet, currentUserAd
                 <div className="mb-4">
                   <p className="text-gray-400 text-sm mb-2">Signed by:</p>
                   <div className="flex flex-wrap gap-2">
-                    {proposal.signatures.map((sig) => (
+                    {proposal.signatures.map(sig => (
                       <div
                         key={sig.id}
                         className="flex items-center gap-2 px-3 py-1 bg-gray-900 rounded-full"
@@ -460,7 +471,7 @@ const ProposalManager: React.FC<ProposalManagerProps> = ({ wallet, currentUserAd
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default ProposalManager
+export default ProposalManager;

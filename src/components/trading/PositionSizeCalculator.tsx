@@ -9,26 +9,26 @@ const RISK_PROFILES: Record<RiskProfile, RiskProfilePreset> = {
     name: 'Conservative',
     riskPercent: 1,
     maxPositionSize: 10,
-    minRiskRewardRatio: 3
+    minRiskRewardRatio: 3,
   },
   moderate: {
     name: 'Moderate',
     riskPercent: 2,
     maxPositionSize: 20,
-    minRiskRewardRatio: 2
+    minRiskRewardRatio: 2,
   },
   aggressive: {
     name: 'Aggressive',
     riskPercent: 5,
     maxPositionSize: 30,
-    minRiskRewardRatio: 1.5
+    minRiskRewardRatio: 1.5,
   },
   custom: {
     name: 'Custom',
     riskPercent: 2,
     maxPositionSize: 20,
-    minRiskRewardRatio: 2
-  }
+    minRiskRewardRatio: 2,
+  },
 };
 
 export function PositionSizeCalculator() {
@@ -85,7 +85,7 @@ export function PositionSizeCalculator() {
       positionValue,
       riskAmount,
       units: positionSize,
-      kellyFraction: useKelly ? calculateKellyFraction() : undefined
+      kellyFraction: useKelly ? calculateKellyFraction() : undefined,
     };
 
     setResult(calculatedResult);
@@ -105,7 +105,7 @@ export function PositionSizeCalculator() {
       side,
       orderType: 'limit',
       source: 'position_size',
-      note: `Position size: ${result.units.toFixed(4)} units, Risk: ${result.riskAmount.toFixed(2)}`
+      note: `Position size: ${result.units.toFixed(4)} units, Risk: ${result.riskAmount.toFixed(2)}`,
     });
   };
 
@@ -126,9 +126,7 @@ export function PositionSizeCalculator() {
                 type="button"
                 onClick={() => applyProfile(key as RiskProfile)}
                 className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
-                  selectedProfile === key
-                    ? 'bg-purple-600'
-                    : 'bg-gray-700 hover:bg-gray-600'
+                  selectedProfile === key ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'
                 }`}
               >
                 {profile.name}
@@ -139,13 +137,11 @@ export function PositionSizeCalculator() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm text-gray-400 mb-2">
-              Account Size ($)
-            </label>
+            <label className="block text-sm text-gray-400 mb-2">Account Size ($)</label>
             <input
               type="number"
               value={accountSize}
-              onChange={(e) => setAccountSize(e.target.value)}
+              onChange={e => setAccountSize(e.target.value)}
               placeholder="10000"
               step="any"
               className="w-full bg-gray-700 px-3 py-2 rounded outline-none focus:ring-2 focus:ring-purple-500"
@@ -153,13 +149,11 @@ export function PositionSizeCalculator() {
           </div>
 
           <div>
-            <label className="block text-sm text-gray-400 mb-2">
-              Risk Per Trade (%)
-            </label>
+            <label className="block text-sm text-gray-400 mb-2">Risk Per Trade (%)</label>
             <input
               type="number"
               value={riskPercent}
-              onChange={(e) => setRiskPercent(e.target.value)}
+              onChange={e => setRiskPercent(e.target.value)}
               placeholder="2"
               step="0.1"
               disabled={useKelly}
@@ -170,13 +164,11 @@ export function PositionSizeCalculator() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm text-gray-400 mb-2">
-              Entry Price ($)
-            </label>
+            <label className="block text-sm text-gray-400 mb-2">Entry Price ($)</label>
             <input
               type="number"
               value={entryPrice}
-              onChange={(e) => setEntryPrice(e.target.value)}
+              onChange={e => setEntryPrice(e.target.value)}
               placeholder="100"
               step="any"
               className="w-full bg-gray-700 px-3 py-2 rounded outline-none focus:ring-2 focus:ring-purple-500"
@@ -184,13 +176,11 @@ export function PositionSizeCalculator() {
           </div>
 
           <div>
-            <label className="block text-sm text-gray-400 mb-2">
-              Stop Loss Price ($)
-            </label>
+            <label className="block text-sm text-gray-400 mb-2">Stop Loss Price ($)</label>
             <input
               type="number"
               value={stopLossPrice}
-              onChange={(e) => setStopLossPrice(e.target.value)}
+              onChange={e => setStopLossPrice(e.target.value)}
               placeholder="95"
               step="any"
               className="w-full bg-gray-700 px-3 py-2 rounded outline-none focus:ring-2 focus:ring-purple-500"
@@ -199,13 +189,11 @@ export function PositionSizeCalculator() {
         </div>
 
         <div>
-          <label className="block text-sm text-gray-400 mb-2">
-            Leverage (optional)
-          </label>
+          <label className="block text-sm text-gray-400 mb-2">Leverage (optional)</label>
           <input
             type="number"
             value={leverage}
-            onChange={(e) => setLeverage(e.target.value)}
+            onChange={e => setLeverage(e.target.value)}
             placeholder="1"
             step="0.1"
             min="1"
@@ -219,7 +207,7 @@ export function PositionSizeCalculator() {
               <input
                 type="checkbox"
                 checked={useKelly}
-                onChange={(e) => setUseKelly(e.target.checked)}
+                onChange={e => setUseKelly(e.target.checked)}
                 className="rounded bg-gray-600"
               />
               <span>Use Kelly Criterion</span>
@@ -230,13 +218,11 @@ export function PositionSizeCalculator() {
           {useKelly && (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs text-gray-400 mb-1">
-                  Win Rate (%)
-                </label>
+                <label className="block text-xs text-gray-400 mb-1">Win Rate (%)</label>
                 <input
                   type="number"
                   value={winRate}
-                  onChange={(e) => setWinRate(e.target.value)}
+                  onChange={e => setWinRate(e.target.value)}
                   placeholder="60"
                   step="1"
                   min="0"
@@ -245,13 +231,11 @@ export function PositionSizeCalculator() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-400 mb-1">
-                  Avg Win/Loss Ratio
-                </label>
+                <label className="block text-xs text-gray-400 mb-1">Avg Win/Loss Ratio</label>
                 <input
                   type="number"
                   value={avgWinLoss}
-                  onChange={(e) => setAvgWinLoss(e.target.value)}
+                  onChange={e => setAvgWinLoss(e.target.value)}
                   placeholder="2"
                   step="0.1"
                   className="w-full bg-gray-600 px-2 py-1 rounded text-sm outline-none focus:ring-1 focus:ring-purple-500"
@@ -288,7 +272,13 @@ export function PositionSizeCalculator() {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">Position Value:</span>
-                <span className="font-medium">${result.positionValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="font-medium">
+                  $
+                  {result.positionValue.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">Risk Amount:</span>
@@ -313,7 +303,8 @@ export function PositionSizeCalculator() {
         )}
 
         <div className="bg-blue-500/10 border border-blue-500/20 rounded p-3 text-xs text-gray-300">
-          <strong>Formula:</strong> Position Size = (Account Size × Risk %) / (Entry Price - Stop Loss Price)
+          <strong>Formula:</strong> Position Size = (Account Size × Risk %) / (Entry Price - Stop
+          Loss Price)
         </div>
       </div>
     </div>

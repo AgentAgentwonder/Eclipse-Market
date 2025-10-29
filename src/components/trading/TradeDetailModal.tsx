@@ -1,5 +1,15 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ExternalLink, Shield, Zap, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
+import {
+  X,
+  ExternalLink,
+  Shield,
+  Zap,
+  TrendingUp,
+  TrendingDown,
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { EnhancedTradeMetrics } from '../../types/tradeReporting';
 import { calculateExecutionQuality } from '../../utils/tradeFilters';
@@ -75,7 +85,7 @@ export function TradeDetailModal({ trade, isOpen, onClose }: TradeDetailModalPro
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             className="bg-slate-800/95 backdrop-blur-xl rounded-3xl border border-purple-500/20 max-w-3xl w-full max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           >
             <div className="sticky top-0 bg-slate-800/95 backdrop-blur-xl border-b border-purple-500/20 p-6 flex items-center justify-between z-10">
               <div>
@@ -109,7 +119,9 @@ export function TradeDetailModal({ trade, isOpen, onClose }: TradeDetailModalPro
                     {trade.side === 'buy' ? 'Buy' : 'Sell'} • {trade.amount}
                   </div>
                 </div>
-                <div className={`px-4 py-2 rounded-xl border flex items-center gap-2 ${getStatusColor()}`}>
+                <div
+                  className={`px-4 py-2 rounded-xl border flex items-center gap-2 ${getStatusColor()}`}
+                >
                   {getStatusIcon()}
                   <span className="font-semibold capitalize">{trade.status}</span>
                 </div>
@@ -118,7 +130,9 @@ export function TradeDetailModal({ trade, isOpen, onClose }: TradeDetailModalPro
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div className="p-4 bg-slate-900/50 rounded-xl border border-purple-500/10">
                   <div className="text-xs text-white/60 mb-2">Execution Quality</div>
-                  <div className={`text-xl font-bold ${getExecutionQualityColor(executionQuality)}`}>
+                  <div
+                    className={`text-xl font-bold ${getExecutionQualityColor(executionQuality)}`}
+                  >
                     {executionQuality}
                   </div>
                 </div>
@@ -126,12 +140,18 @@ export function TradeDetailModal({ trade, isOpen, onClose }: TradeDetailModalPro
                 {trade.pnl !== undefined && (
                   <div className="p-4 bg-slate-900/50 rounded-xl border border-purple-500/10">
                     <div className="text-xs text-white/60 mb-2">P&L</div>
-                    <div className={`text-xl font-bold ${trade.pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      {trade.pnl >= 0 ? '+' : ''}{trade.pnl.toFixed(6)} SOL
+                    <div
+                      className={`text-xl font-bold ${trade.pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}
+                    >
+                      {trade.pnl >= 0 ? '+' : ''}
+                      {trade.pnl.toFixed(6)} SOL
                     </div>
                     {trade.pnlPercent !== undefined && (
-                      <div className={`text-sm ${trade.pnlPercent >= 0 ? 'text-green-400/80' : 'text-red-400/80'}`}>
-                        {trade.pnlPercent >= 0 ? '+' : ''}{trade.pnlPercent.toFixed(2)}%
+                      <div
+                        className={`text-sm ${trade.pnlPercent >= 0 ? 'text-green-400/80' : 'text-red-400/80'}`}
+                      >
+                        {trade.pnlPercent >= 0 ? '+' : ''}
+                        {trade.pnlPercent.toFixed(2)}%
                       </div>
                     )}
                   </div>
@@ -157,20 +177,30 @@ export function TradeDetailModal({ trade, isOpen, onClose }: TradeDetailModalPro
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-3 bg-slate-900/50 rounded-lg">
                     <div className="text-xs text-white/60 mb-1">Slippage</div>
-                    <div className={`font-semibold ${
-                      trade.slippage < 0.5 ? 'text-green-400' :
-                      trade.slippage < 1 ? 'text-yellow-400' : 'text-red-400'
-                    }`}>
+                    <div
+                      className={`font-semibold ${
+                        trade.slippage < 0.5
+                          ? 'text-green-400'
+                          : trade.slippage < 1
+                            ? 'text-yellow-400'
+                            : 'text-red-400'
+                      }`}
+                    >
                       {trade.slippage.toFixed(2)}%
                     </div>
                   </div>
 
                   <div className="p-3 bg-slate-900/50 rounded-lg">
                     <div className="text-xs text-white/60 mb-1">Price Impact</div>
-                    <div className={`font-semibold ${
-                      trade.priceImpact < 1 ? 'text-green-400' :
-                      trade.priceImpact < 5 ? 'text-yellow-400' : 'text-red-400'
-                    }`}>
+                    <div
+                      className={`font-semibold ${
+                        trade.priceImpact < 1
+                          ? 'text-green-400'
+                          : trade.priceImpact < 5
+                            ? 'text-yellow-400'
+                            : 'text-red-400'
+                      }`}
+                    >
                       {trade.priceImpact.toFixed(2)}%
                     </div>
                   </div>

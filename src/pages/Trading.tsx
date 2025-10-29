@@ -24,7 +24,7 @@ function Trading() {
   const jupiter = useJupiter();
   const wallet = useWallet();
   const { isPaperMode } = usePaperTradingStore();
-  
+
   useOrderNotifications();
 
   useEffect(() => {
@@ -35,7 +35,7 @@ function Trading() {
         console.error('Failed to initialize trading module:', err);
       }
     };
-    
+
     initTrading();
   }, []);
 
@@ -48,7 +48,8 @@ function Trading() {
             <div className="text-sm text-orange-400">
               <p className="font-medium mb-1">Live Trading Disabled in Paper Mode</p>
               <p className="text-orange-400/80">
-                You are currently in paper trading mode. Live trading functions are disabled. Switch to live mode in Settings to execute real trades.
+                You are currently in paper trading mode. Live trading functions are disabled. Switch
+                to live mode in Settings to execute real trades.
               </p>
             </div>
           </div>

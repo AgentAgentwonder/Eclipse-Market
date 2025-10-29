@@ -1,6 +1,17 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Database, Zap, TrendingUp, RefreshCw, Trash2, CheckCircle, AlertCircle, Clock, Gauge, FlaskConical } from 'lucide-react';
+import {
+  Database,
+  Zap,
+  TrendingUp,
+  RefreshCw,
+  Trash2,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  Gauge,
+  FlaskConical,
+} from 'lucide-react';
 import { invoke } from '@tauri-apps/api/tauri';
 
 interface CacheStatistics {
@@ -75,7 +86,7 @@ export function CacheSettings() {
   const [warmProgress, setWarmProgress] = useState<WarmProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  
+
   const [ttlConfig, setTtlConfig] = useState<CacheTtlConfig | null>(null);
   const [pendingTtlConfig, setPendingTtlConfig] = useState<CacheTtlConfig | null>(null);
   const [ttlLoading, setTtlLoading] = useState(false);
@@ -189,8 +200,11 @@ export function CacheSettings() {
   }, [ttlConfig, pendingTtlConfig]);
 
   const updateTtlField = (field: keyof CacheTtlConfig, value: number) => {
-    const clamped = Math.min(Math.max(Number.isNaN(value) ? TTL_MIN_MS : value, TTL_MIN_MS), TTL_MAX_MS);
-    setPendingTtlConfig((prev) => {
+    const clamped = Math.min(
+      Math.max(Number.isNaN(value) ? TTL_MIN_MS : value, TTL_MIN_MS),
+      TTL_MAX_MS
+    );
+    setPendingTtlConfig(prev => {
       if (prev) {
         return { ...prev, [field]: clamped };
       }
@@ -199,11 +213,7 @@ export function CacheSettings() {
     });
   };
 
-  const renderTtlControl = (
-    label: string,
-    field: keyof CacheTtlConfig,
-    description: string,
-  ) => {
+  const renderTtlControl = (label: string, field: keyof CacheTtlConfig, description: string) => {
     if (!pendingTtlConfig) {
       return (
         <div className="p-6 bg-slate-900/40 rounded-xl border border-purple-500/10 flex items-center justify-center">
@@ -216,20 +226,23 @@ export function CacheSettings() {
     const current = ttlConfig?.[field];
     const diff = current !== undefined ? value - current : 0;
     const diffPercent = current && current > 0 ? (diff / current) * 100 : 0;
-    const diffColor = diff === 0 ? 'text-white/60' : diff > 0 ? 'text-emerald-400' : 'text-amber-300';
-    const diffLabel = current === undefined
-      ? 'New configuration'
-      : diff === 0
-        ? 'No change'
-        : diff > 0
-          ? `+${Math.min(diffPercent, 500).toFixed(0)}% retention`
-          : `-${Math.min(Math.abs(diffPercent), 500).toFixed(0)}% retention`;
+    const diffColor =
+      diff === 0 ? 'text-white/60' : diff > 0 ? 'text-emerald-400' : 'text-amber-300';
+    const diffLabel =
+      current === undefined
+        ? 'New configuration'
+        : diff === 0
+          ? 'No change'
+          : diff > 0
+            ? `+${Math.min(diffPercent, 500).toFixed(0)}% retention`
+            : `-${Math.min(Math.abs(diffPercent), 500).toFixed(0)}% retention`;
 
-    const impactLabel = diff === 0
-      ? 'No change expected in hit rate.'
-      : diff > 0
-        ? 'Longer TTL reduces API calls and boosts hit rate.'
-        : 'Shorter TTL refreshes data more often at the cost of extra API calls.';
+    const impactLabel =
+      diff === 0
+        ? 'No change expected in hit rate.'
+        : diff > 0
+          ? 'Longer TTL reduces API calls and boosts hit rate.'
+          : 'Shorter TTL refreshes data more often at the cost of extra API calls.';
 
     return (
       <div className="space-y-4 p-4 bg-slate-900/40 rounded-xl border border-purple-500/10">
@@ -244,8 +257,8 @@ export function CacheSettings() {
                 {diff === 0
                   ? 'Stable'
                   : diff > 0
-                  ? `+${formatTtl(value - current)}`
-                  : `-${formatTtl(current - value)}`}
+                    ? `+${formatTtl(value - current)}`
+                    : `-${formatTtl(current - value)}`}
               </p>
             )}
             <p className="text-xs text-white/40">{diffLabel}</p>
@@ -261,7 +274,7 @@ export function CacheSettings() {
             max={TTL_MAX_MS}
             step={100}
             value={value}
-            onChange={(event) => updateTtlField(field, Number(event.target.value))}
+            onChange={event => updateTtlField(field, Number(event.target.value))}
             className="w-full accent-purple-500"
           />
           <div className="flex justify-between text-xs text-white/30 mt-2">
@@ -271,7 +284,7 @@ export function CacheSettings() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {TTL_PRESETS.map((preset) => (
+          {TTL_PRESETS.map(preset => (
             <button
               key={`${field}-${preset.value}`}
               type="button"
@@ -312,7 +325,7 @@ export function CacheSettings() {
         '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R', // RAY
       ];
 
-      const keys = topTokens.map((addr) => `token_price_${addr}`);
+      const keys = topTokens.map(addr => `token_price_${addr}`);
       const progress = await invoke<WarmProgress>('warm_cache', { keys });
       setWarmProgress(progress);
       setSuccess(`Successfully warmed ${progress.completed} of ${progress.total} cache entries`);
@@ -365,9 +378,7 @@ export function CacheSettings() {
     return 'bg-red-500/20 border-red-500/30';
   };
 
-  const diskHitRate = stats 
-    ? stats.diskHits / Math.max(stats.diskHits + stats.diskMisses, 1) 
-    : 0;
+  const diskHitRate = stats ? stats.diskHits / Math.max(stats.diskHits + stats.diskMisses, 1) : 0;
 
   if (loading) {
     return (
@@ -442,7 +453,8 @@ export function CacheSettings() {
                 {(stats.hitRate * 100).toFixed(1)}%
               </div>
               <div className="text-sm text-white/60">
-                {stats.totalHits.toLocaleString()} hits / {stats.totalMisses.toLocaleString()} misses
+                {stats.totalHits.toLocaleString()} hits / {stats.totalMisses.toLocaleString()}{' '}
+                misses
               </div>
               <div className="mt-4 h-2 bg-slate-900/50 rounded-full overflow-hidden">
                 <div
@@ -450,8 +462,8 @@ export function CacheSettings() {
                     stats.hitRate >= 0.8
                       ? 'bg-green-500'
                       : stats.hitRate >= 0.5
-                      ? 'bg-yellow-500'
-                      : 'bg-red-500'
+                        ? 'bg-yellow-500'
+                        : 'bg-red-500'
                   }`}
                   style={{ width: `${stats.hitRate * 100}%` }}
                 />
@@ -472,7 +484,9 @@ export function CacheSettings() {
               <div className="mt-4 h-2 bg-slate-900/50 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-blue-500"
-                  style={{ width: `${Math.min((stats.totalSizeBytes / (100 * 1024 * 1024)) * 100, 100)}%` }}
+                  style={{
+                    width: `${Math.min((stats.totalSizeBytes / (100 * 1024 * 1024)) * 100, 100)}%`,
+                  }}
                 />
               </div>
               <div className="text-xs text-white/40 mt-1">Max: 100 MB</div>
@@ -513,7 +527,9 @@ export function CacheSettings() {
               <Clock className="w-6 h-6 text-orange-400" />
               <div className="flex-1">
                 <h3 className="text-xl font-semibold">TTL Configuration</h3>
-                <p className="text-sm text-white/60">Configure cache time-to-live for different data types</p>
+                <p className="text-sm text-white/60">
+                  Configure cache time-to-live for different data types
+                </p>
               </div>
             </div>
 
@@ -574,7 +590,9 @@ export function CacheSettings() {
               <FlaskConical className="w-6 h-6 text-cyan-400" />
               <div className="flex-1">
                 <h3 className="text-xl font-semibold">Cache Performance Test</h3>
-                <p className="text-sm text-white/60">Verify cache efficiency and performance improvements</p>
+                <p className="text-sm text-white/60">
+                  Verify cache efficiency and performance improvements
+                </p>
               </div>
             </div>
 
@@ -606,26 +624,36 @@ export function CacheSettings() {
                     <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
                   )}
                   <div className="flex-1">
-                    <p className={`font-semibold ${testResult.passed ? 'text-green-400' : 'text-amber-400'}`}>
+                    <p
+                      className={`font-semibold ${testResult.passed ? 'text-green-400' : 'text-amber-400'}`}
+                    >
                       {testResult.testName}
                     </p>
                     <p className="text-sm mt-1 text-white/80">{testResult.message}</p>
                     <div className="grid grid-cols-2 gap-3 mt-3 text-sm">
                       <div>
                         <p className="text-white/40">Cached Latency</p>
-                        <p className="font-semibold text-emerald-400">{testResult.cachedLatencyMs.toFixed(3)}ms</p>
+                        <p className="font-semibold text-emerald-400">
+                          {testResult.cachedLatencyMs.toFixed(3)}ms
+                        </p>
                       </div>
                       <div>
                         <p className="text-white/40">Uncached Latency</p>
-                        <p className="font-semibold text-red-400">{testResult.uncachedLatencyMs.toFixed(3)}ms</p>
+                        <p className="font-semibold text-red-400">
+                          {testResult.uncachedLatencyMs.toFixed(3)}ms
+                        </p>
                       </div>
                       <div>
                         <p className="text-white/40">Improvement</p>
-                        <p className="font-semibold text-cyan-400">{testResult.latencyImprovementPercent.toFixed(1)}%</p>
+                        <p className="font-semibold text-cyan-400">
+                          {testResult.latencyImprovementPercent.toFixed(1)}%
+                        </p>
                       </div>
                       <div>
                         <p className="text-white/40">Test Hit Rate</p>
-                        <p className="font-semibold text-purple-400">{(testResult.hitRate * 100).toFixed(1)}%</p>
+                        <p className="font-semibold text-purple-400">
+                          {(testResult.hitRate * 100).toFixed(1)}%
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -642,26 +670,43 @@ export function CacheSettings() {
                 <thead>
                   <tr className="border-b border-purple-500/20">
                     <th className="text-left py-3 px-4 text-sm font-medium text-white/60">Type</th>
-                    <th className="text-right py-3 px-4 text-sm font-medium text-white/60">Hit Rate</th>
+                    <th className="text-right py-3 px-4 text-sm font-medium text-white/60">
+                      Hit Rate
+                    </th>
                     <th className="text-right py-3 px-4 text-sm font-medium text-white/60">Hits</th>
-                    <th className="text-right py-3 px-4 text-sm font-medium text-white/60">Misses</th>
-                    <th className="text-right py-3 px-4 text-sm font-medium text-white/60">Entries</th>
+                    <th className="text-right py-3 px-4 text-sm font-medium text-white/60">
+                      Misses
+                    </th>
+                    <th className="text-right py-3 px-4 text-sm font-medium text-white/60">
+                      Entries
+                    </th>
                     <th className="text-right py-3 px-4 text-sm font-medium text-white/60">Size</th>
                   </tr>
                 </thead>
                 <tbody>
                   {Object.entries(stats.perTypeStats).map(([type, typeStats]) => (
-                    <tr key={type} className="border-b border-purple-500/10 hover:bg-slate-700/30 transition-colors">
+                    <tr
+                      key={type}
+                      className="border-b border-purple-500/10 hover:bg-slate-700/30 transition-colors"
+                    >
                       <td className="py-3 px-4 font-medium">{type}</td>
                       <td className="text-right py-3 px-4">
                         <span className={`font-semibold ${getHitRateColor(typeStats.hitRate)}`}>
                           {(typeStats.hitRate * 100).toFixed(1)}%
                         </span>
                       </td>
-                      <td className="text-right py-3 px-4 text-white/60">{typeStats.hits.toLocaleString()}</td>
-                      <td className="text-right py-3 px-4 text-white/60">{typeStats.misses.toLocaleString()}</td>
-                      <td className="text-right py-3 px-4 text-white/60">{typeStats.entries.toLocaleString()}</td>
-                      <td className="text-right py-3 px-4 text-white/60">{formatBytes(typeStats.sizeBytes)}</td>
+                      <td className="text-right py-3 px-4 text-white/60">
+                        {typeStats.hits.toLocaleString()}
+                      </td>
+                      <td className="text-right py-3 px-4 text-white/60">
+                        {typeStats.misses.toLocaleString()}
+                      </td>
+                      <td className="text-right py-3 px-4 text-white/60">
+                        {typeStats.entries.toLocaleString()}
+                      </td>
+                      <td className="text-right py-3 px-4 text-white/60">
+                        {formatBytes(typeStats.sizeBytes)}
+                      </td>
                     </tr>
                   ))}
                   {Object.keys(stats.perTypeStats).length === 0 && (
@@ -709,7 +754,9 @@ export function CacheSettings() {
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium text-blue-400">Cache Warming Progress</span>
-                <span className="text-sm font-bold text-blue-400">{warmProgress.percentage.toFixed(0)}%</span>
+                <span className="text-sm font-bold text-blue-400">
+                  {warmProgress.percentage.toFixed(0)}%
+                </span>
               </div>
               <div className="h-2 bg-slate-900/50 rounded-full overflow-hidden">
                 <div

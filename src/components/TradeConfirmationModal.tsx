@@ -62,7 +62,7 @@ export function TradeConfirmationModal({
           >
             <div
               className="bg-slate-800/95 backdrop-blur-xl rounded-3xl border border-purple-500/20 shadow-2xl max-w-lg w-full pointer-events-auto overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
+              onClick={e => e.stopPropagation()}
             >
               {/* Header */}
               <div className="px-6 py-4 border-b border-purple-500/20 flex items-center justify-between">
@@ -88,8 +88,9 @@ export function TradeConfirmationModal({
                     <div>
                       <p className="text-red-400 font-semibold mb-1">Trade Blocked</p>
                       <p className="text-red-400/80 text-sm">
-                        This trade exceeds your maximum slippage tolerance of {slippage.maxTolerance / 100}%.
-                        Adjust your settings or try a smaller amount.
+                        This trade exceeds your maximum slippage tolerance of{' '}
+                        {slippage.maxTolerance / 100}%. Adjust your settings or try a smaller
+                        amount.
                       </p>
                     </div>
                   </motion.div>
@@ -106,8 +107,8 @@ export function TradeConfirmationModal({
                     <div>
                       <p className="text-yellow-400 font-semibold mb-1">High Price Impact</p>
                       <p className="text-yellow-400/80 text-sm">
-                        This trade has a price impact of {priceImpact.toFixed(2)}%. Consider trading a
-                        smaller amount to reduce slippage.
+                        This trade has a price impact of {priceImpact.toFixed(2)}%. Consider trading
+                        a smaller amount to reduce slippage.
                       </p>
                     </div>
                   </motion.div>
@@ -124,8 +125,8 @@ export function TradeConfirmationModal({
                     <div>
                       <p className="text-orange-400 font-semibold mb-1">High Slippage Tolerance</p>
                       <p className="text-orange-400/80 text-sm">
-                        Your slippage tolerance is set to {slippagePercent.toFixed(2)}%. You may receive
-                        significantly less than expected.
+                        Your slippage tolerance is set to {slippagePercent.toFixed(2)}%. You may
+                        receive significantly less than expected.
                       </p>
                     </div>
                   </motion.div>
@@ -159,7 +160,8 @@ export function TradeConfirmationModal({
                   <div className="flex justify-between">
                     <span className="text-white/60">Minimum Received</span>
                     <span className="text-white">
-                      {formatAmount(quote.quote.otherAmountThreshold, toToken.decimals)} {toToken.symbol}
+                      {formatAmount(quote.quote.otherAmountThreshold, toToken.decimals)}{' '}
+                      {toToken.symbol}
                     </span>
                   </div>
                 </div>
@@ -187,8 +189,12 @@ export function TradeConfirmationModal({
                       <span className="text-white/60 text-sm">Priority Fee</span>
                     </div>
                     <div className="text-right">
-                      <div className="font-semibold capitalize">{gasOptimization.priorityFeePreset}</div>
-                      <div className="text-xs text-white/40">~{priorityFeeConfig.estimatedConfirmationTime}</div>
+                      <div className="font-semibold capitalize">
+                        {gasOptimization.priorityFeePreset}
+                      </div>
+                      <div className="text-xs text-white/40">
+                        ~{priorityFeeConfig.estimatedConfirmationTime}
+                      </div>
                     </div>
                   </div>
                   <div className="flex justify-between text-sm">

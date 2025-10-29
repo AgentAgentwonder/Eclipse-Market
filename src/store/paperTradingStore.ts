@@ -59,7 +59,10 @@ const MIN_POSITION_AMOUNT = 0.000001;
 const recalcPosition = (position: PaperPosition, priceOverride?: number): PaperPosition => {
   const effectivePrice = priceOverride ?? position.currentPrice ?? position.averagePrice;
   const pnl = (effectivePrice - position.averagePrice) * position.amount;
-  const pnlPercent = position.averagePrice === 0 ? 0 : ((effectivePrice - position.averagePrice) / position.averagePrice) * 100;
+  const pnlPercent =
+    position.averagePrice === 0
+      ? 0
+      : ((effectivePrice - position.averagePrice) / position.averagePrice) * 100;
 
   return {
     ...position,
@@ -90,12 +93,13 @@ export const usePaperTradingStore = create<PaperTradingState>()(
         }
       },
 
-      executePaperTrade: (tradeInput) => {
+      executePaperTrade: tradeInput => {
         const state = get();
 
-        const tokenForPosition = tradeInput.side === 'buy' ? tradeInput.toToken : tradeInput.fromToken;
+        const tokenForPosition =
+          tradeInput.side === 'buy' ? tradeInput.toToken : tradeInput.fromToken;
         const positions = [...state.positions];
-        const existingIndex = positions.findIndex((pos) => pos.token === tokenForPosition);
+        const existingIndex = positions.findIndex(pos => pos.token === tokenForPosition);
 
         let realizedPnL = 0;
         let realizedPnLPercent = 0;
@@ -104,7 +108,8 @@ export const usePaperTradingStore = create<PaperTradingState>()(
           if (existingIndex >= 0) {
             const existing = positions[existingIndex];
             const totalAmount = existing.amount + tradeInput.toAmount;
-            const totalCost = existing.averagePrice * existing.amount + tradeInput.price * tradeInput.toAmount;
+            const totalCost =
+              existing.averagePrice * existing.amount + tradeInput.price * tradeInput.toAmount;
             positions[existingIndex] = recalcPosition(
               {
                 ...existing,
@@ -115,14 +120,17 @@ export const usePaperTradingStore = create<PaperTradingState>()(
             );
           } else {
             positions.push(
-              recalcPosition({
-                token: tradeInput.toToken,
-                amount: tradeInput.toAmount,
-                averagePrice: tradeInput.price,
-                currentPrice: tradeInput.price,
-                pnl: 0,
-                pnlPercent: 0,
-              }, tradeInput.price)
+              recalcPosition(
+                {
+                  token: tradeInput.toToken,
+                  amount: tradeInput.toAmount,
+                  averagePrice: tradeInput.price,
+                  currentPrice: tradeInput.price,
+                  pnl: 0,
+                  pnlPercent: 0,
+                },
+                tradeInput.price
+              )
             );
           }
         } else {
@@ -155,9 +163,10 @@ export const usePaperTradingStore = create<PaperTradingState>()(
           }
         }
 
-        const newBalance = tradeInput.side === 'buy'
-          ? state.virtualBalance - tradeInput.fromAmount - tradeInput.fees
-          : state.virtualBalance + tradeInput.toAmount - tradeInput.fees;
+        const newBalance =
+          tradeInput.side === 'buy'
+            ? state.virtualBalance - tradeInput.fromAmount - tradeInput.fees
+            : state.virtualBalance + tradeInput.toAmount - tradeInput.fees;
 
         const newTrade: PaperTrade = {
           ...tradeInput,
@@ -177,7 +186,7 @@ export const usePaperTradingStore = create<PaperTradingState>()(
 
       updatePosition: (token: string, currentPrice: number) => {
         const state = get();
-        const positions = state.positions.map((position) =>
+        const positions = state.positions.map(position =>
           position.token === token ? recalcPosition(position, currentPrice) : position
         );
         set({ positions });
@@ -210,21 +219,25 @@ export const usePaperTradingStore = create<PaperTradingState>()(
       },
 
       getBestTrade: () => {
-        const trades = get().trades.filter((trade) => (trade.pnl ?? 0) > 0);
+        const trades = get().trades.filter(trade => (trade.pnl ?? 0) > 0);
         if (trades.length === 0) return null;
-        return trades.reduce((best, current) => ((current.pnl ?? 0) > (best.pnl ?? 0) ? current : best));
+        return trades.reduce((best, current) =>
+          (current.pnl ?? 0) > (best.pnl ?? 0) ? current : best
+        );
       },
 
       getWorstTrade: () => {
-        const trades = get().trades.filter((trade) => (trade.pnl ?? 0) < 0);
+        const trades = get().trades.filter(trade => (trade.pnl ?? 0) < 0);
         if (trades.length === 0) return null;
-        return trades.reduce((worst, current) => ((current.pnl ?? 0) < (worst.pnl ?? 0) ? current : worst));
+        return trades.reduce((worst, current) =>
+          (current.pnl ?? 0) < (worst.pnl ?? 0) ? current : worst
+        );
       },
 
       getWinRate: () => {
-        const trades = get().trades.filter((trade) => trade.pnl !== undefined);
+        const trades = get().trades.filter(trade => trade.pnl !== undefined);
         if (trades.length === 0) return 0;
-        const wins = trades.filter((trade) => (trade.pnl ?? 0) > 0);
+        const wins = trades.filter(trade => (trade.pnl ?? 0) > 0);
         return (wins.length / trades.length) * 100;
       },
 
@@ -232,9 +245,10 @@ export const usePaperTradingStore = create<PaperTradingState>()(
         const state = get();
         const history: BalancePoint[] = [];
 
-        const baselineTimestamp = state.trades.length > 0
-          ? state.trades[state.trades.length - 1].timestamp - 1
-          : Date.now();
+        const baselineTimestamp =
+          state.trades.length > 0
+            ? state.trades[state.trades.length - 1].timestamp - 1
+            : Date.now();
 
         history.push({
           timestamp: baselineTimestamp,
@@ -242,16 +256,18 @@ export const usePaperTradingStore = create<PaperTradingState>()(
         });
 
         let runningBalance = state.startingBalance;
-        state.trades.slice().reverse().forEach((trade) => {
-          const delta = trade.side === 'buy'
-            ? -trade.fromAmount - trade.fees
-            : trade.toAmount - trade.fees;
-          runningBalance += delta;
-          history.push({
-            timestamp: trade.timestamp,
-            balance: Number(runningBalance.toFixed(2)),
+        state.trades
+          .slice()
+          .reverse()
+          .forEach(trade => {
+            const delta =
+              trade.side === 'buy' ? -trade.fromAmount - trade.fees : trade.toAmount - trade.fees;
+            runningBalance += delta;
+            history.push({
+              timestamp: trade.timestamp,
+              balance: Number(runningBalance.toFixed(2)),
+            });
           });
-        });
 
         return history;
       },

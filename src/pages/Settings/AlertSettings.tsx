@@ -5,7 +5,8 @@ import { useAlertStore } from '../../store/alertStore';
 
 const AlertSettings = () => {
   const { alerts, fetchAlerts } = useAlertStore();
-  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
+  const [notificationPermission, setNotificationPermission] =
+    useState<NotificationPermission>('default');
 
   useEffect(() => {
     fetchAlerts().catch(console.error);
@@ -21,8 +22,8 @@ const AlertSettings = () => {
     }
   };
 
-  const activeAlerts = alerts.filter((a) => a.state === 'active').length;
-  const cooldownAlerts = alerts.filter((a) => a.state === 'cooldown').length;
+  const activeAlerts = alerts.filter(a => a.state === 'active').length;
+  const cooldownAlerts = alerts.filter(a => a.state === 'cooldown').length;
 
   return (
     <div className="space-y-6">

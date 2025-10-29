@@ -1,24 +1,30 @@
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { X, Plus, Trash2, Loader2, AlertCircle, Shield } from 'lucide-react'
-import { useMonitoredWallets } from '../../hooks/useWalletActivity'
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Plus, Trash2, Loader2, AlertCircle, Shield } from 'lucide-react';
+import { useMonitoredWallets } from '../../hooks/useWalletActivity';
 
 interface WalletMonitorSettingsProps {
-  onClose: () => void
+  onClose: () => void;
 }
 
 export function WalletMonitorSettings({ onClose }: WalletMonitorSettingsProps) {
-  const { wallets, loading, error, addWallet, updateWallet, removeWallet, refresh } = useMonitoredWallets()
-  const [newWallet, setNewWallet] = useState({ address: '', label: '', isWhale: false, minAmount: 5000 })
-  const [saving, setSaving] = useState(false)
-  const [saveError, setSaveError] = useState<string | null>(null)
+  const { wallets, loading, error, addWallet, updateWallet, removeWallet, refresh } =
+    useMonitoredWallets();
+  const [newWallet, setNewWallet] = useState({
+    address: '',
+    label: '',
+    isWhale: false,
+    minAmount: 5000,
+  });
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const handleAddWallet = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!newWallet.address) return
+    e.preventDefault();
+    if (!newWallet.address) return;
 
-    setSaving(true)
-    setSaveError(null)
+    setSaving(true);
+    setSaveError(null);
 
     try {
       await addWallet(
@@ -26,22 +32,22 @@ export function WalletMonitorSettings({ onClose }: WalletMonitorSettingsProps) {
         newWallet.label.trim() || undefined,
         newWallet.isWhale,
         newWallet.minAmount
-      )
-      setNewWallet({ address: '', label: '', isWhale: false, minAmount: 5000 })
+      );
+      setNewWallet({ address: '', label: '', isWhale: false, minAmount: 5000 });
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : String(err))
+      setSaveError(err instanceof Error ? err.message : String(err));
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   const handleToggle = async (id: string, isActive: boolean) => {
     try {
-      await updateWallet(id, { is_active: !isActive })
+      await updateWallet(id, { is_active: !isActive });
     } catch (err) {
-      console.error('Failed to toggle wallet', err)
+      console.error('Failed to toggle wallet', err);
     }
-  }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -62,13 +68,16 @@ export function WalletMonitorSettings({ onClose }: WalletMonitorSettingsProps) {
         </div>
 
         <div className="px-6 py-5 space-y-6 max-h-[80vh] overflow-y-auto">
-          <form onSubmit={handleAddWallet} className="bg-slate-800/50 rounded-xl border border-purple-500/20 p-4 space-y-4">
+          <form
+            onSubmit={handleAddWallet}
+            className="bg-slate-800/50 rounded-xl border border-purple-500/20 p-4 space-y-4"
+          >
             <div className="flex items-center gap-3">
               <div className="flex-1">
                 <label className="block text-sm text-gray-400 mb-2">Wallet Address</label>
                 <input
                   value={newWallet.address}
-                  onChange={(e) => setNewWallet((prev) => ({ ...prev, address: e.target.value }))}
+                  onChange={e => setNewWallet(prev => ({ ...prev, address: e.target.value }))}
                   placeholder="Enter Solana wallet address"
                   className="w-full bg-slate-900 px-4 py-2 rounded-lg border border-slate-700 focus:border-purple-500 focus:outline-none"
                   required
@@ -78,7 +87,7 @@ export function WalletMonitorSettings({ onClose }: WalletMonitorSettingsProps) {
                 <label className="block text-sm text-gray-400 mb-2">Label (optional)</label>
                 <input
                   value={newWallet.label}
-                  onChange={(e) => setNewWallet((prev) => ({ ...prev, label: e.target.value }))}
+                  onChange={e => setNewWallet(prev => ({ ...prev, label: e.target.value }))}
                   placeholder="Whale wallet"
                   className="w-full bg-slate-900 px-4 py-2 rounded-lg border border-slate-700 focus:border-purple-500 focus:outline-none"
                 />
@@ -90,7 +99,7 @@ export function WalletMonitorSettings({ onClose }: WalletMonitorSettingsProps) {
                 <label className="block text-sm text-gray-400 mb-2">Whale Indicator</label>
                 <button
                   type="button"
-                  onClick={() => setNewWallet((prev) => ({ ...prev, isWhale: !prev.isWhale }))}
+                  onClick={() => setNewWallet(prev => ({ ...prev, isWhale: !prev.isWhale }))}
                   className={`w-full px-4 py-2 rounded-lg border transition-colors ${
                     newWallet.isWhale
                       ? 'bg-yellow-500/20 border-yellow-500/40 text-yellow-300'
@@ -102,11 +111,15 @@ export function WalletMonitorSettings({ onClose }: WalletMonitorSettingsProps) {
                 </button>
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Large Tx Alert Threshold (USD)</label>
+                <label className="block text-sm text-gray-400 mb-2">
+                  Large Tx Alert Threshold (USD)
+                </label>
                 <input
                   type="number"
                   value={newWallet.minAmount}
-                  onChange={(e) => setNewWallet((prev) => ({ ...prev, minAmount: parseFloat(e.target.value) || 0 }))}
+                  onChange={e =>
+                    setNewWallet(prev => ({ ...prev, minAmount: parseFloat(e.target.value) || 0 }))
+                  }
                   className="w-full bg-slate-900 px-4 py-2 rounded-lg border border-slate-700 focus:border-purple-500 focus:outline-none"
                 />
               </div>
@@ -116,7 +129,11 @@ export function WalletMonitorSettings({ onClose }: WalletMonitorSettingsProps) {
                   disabled={saving}
                   className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  {saving ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Plus className="w-4 h-4" />
+                  )}
                   Add Wallet
                 </button>
               </div>
@@ -150,11 +167,15 @@ export function WalletMonitorSettings({ onClose }: WalletMonitorSettingsProps) {
                   No wallets being monitored yet.
                 </div>
               ) : (
-                wallets.map((wallet) => (
-                  <div key={wallet.id} className="px-4 py-4 grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
+                wallets.map(wallet => (
+                  <div
+                    key={wallet.id}
+                    className="px-4 py-4 grid grid-cols-1 md:grid-cols-4 gap-3 text-sm"
+                  >
                     <div>
                       <p className="font-mono text-gray-200">
-                        {wallet.label || `${wallet.wallet_address.slice(0, 6)}...${wallet.wallet_address.slice(-4)}`}
+                        {wallet.label ||
+                          `${wallet.wallet_address.slice(0, 6)}...${wallet.wallet_address.slice(-4)}`}
                       </p>
                       <p className="text-xs text-gray-500">{wallet.wallet_address}</p>
                     </div>
@@ -165,11 +186,13 @@ export function WalletMonitorSettings({ onClose }: WalletMonitorSettingsProps) {
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        wallet.is_active
-                          ? 'bg-green-500/20 text-green-400'
-                          : 'bg-gray-500/20 text-gray-400'
-                      }`}>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs ${
+                          wallet.is_active
+                            ? 'bg-green-500/20 text-green-400'
+                            : 'bg-gray-500/20 text-gray-400'
+                        }`}
+                      >
                         {wallet.is_active ? 'Active' : 'Paused'}
                       </span>
                       <button
@@ -202,5 +225,5 @@ export function WalletMonitorSettings({ onClose }: WalletMonitorSettingsProps) {
         </div>
       </motion.div>
     </div>
-  )
+  );
 }

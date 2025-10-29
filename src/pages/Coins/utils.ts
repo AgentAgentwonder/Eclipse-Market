@@ -16,7 +16,10 @@ export function formatCurrencyAbbrev(value: number, precision = 2): string {
   return value.toFixed(precision);
 }
 
-export function formatTimeAgo(timestampSeconds: number, nowSeconds: number = Date.now() / 1000): string {
+export function formatTimeAgo(
+  timestampSeconds: number,
+  nowSeconds: number = Date.now() / 1000
+): string {
   const diff = Math.max(nowSeconds - timestampSeconds, 0);
 
   if (diff < 60) return 'Just now';

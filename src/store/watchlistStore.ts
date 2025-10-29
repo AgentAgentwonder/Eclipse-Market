@@ -28,7 +28,10 @@ interface WatchlistState {
   deleteWatchlist: (id: string) => Promise<void>;
   addItem: (watchlistId: string, symbol: string, mint: string) => Promise<Watchlist>;
   removeItem: (watchlistId: string, mint: string) => Promise<Watchlist>;
-  reorderItems: (watchlistId: string, items: Array<{ symbol: string; mint: string; position: number }>) => Promise<Watchlist>;
+  reorderItems: (
+    watchlistId: string,
+    items: Array<{ symbol: string; mint: string; position: number }>
+  ) => Promise<Watchlist>;
   exportWatchlist: (id: string) => Promise<string>;
   importWatchlist: (data: string) => Promise<Watchlist>;
   setSelectedWatchlist: (id: string | null) => void;
@@ -55,7 +58,7 @@ export const useWatchlistStore = create<WatchlistState>((set, get) => ({
     set({ error: null });
     try {
       const watchlist = await invoke<Watchlist>('watchlist_create', { name });
-      set((state) => ({ watchlists: [watchlist, ...state.watchlists] }));
+      set(state => ({ watchlists: [watchlist, ...state.watchlists] }));
       return watchlist;
     } catch (error) {
       set({ error: String(error) });
@@ -67,8 +70,8 @@ export const useWatchlistStore = create<WatchlistState>((set, get) => ({
     set({ error: null });
     try {
       const watchlist = await invoke<Watchlist>('watchlist_update', { id, name });
-      set((state) => ({
-        watchlists: state.watchlists.map((w) => (w.id === id ? watchlist : w)),
+      set(state => ({
+        watchlists: state.watchlists.map(w => (w.id === id ? watchlist : w)),
       }));
       return watchlist;
     } catch (error) {
@@ -81,8 +84,8 @@ export const useWatchlistStore = create<WatchlistState>((set, get) => ({
     set({ error: null });
     try {
       await invoke('watchlist_delete', { id });
-      set((state) => ({
-        watchlists: state.watchlists.filter((w) => w.id !== id),
+      set(state => ({
+        watchlists: state.watchlists.filter(w => w.id !== id),
         selectedWatchlistId: state.selectedWatchlistId === id ? null : state.selectedWatchlistId,
       }));
     } catch (error) {
@@ -99,8 +102,8 @@ export const useWatchlistStore = create<WatchlistState>((set, get) => ({
         symbol,
         mint,
       });
-      set((state) => ({
-        watchlists: state.watchlists.map((w) => (w.id === watchlistId ? watchlist : w)),
+      set(state => ({
+        watchlists: state.watchlists.map(w => (w.id === watchlistId ? watchlist : w)),
       }));
       return watchlist;
     } catch (error) {
@@ -116,8 +119,8 @@ export const useWatchlistStore = create<WatchlistState>((set, get) => ({
         watchlistId,
         mint,
       });
-      set((state) => ({
-        watchlists: state.watchlists.map((w) => (w.id === watchlistId ? watchlist : w)),
+      set(state => ({
+        watchlists: state.watchlists.map(w => (w.id === watchlistId ? watchlist : w)),
       }));
       return watchlist;
     } catch (error) {
@@ -126,15 +129,18 @@ export const useWatchlistStore = create<WatchlistState>((set, get) => ({
     }
   },
 
-  reorderItems: async (watchlistId: string, items: Array<{ symbol: string; mint: string; position: number }>) => {
+  reorderItems: async (
+    watchlistId: string,
+    items: Array<{ symbol: string; mint: string; position: number }>
+  ) => {
     set({ error: null });
     try {
       const watchlist = await invoke<Watchlist>('watchlist_reorder_items', {
         watchlistId,
         items,
       });
-      set((state) => ({
-        watchlists: state.watchlists.map((w) => (w.id === watchlistId ? watchlist : w)),
+      set(state => ({
+        watchlists: state.watchlists.map(w => (w.id === watchlistId ? watchlist : w)),
       }));
       return watchlist;
     } catch (error) {
@@ -158,7 +164,7 @@ export const useWatchlistStore = create<WatchlistState>((set, get) => ({
     set({ error: null });
     try {
       const watchlist = await invoke<Watchlist>('watchlist_import', { data });
-      set((state) => ({ watchlists: [watchlist, ...state.watchlists] }));
+      set(state => ({ watchlists: [watchlist, ...state.watchlists] }));
       return watchlist;
     } catch (error) {
       set({ error: String(error) });

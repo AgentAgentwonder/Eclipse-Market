@@ -58,9 +58,9 @@ export function TopMarketCap({
       if (offset === 0) {
         setCoins(result);
       } else {
-        setCoins((prev) => {
-          const existingAddresses = new Set(prev.map((coin) => coin.address));
-          const filtered = result.filter((coin) => !existingAddresses.has(coin.address));
+        setCoins(prev => {
+          const existingAddresses = new Set(prev.map(coin => coin.address));
+          const filtered = result.filter(coin => !existingAddresses.has(coin.address));
           return [...prev, ...filtered];
         });
       }
@@ -68,7 +68,7 @@ export function TopMarketCap({
       if (result.length < PAGE_SIZE) {
         setHasMore(false);
       } else {
-        setOffset((prev) => prev + PAGE_SIZE);
+        setOffset(prev => prev + PAGE_SIZE);
       }
     } catch (error) {
       console.error('Failed to fetch top coins:', error);
@@ -88,7 +88,7 @@ export function TopMarketCap({
     if (!sentinelRef.current) return;
 
     const observer = new IntersectionObserver(
-      (entries) => {
+      entries => {
         if (entries[0].isIntersecting && !loading && hasMore) {
           fetchCoins();
         }
@@ -142,10 +142,13 @@ export function TopMarketCap({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60">
-            {coins.map((coin) => {
+            {coins.map(coin => {
               const isPositive = coin.price_change_24h >= 0;
               return (
-                <tr key={`${coin.rank}-${coin.address}`} className="hover:bg-slate-800/40 transition-colors">
+                <tr
+                  key={`${coin.rank}-${coin.address}`}
+                  className="hover:bg-slate-800/40 transition-colors"
+                >
                   <td className="px-4 py-3">
                     <span className="px-2 py-1 rounded-full bg-purple-500/10 text-purple-300 text-xs font-semibold">
                       #{coin.rank}
@@ -158,7 +161,11 @@ export function TopMarketCap({
                     </div>
                   </td>
                   <td className="px-4 py-3 text-right font-semibold">
-                    ${coin.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+                    $
+                    {coin.price.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 6,
+                    })}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <span
@@ -166,7 +173,11 @@ export function TopMarketCap({
                         isPositive ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
                       }`}
                     >
-                      {isPositive ? <ArrowUpCircle className="w-3 h-3" /> : <ArrowDownCircle className="w-3 h-3" />}
+                      {isPositive ? (
+                        <ArrowUpCircle className="w-3 h-3" />
+                      ) : (
+                        <ArrowDownCircle className="w-3 h-3" />
+                      )}
                       {coin.price_change_24h.toFixed(2)}%
                     </span>
                   </td>
@@ -180,7 +191,11 @@ export function TopMarketCap({
                     {coin.liquidity ? `${formatCurrencyAbbrev(coin.liquidity, 2)}` : '—'}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <Sparkline data={normalizeSparkline(coin.sparkline, 24)} width={120} height={32} />
+                    <Sparkline
+                      data={normalizeSparkline(coin.sparkline, 24)}
+                      width={120}
+                      height={32}
+                    />
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
@@ -226,7 +241,10 @@ export function TopMarketCap({
         </table>
       </div>
 
-      <div ref={sentinelRef} className="h-10 flex items-center justify-center text-sm text-gray-400">
+      <div
+        ref={sentinelRef}
+        className="h-10 flex items-center justify-center text-sm text-gray-400"
+      >
         {loading ? 'Loading more tokens...' : hasMore ? 'Scroll to load more' : 'End of list'}
       </div>
     </div>

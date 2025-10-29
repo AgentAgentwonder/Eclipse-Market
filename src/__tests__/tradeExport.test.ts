@@ -32,22 +32,22 @@ describe('getColumnsForPreset', () => {
   it('should return tax report columns', () => {
     const columns = getColumnsForPreset('tax_report');
     expect(columns).toHaveLength(9);
-    expect(columns.some((c) => c.key === 'walletAddress')).toBe(true);
-    expect(columns.some((c) => c.key === 'pnl')).toBe(true);
+    expect(columns.some(c => c.key === 'walletAddress')).toBe(true);
+    expect(columns.some(c => c.key === 'pnl')).toBe(true);
   });
 
   it('should return performance columns', () => {
     const columns = getColumnsForPreset('performance');
     expect(columns).toHaveLength(11);
-    expect(columns.some((c) => c.key === 'pnl')).toBe(true);
-    expect(columns.some((c) => c.key === 'pnlPercent')).toBe(true);
-    expect(columns.some((c) => c.key === 'executionQuality')).toBe(true);
+    expect(columns.some(c => c.key === 'pnl')).toBe(true);
+    expect(columns.some(c => c.key === 'pnlPercent')).toBe(true);
+    expect(columns.some(c => c.key === 'executionQuality')).toBe(true);
   });
 
   it('should return trade journal columns', () => {
     const columns = getColumnsForPreset('trade_journal');
     expect(columns).toHaveLength(15);
-    expect(columns.some((c) => c.key === 'mevProtected')).toBe(true);
+    expect(columns.some(c => c.key === 'mevProtected')).toBe(true);
   });
 
   it('should return default columns for custom preset', () => {
@@ -58,7 +58,7 @@ describe('getColumnsForPreset', () => {
   it('should clone columns to prevent mutations', () => {
     const columns1 = getColumnsForPreset('tax_report');
     const columns2 = getColumnsForPreset('tax_report');
-    
+
     columns1[0].enabled = false;
     expect(columns2[0].enabled).toBe(true);
   });
@@ -124,7 +124,7 @@ describe('exportToCSV', () => {
 
     const csv = exportToCSV(trades, config);
     const lines = csv.trim().split('\n');
-    
+
     expect(lines.length).toBe(2);
     expect(lines[0]).toBe('Date,From,To');
     expect(lines[1]).toContain('SOL');
@@ -145,7 +145,7 @@ describe('exportToCSV', () => {
 
     const csv = exportToCSV(trades, config);
     const lines = csv.trim().split('\n');
-    
+
     expect(lines.length).toBe(1);
     expect(lines[0]).not.toBe('From,To');
   });
@@ -178,7 +178,7 @@ describe('exportToCSV', () => {
 
     const csv = exportToCSV(trades, config);
     const lines = csv.trim().split('\n');
-    
+
     expect(lines[0]).toBe('From,Amount');
     expect(lines[0]).not.toContain('To');
   });

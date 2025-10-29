@@ -28,7 +28,7 @@ export function WalletConnect() {
       if (!window.solana?.isPhantom) {
         throw new Error('Phantom wallet not found');
       }
-      
+
       const response = await window.solana.connect();
       setPublicKey(response.publicKey);
       setError('');
@@ -39,24 +39,20 @@ export function WalletConnect() {
 
   return (
     <div className="wallet-connect">
-      <button 
+      <button
         onClick={handleConnect}
         className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition"
       >
         Connect Wallet
       </button>
-      
+
       {publicKey && (
         <div className="mt-2 text-green-500 text-sm">
           Connected: {publicKey.slice(0, 4)}...{publicKey.slice(-4)}
         </div>
       )}
-      
-      {error && (
-        <div className="mt-2 text-red-500 text-sm">
-          Error: {error}
-        </div>
-      )}
+
+      {error && <div className="mt-2 text-red-500 text-sm">Error: {error}</div>}
     </div>
   );
 }

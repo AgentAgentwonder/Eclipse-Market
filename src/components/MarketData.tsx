@@ -17,7 +17,7 @@ export function MarketData() {
       setData(result);
     };
     loadData();
-    
+
     // TODO: Setup WebSocket subscription
   }, []);
 

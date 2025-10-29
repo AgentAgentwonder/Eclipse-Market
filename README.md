@@ -49,6 +49,23 @@ Run the app in development mode:
 npm run tauri dev
 ```
 
+### Formatting & Linting
+
+The project uses **Prettier** and **ESLint** to maintain a consistent code style.
+
+- Format code automatically:
+  ```bash
+  npm run format
+  ```
+- Check formatting without modifying files:
+  ```bash
+  npm run format:check
+  ```
+- Run ESLint:
+  ```bash
+  npm run lint
+  ```
+
 ### Build
 
 Build the application for production:

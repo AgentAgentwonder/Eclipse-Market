@@ -27,7 +27,11 @@ function HardwareWalletIndicator({ onClick }: HardwareWalletIndicatorProps) {
           : 'border-purple-500/30 bg-slate-800 text-white/70'
       }`}
     >
-      {isConnected ? <Usb className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4 text-yellow-400" />}
+      {isConnected ? (
+        <Usb className="w-4 h-4" />
+      ) : (
+        <AlertTriangle className="w-4 h-4 text-yellow-400" />
+      )}
       <span>{label}</span>
       <span className="text-xs uppercase tracking-wide bg-black/30 px-2 py-0.5 rounded-lg">
         {signingMethod === 'hardware' ? 'HW' : 'SW'}

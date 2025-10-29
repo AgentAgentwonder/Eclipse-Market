@@ -20,7 +20,10 @@ export interface LedgerDeviceInfo {
 }
 
 export class LedgerError extends Error {
-  constructor(message: string, public code?: string) {
+  constructor(
+    message: string,
+    public code?: string
+  ) {
     super(message);
     this.name = 'LedgerError';
   }
@@ -37,19 +40,19 @@ export class LedgerWalletService {
 
   async requestDevice(): Promise<LedgerDevice> {
     try {
-      if (!await this.isSupported()) {
+      if (!(await this.isSupported())) {
         throw new LedgerError('WebHID is not supported in this browser', 'WEBHID_NOT_SUPPORTED');
       }
 
       this.transport = await TransportWebHID.create();
-      
+
       const deviceInfo = this.transport.device;
       const deviceId = deviceInfo.productId.toString(16).padStart(4, '0');
-      
+
       this.solanaApp = new Solana(this.transport);
 
       const appConfig = await this.solanaApp.getAppConfiguration();
-      
+
       this.currentDeviceId = deviceId;
 
       const device: LedgerDevice = {
@@ -71,20 +74,29 @@ export class LedgerWalletService {
         throw new LedgerError('Solana app is not opened on the device', 'APP_NOT_OPENED');
       }
       if (error?.statusCode === 0x6700) {
-        throw new LedgerError('Wrong app opened on device. Please open the Solana app.', 'WRONG_APP');
+        throw new LedgerError(
+          'Wrong app opened on device. Please open the Solana app.',
+          'WRONG_APP'
+        );
       }
-      throw new LedgerError(error?.message || 'Failed to connect to Ledger device', 'CONNECTION_FAILED');
+      throw new LedgerError(
+        error?.message || 'Failed to connect to Ledger device',
+        'CONNECTION_FAILED'
+      );
     }
   }
 
-  async getAddress(derivationPath: string = "44'/501'/0'/0'", display: boolean = false): Promise<{ address: string; publicKey: string }> {
+  async getAddress(
+    derivationPath: string = "44'/501'/0'/0'",
+    display: boolean = false
+  ): Promise<{ address: string; publicKey: string }> {
     if (!this.solanaApp) {
       throw new LedgerError('No Ledger device connected', 'NOT_CONNECTED');
     }
 
     try {
       const result = await this.solanaApp.getAddress(derivationPath, display);
-      
+
       const address = result.address.toString();
       const publicKey = new PublicKey(result.address).toBase58();
 
@@ -104,7 +116,10 @@ export class LedgerWalletService {
       if (error?.statusCode === 0x6511) {
         throw new LedgerError('Solana app is not opened on the device', 'APP_NOT_OPENED');
       }
-      throw new LedgerError(error?.message || 'Failed to get address from Ledger', 'GET_ADDRESS_FAILED');
+      throw new LedgerError(
+        error?.message || 'Failed to get address from Ledger',
+        'GET_ADDRESS_FAILED'
+      );
     }
   }
 
@@ -118,7 +133,7 @@ export class LedgerWalletService {
 
     try {
       let serialized: Buffer;
-      
+
       if (transaction instanceof VersionedTransaction) {
         serialized = Buffer.from(transaction.message.serialize());
       } else {
@@ -138,7 +153,7 @@ export class LedgerWalletService {
       }
 
       const result = await this.solanaApp.signTransaction(derivationPath, serialized);
-      
+
       return result.signature;
     } catch (error: any) {
       if (error?.statusCode === 0x6985) {
@@ -154,7 +169,10 @@ export class LedgerWalletService {
     }
   }
 
-  async signMessage(message: Uint8Array, derivationPath: string = "44'/501'/0'/0'"): Promise<Buffer> {
+  async signMessage(
+    message: Uint8Array,
+    derivationPath: string = "44'/501'/0'/0'"
+  ): Promise<Buffer> {
     if (!this.solanaApp) {
       throw new LedgerError('No Ledger device connected', 'NOT_CONNECTED');
     }

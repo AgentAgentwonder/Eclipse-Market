@@ -1,5 +1,10 @@
 import { Plus, Trash2 } from 'lucide-react';
-import { AlertConditionType, LogicalOperator, CompoundCondition, AlertCondition } from '../../store/alertStore';
+import {
+  AlertConditionType,
+  LogicalOperator,
+  CompoundCondition,
+  AlertCondition,
+} from '../../store/alertStore';
 
 interface ConditionBuilderProps {
   value: CompoundCondition;
@@ -66,7 +71,7 @@ const ConditionBuilder = ({ value, onChange }: ConditionBuilderProps) => {
           >
             <select
               value={condition.conditionType}
-              onChange={(e) =>
+              onChange={e =>
                 updateCondition(index, { conditionType: e.target.value as AlertConditionType })
               }
               className="flex-1 px-3 py-2 bg-slate-900/60 border border-purple-500/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/40 text-sm"
@@ -81,17 +86,18 @@ const ConditionBuilder = ({ value, onChange }: ConditionBuilderProps) => {
               type="number"
               step="0.01"
               value={condition.value}
-              onChange={(e) => updateCondition(index, { value: parseFloat(e.target.value) })}
+              onChange={e => updateCondition(index, { value: parseFloat(e.target.value) })}
               placeholder={condition.conditionType === 'volume_spike' ? 'Volume ($)' : 'Value'}
               className="w-32 px-3 py-2 bg-slate-900/60 border border-purple-500/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/40 text-sm"
             />
 
-            {(condition.conditionType === 'percent_change' || condition.conditionType === 'volume_spike') && (
+            {(condition.conditionType === 'percent_change' ||
+              condition.conditionType === 'volume_spike') && (
               <input
                 type="number"
                 min={1}
                 value={condition.timeframeMinutes ?? 1440}
-                onChange={(e) =>
+                onChange={e =>
                   updateCondition(index, { timeframeMinutes: parseInt(e.target.value) })
                 }
                 placeholder="Timeframe (min)"

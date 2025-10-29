@@ -48,7 +48,7 @@ export function ActivityLog() {
   const [stats, setStats] = useState<ActivityStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [actionFilter, setActionFilter] = useState('');
   const [resultFilter, setResultFilter] = useState('');
@@ -103,7 +103,7 @@ export function ActivityLog() {
       if (endDate) filter.endDate = new Date(endDate).toISOString();
 
       const csv = await invoke<string>('export_activity_logs', { filter });
-      
+
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -173,10 +173,15 @@ export function ActivityLog() {
               <div className="space-y-2">
                 {stats.suspiciousActivities.map((activity, idx) => (
                   <div key={idx} className="text-sm text-red-300/90">
-                    <span className="font-medium">{activity.walletAddress}</span>: {activity.description}
-                    <span className={`ml-2 px-2 py-0.5 rounded text-xs ${
-                      activity.severity === 'high' ? 'bg-red-500/20 text-red-300' : 'bg-yellow-500/20 text-yellow-300'
-                    }`}>
+                    <span className="font-medium">{activity.walletAddress}</span>:{' '}
+                    {activity.description}
+                    <span
+                      className={`ml-2 px-2 py-0.5 rounded text-xs ${
+                        activity.severity === 'high'
+                          ? 'bg-red-500/20 text-red-300'
+                          : 'bg-yellow-500/20 text-yellow-300'
+                      }`}
+                    >
                       {activity.severity}
                     </span>
                   </div>
@@ -192,7 +197,7 @@ export function ActivityLog() {
           <Filter className="w-4 h-4 text-purple-400" />
           <span className="font-semibold">Filters</span>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium mb-2">Wallet Address</label>
@@ -201,7 +206,7 @@ export function ActivityLog() {
               <input
                 type="text"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={e => setSearchTerm(e.target.value)}
                 placeholder="Search address..."
                 className="w-full pl-10 pr-4 py-2 bg-slate-900/50 border border-purple-500/20 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:border-purple-500/50 transition-colors"
               />
@@ -212,12 +217,14 @@ export function ActivityLog() {
             <label className="block text-sm font-medium mb-2">Action Type</label>
             <select
               value={actionFilter}
-              onChange={(e) => setActionFilter(e.target.value)}
+              onChange={e => setActionFilter(e.target.value)}
               className="w-full px-4 py-2 bg-slate-900/50 border border-purple-500/20 rounded-xl text-white focus:outline-none focus:border-purple-500/50 transition-colors"
             >
               <option value="">All Actions</option>
-              {actionTypes.map((action) => (
-                <option key={action} value={action}>{action}</option>
+              {actionTypes.map(action => (
+                <option key={action} value={action}>
+                  {action}
+                </option>
               ))}
             </select>
           </div>
@@ -226,7 +233,7 @@ export function ActivityLog() {
             <label className="block text-sm font-medium mb-2">Result</label>
             <select
               value={resultFilter}
-              onChange={(e) => setResultFilter(e.target.value)}
+              onChange={e => setResultFilter(e.target.value)}
               className="w-full px-4 py-2 bg-slate-900/50 border border-purple-500/20 rounded-xl text-white focus:outline-none focus:border-purple-500/50 transition-colors"
             >
               <option value="">All Results</option>
@@ -239,14 +246,16 @@ export function ActivityLog() {
             <label className="block text-sm font-medium mb-2">Page Size</label>
             <select
               value={pageSize}
-              onChange={(e) => {
+              onChange={e => {
                 setPageSize(Number(e.target.value));
                 setCurrentPage(1);
               }}
               className="w-full px-4 py-2 bg-slate-900/50 border border-purple-500/20 rounded-xl text-white focus:outline-none focus:border-purple-500/50 transition-colors"
             >
-              {PAGE_SIZES.map((size) => (
-                <option key={size} value={size}>{size} per page</option>
+              {PAGE_SIZES.map(size => (
+                <option key={size} value={size}>
+                  {size} per page
+                </option>
               ))}
             </select>
           </div>
@@ -258,7 +267,7 @@ export function ActivityLog() {
             <input
               type="datetime-local"
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              onChange={e => setStartDate(e.target.value)}
               className="w-full px-4 py-2 bg-slate-900/50 border border-purple-500/20 rounded-xl text-white focus:outline-none focus:border-purple-500/50 transition-colors"
             />
           </div>
@@ -268,7 +277,7 @@ export function ActivityLog() {
             <input
               type="datetime-local"
               value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
+              onChange={e => setEndDate(e.target.value)}
               className="w-full px-4 py-2 bg-slate-900/50 border border-purple-500/20 rounded-xl text-white focus:outline-none focus:border-purple-500/50 transition-colors"
             />
           </div>
@@ -299,16 +308,29 @@ export function ActivityLog() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-purple-500/20">
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-white/80">Timestamp</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-white/80">Wallet</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-white/80">Action</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-white/80">Details</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-white/80">Result</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white/80">
+                    Timestamp
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white/80">
+                    Wallet
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white/80">
+                    Action
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white/80">
+                    Details
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white/80">
+                    Result
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {logs.map((log) => (
-                  <tr key={log.id} className="border-b border-purple-500/10 hover:bg-purple-500/5 transition-colors">
+                {logs.map(log => (
+                  <tr
+                    key={log.id}
+                    className="border-b border-purple-500/10 hover:bg-purple-500/5 transition-colors"
+                  >
                     <td className="px-4 py-3 text-sm">
                       {new Date(log.timestamp).toLocaleString()}
                     </td>
@@ -324,11 +346,13 @@ export function ActivityLog() {
                       {log.detailsJson}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
-                        log.result === 'success'
-                          ? 'bg-green-500/20 text-green-300'
-                          : 'bg-red-500/20 text-red-300'
-                      }`}>
+                      <span
+                        className={`px-2 py-1 rounded-lg text-xs font-medium ${
+                          log.result === 'success'
+                            ? 'bg-green-500/20 text-green-300'
+                            : 'bg-red-500/20 text-red-300'
+                        }`}
+                      >
                         {log.result}
                       </span>
                     </td>
@@ -341,7 +365,8 @@ export function ActivityLog() {
           <div className="flex items-center justify-between">
             <p className="text-sm text-white/60">
               Showing {Math.min((currentPage - 1) * pageSize + 1, stats?.totalActions || 0)} to{' '}
-              {Math.min(currentPage * pageSize, stats?.totalActions || 0)} of {stats?.totalActions || 0} entries
+              {Math.min(currentPage * pageSize, stats?.totalActions || 0)} of{' '}
+              {stats?.totalActions || 0} entries
             </p>
             <div className="flex items-center gap-2">
               <button

@@ -1,39 +1,38 @@
-import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { invoke } from '@tauri-apps/api/tauri'
-import { X, Copy, CheckCircle, AlertCircle, Loader2, Settings2 } from 'lucide-react'
-import { WalletActivity } from '../../types/insiders'
-import { useWalletStore } from '../../store/walletStore'
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { invoke } from '@tauri-apps/api/tauri';
+import { X, Copy, CheckCircle, AlertCircle, Loader2, Settings2 } from 'lucide-react';
+import { WalletActivity } from '../../types/insiders';
+import { useWalletStore } from '../../store/walletStore';
 
 interface CopyTradeModalProps {
-  activity: WalletActivity
-  onClose: () => void
+  activity: WalletActivity;
+  onClose: () => void;
 }
 
 export function CopyTradeModal({ activity, onClose }: CopyTradeModalProps) {
-  const { publicKey } = useWalletStore()
-  const [multiplier, setMultiplier] = useState(1.0)
-  const [delaySeconds, setDelaySeconds] = useState(0)
-  const [useCustomAmount, setUseCustomAmount] = useState(false)
-  const [customAmount, setCustomAmount] = useState<number | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const { publicKey } = useWalletStore();
+  const [multiplier, setMultiplier] = useState(1.0);
+  const [delaySeconds, setDelaySeconds] = useState(0);
+  const [useCustomAmount, setUseCustomAmount] = useState(false);
+  const [customAmount, setCustomAmount] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const calculatedAmount = useCustomAmount && customAmount
-    ? customAmount
-    : (activity.amount || 0) * multiplier
+  const calculatedAmount =
+    useCustomAmount && customAmount ? customAmount : (activity.amount || 0) * multiplier;
 
   const handleConfirm = async () => {
     if (!publicKey) {
-      setStatus('error')
-      setErrorMessage('Please connect your wallet first')
-      return
+      setStatus('error');
+      setErrorMessage('Please connect your wallet first');
+      return;
     }
 
-    setLoading(true)
-    setStatus('idle')
-    setErrorMessage(null)
+    setLoading(true);
+    setStatus('idle');
+    setErrorMessage(null);
 
     try {
       const request = {
@@ -51,28 +50,28 @@ export function CopyTradeModal({ activity, onClose }: CopyTradeModalProps) {
         take_profit_percentage: null,
         max_daily_trades: null,
         max_total_loss: null,
-      }
+      };
 
-      await invoke('copy_trading_create', { request })
+      await invoke('copy_trading_create', { request });
 
-      setStatus('success')
+      setStatus('success');
       setTimeout(() => {
-        onClose()
-      }, 2000)
+        onClose();
+      }, 2000);
     } catch (error) {
-      setStatus('error')
-      setErrorMessage(error instanceof Error ? error.message : String(error))
+      setStatus('error');
+      setErrorMessage(error instanceof Error ? error.message : String(error));
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const formatAmount = (amount: number | undefined) => {
-    if (!amount) return 'N/A'
-    if (amount >= 1000000) return `$${(amount / 1000000).toFixed(2)}M`
-    if (amount >= 1000) return `$${(amount / 1000).toFixed(2)}K`
-    return `$${amount.toFixed(2)}`
-  }
+    if (!amount) return 'N/A';
+    if (amount >= 1000000) return `$${(amount / 1000000).toFixed(2)}M`;
+    if (amount >= 1000) return `$${(amount / 1000).toFixed(2)}K`;
+    return `$${amount.toFixed(2)}`;
+  };
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -92,10 +91,7 @@ export function CopyTradeModal({ activity, onClose }: CopyTradeModalProps) {
               <p className="text-sm text-gray-400">Follow this wallet's trades</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
-          >
+          <button onClick={onClose} className="p-2 hover:bg-slate-700 rounded-lg transition-colors">
             <X className="w-5 h-5 text-gray-400" />
           </button>
         </div>
@@ -142,7 +138,7 @@ export function CopyTradeModal({ activity, onClose }: CopyTradeModalProps) {
                     <input
                       type="number"
                       value={customAmount || ''}
-                      onChange={(e) => setCustomAmount(parseFloat(e.target.value) || null)}
+                      onChange={e => setCustomAmount(parseFloat(e.target.value) || null)}
                       placeholder="Enter custom amount in USD"
                       className="w-full bg-slate-700 px-4 py-3 rounded-lg border border-slate-600 focus:border-purple-500 focus:outline-none"
                     />
@@ -154,7 +150,7 @@ export function CopyTradeModal({ activity, onClose }: CopyTradeModalProps) {
                         max="5"
                         step="0.1"
                         value={multiplier}
-                        onChange={(e) => setMultiplier(parseFloat(e.target.value))}
+                        onChange={e => setMultiplier(parseFloat(e.target.value))}
                         className="w-full"
                       />
                       <div className="flex items-center justify-between text-sm">
@@ -168,11 +164,9 @@ export function CopyTradeModal({ activity, onClose }: CopyTradeModalProps) {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">
-                    Delay (seconds)
-                  </label>
+                  <label className="block text-sm text-gray-400 mb-2">Delay (seconds)</label>
                   <div className="grid grid-cols-4 gap-2 mb-2">
-                    {[0, 5, 10, 30].map((delay) => (
+                    {[0, 5, 10, 30].map(delay => (
                       <button
                         key={delay}
                         onClick={() => setDelaySeconds(delay)}
@@ -189,7 +183,7 @@ export function CopyTradeModal({ activity, onClose }: CopyTradeModalProps) {
                   <input
                     type="number"
                     value={delaySeconds}
-                    onChange={(e) => setDelaySeconds(parseInt(e.target.value) || 0)}
+                    onChange={e => setDelaySeconds(parseInt(e.target.value) || 0)}
                     placeholder="Custom delay"
                     className="w-full bg-slate-700 px-4 py-2 rounded-lg border border-slate-600 focus:border-purple-500 focus:outline-none text-sm"
                   />
@@ -201,8 +195,9 @@ export function CopyTradeModal({ activity, onClose }: CopyTradeModalProps) {
                     <div className="text-sm">
                       <p className="text-purple-300 font-medium mb-1">Copy Trading Setup</p>
                       <p className="text-gray-400">
-                        This will create a copy trading configuration that will automatically replicate 
-                        trades from this wallet. You can manage this in the Copy Trading settings.
+                        This will create a copy trading configuration that will automatically
+                        replicate trades from this wallet. You can manage this in the Copy Trading
+                        settings.
                       </p>
                     </div>
                   </div>
@@ -270,5 +265,5 @@ export function CopyTradeModal({ activity, onClose }: CopyTradeModalProps) {
         </div>
       </motion.div>
     </div>
-  )
+  );
 }

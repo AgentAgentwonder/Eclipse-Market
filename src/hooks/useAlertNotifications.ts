@@ -12,13 +12,13 @@ interface AlertTriggeredEvent {
 }
 
 export function useAlertNotifications() {
-  const setLastTriggerEvent = useAlertStore((state) => state.setLastTriggerEvent);
+  const setLastTriggerEvent = useAlertStore(state => state.setLastTriggerEvent);
 
   useEffect(() => {
     let unlisten: UnlistenFn | undefined;
 
     const setupListener = async () => {
-      unlisten = await listen<AlertTriggeredEvent>('alert_triggered', (event) => {
+      unlisten = await listen<AlertTriggeredEvent>('alert_triggered', event => {
         const { alertName, symbol, currentPrice, conditionsMet } = event.payload;
 
         showNotification({
@@ -39,14 +39,18 @@ export function useAlertNotifications() {
   }, [setLastTriggerEvent]);
 }
 
-function showNotification(options: { title: string; message: string; type: 'success' | 'error' | 'info' }) {
+function showNotification(options: {
+  title: string;
+  message: string;
+  type: 'success' | 'error' | 'info';
+}) {
   if ('Notification' in window && Notification.permission === 'granted') {
     new Notification(options.title, {
       body: options.message,
       icon: '/icon.png',
     });
   } else if ('Notification' in window && Notification.permission === 'default') {
-    Notification.requestPermission().then((permission) => {
+    Notification.requestPermission().then(permission => {
       if (permission === 'granted') {
         new Notification(options.title, {
           body: options.message,

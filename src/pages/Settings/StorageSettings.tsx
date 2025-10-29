@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { HardDrive, Zap, Clock, Settings as SettingsIcon, CheckCircle, AlertCircle } from 'lucide-react';
+import {
+  HardDrive,
+  Zap,
+  Clock,
+  Settings as SettingsIcon,
+  CheckCircle,
+  AlertCircle,
+} from 'lucide-react';
 import { invoke } from '@tauri-apps/api/tauri';
 
 interface CompressionStats {
@@ -152,7 +159,9 @@ export function StorageSettings() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-[#0f0f1a] rounded-lg p-4 border border-purple-500/10">
             <div className="text-sm text-gray-400 mb-1">Total Database Size</div>
-            <div className="text-2xl font-bold text-white">{dbSize ? formatBytes(dbSize.total_bytes) : '---'}</div>
+            <div className="text-2xl font-bold text-white">
+              {dbSize ? formatBytes(dbSize.total_bytes) : '---'}
+            </div>
           </div>
 
           <div className="bg-[#0f0f1a] rounded-lg p-4 border border-purple-500/10">
@@ -209,13 +218,15 @@ export function StorageSettings() {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-sm font-medium text-white">Enable Compression</div>
-              <div className="text-xs text-gray-400">Automatically compress old data to save space</div>
+              <div className="text-xs text-gray-400">
+                Automatically compress old data to save space
+              </div>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 checked={config.enabled}
-                onChange={(e) => setConfig({ ...config, enabled: e.target.checked })}
+                onChange={e => setConfig({ ...config, enabled: e.target.checked })}
                 className="sr-only peer"
               />
               <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
@@ -226,13 +237,15 @@ export function StorageSettings() {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-sm font-medium text-white">Auto Compress</div>
-              <div className="text-xs text-gray-400">Run compression automatically at 3 AM daily</div>
+              <div className="text-xs text-gray-400">
+                Run compression automatically at 3 AM daily
+              </div>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 checked={config.auto_compress}
-                onChange={(e) => setConfig({ ...config, auto_compress: e.target.checked })}
+                onChange={e => setConfig({ ...config, auto_compress: e.target.checked })}
                 disabled={!config.enabled}
                 className="sr-only peer"
               />
@@ -247,7 +260,9 @@ export function StorageSettings() {
                 <div className="text-sm font-medium text-white">Age Threshold</div>
                 <div className="text-xs text-gray-400">Compress data older than this many days</div>
               </div>
-              <div className="text-sm font-bold text-purple-400">{config.age_threshold_days} days</div>
+              <div className="text-sm font-bold text-purple-400">
+                {config.age_threshold_days} days
+              </div>
             </div>
             <input
               type="range"
@@ -255,7 +270,7 @@ export function StorageSettings() {
               max="90"
               step="1"
               value={config.age_threshold_days}
-              onChange={(e) => setConfig({ ...config, age_threshold_days: parseInt(e.target.value) })}
+              onChange={e => setConfig({ ...config, age_threshold_days: parseInt(e.target.value) })}
               disabled={!config.enabled}
               className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-600 disabled:opacity-50"
             />
@@ -270,9 +285,13 @@ export function StorageSettings() {
             <div className="flex items-center justify-between mb-2">
               <div>
                 <div className="text-sm font-medium text-white">Compression Level</div>
-                <div className="text-xs text-gray-400">Higher levels = better compression but slower</div>
+                <div className="text-xs text-gray-400">
+                  Higher levels = better compression but slower
+                </div>
               </div>
-              <div className="text-sm font-bold text-purple-400">Level {config.compression_level}</div>
+              <div className="text-sm font-bold text-purple-400">
+                Level {config.compression_level}
+              </div>
             </div>
             <input
               type="range"
@@ -280,7 +299,7 @@ export function StorageSettings() {
               max="9"
               step="1"
               value={config.compression_level}
-              onChange={(e) => setConfig({ ...config, compression_level: parseInt(e.target.value) })}
+              onChange={e => setConfig({ ...config, compression_level: parseInt(e.target.value) })}
               disabled={!config.enabled}
               className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-600 disabled:opacity-50"
             />
@@ -318,8 +337,8 @@ export function StorageSettings() {
         </div>
 
         <p className="text-sm text-gray-400 mb-4">
-          Manually trigger compression of old data. This will compress historical events and closed trades
-          that are older than the configured age threshold.
+          Manually trigger compression of old data. This will compress historical events and closed
+          trades that are older than the configured age threshold.
         </p>
 
         <button

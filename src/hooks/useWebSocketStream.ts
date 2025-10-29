@@ -1,111 +1,111 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
-import { listen, UnlistenFn } from '@tauri-apps/api/event'
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { listen, UnlistenFn } from '@tauri-apps/api/event';
 
 export interface ConnectionStatus {
-  provider: string
-  state: 'Connecting' | 'Connected' | 'Disconnecting' | 'Disconnected' | 'Failed' | 'Fallback'
-  lastMessage: number | null
+  provider: string;
+  state: 'Connecting' | 'Connected' | 'Disconnecting' | 'Disconnected' | 'Failed' | 'Fallback';
+  lastMessage: number | null;
   statistics: {
-    messagesReceived: number
-    messagesSent: number
-    bytesReceived: number
-    bytesSent: number
-    reconnectCount: number
-    uptimeMs: number
-    averageLatencyMs: number
-    droppedMessages: number
-  }
+    messagesReceived: number;
+    messagesSent: number;
+    bytesReceived: number;
+    bytesSent: number;
+    reconnectCount: number;
+    uptimeMs: number;
+    averageLatencyMs: number;
+    droppedMessages: number;
+  };
   subscriptions: {
-    prices: string[]
-    wallets: string[]
-  }
+    prices: string[];
+    wallets: string[];
+  };
   fallback?: {
-    active: boolean
-    lastSuccess: number | null
-    intervalMs: number
-    reason: string | null
-  }
+    active: boolean;
+    lastSuccess: number | null;
+    intervalMs: number;
+    reason: string | null;
+  };
 }
 
 export function useWebSocketStream<T>(
   eventName: string,
   options?: {
-    onData?: (data: T) => void
-    enabled?: boolean
+    onData?: (data: T) => void;
+    enabled?: boolean;
   }
 ) {
-  const [data, setData] = useState<T | null>(null)
-  const [isConnected, setIsConnected] = useState(false)
-  const unlistenRef = useRef<UnlistenFn>()
+  const [data, setData] = useState<T | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const unlistenRef = useRef<UnlistenFn>();
 
-  const { onData, enabled = true } = options || {}
+  const { onData, enabled = true } = options || {};
 
   useEffect(() => {
     if (!enabled) {
-      return
+      return;
     }
 
-    let mounted = true
+    let mounted = true;
 
     const setupListener = async () => {
-      const unlisten = await listen<T>(eventName, (event) => {
-        if (!mounted) return
+      const unlisten = await listen<T>(eventName, event => {
+        if (!mounted) return;
 
-        const payload = event.payload
-        setData(payload)
-        setIsConnected(true)
+        const payload = event.payload;
+        setData(payload);
+        setIsConnected(true);
 
         if (onData) {
-          onData(payload)
+          onData(payload);
         }
-      })
+      });
 
       if (mounted) {
-        unlistenRef.current = unlisten
+        unlistenRef.current = unlisten;
       } else {
-        unlisten()
+        unlisten();
       }
-    }
+    };
 
-    setupListener()
+    setupListener();
 
     return () => {
-      mounted = false
+      mounted = false;
       if (unlistenRef.current) {
-        unlistenRef.current()
+        unlistenRef.current();
       }
-    }
-  }, [eventName, enabled, onData])
+    };
+  }, [eventName, enabled, onData]);
 
   return {
     data,
     isConnected,
-  }
+  };
 }
 
 export function useStreamStatus() {
-  const [statuses, setStatuses] = useState<ConnectionStatus[]>([])
+  const [statuses, setStatuses] = useState<ConnectionStatus[]>([]);
 
   useEffect(() => {
-    let unlisten: UnlistenFn | undefined
+    let unlisten: UnlistenFn | undefined;
 
     const setupListener = async () => {
-      unlisten = await listen<ConnectionStatus>('stream_status_change', (event) => {
-        setStatuses((prev) => {
-          const updated = prev.filter((s) => s.provider !== event.payload.provider)
-          return [...updated, event.payload]
-        })
-      })
-    }
+      unlisten = await listen<ConnectionStatus>('stream_status_change', event => {
+        setStatuses(prev => {
+          const updated = prev.filter(s => s.provider !== event.payload.provider);
+          return [...updated, event.payload];
+        });
+      });
+    };
 
-    setupListener()
+    setupListener();
 
     return () => {
       if (unlisten) {
-        unlisten()
+        unlisten();
       }
-    }
-  }, [])
+    };
+  }, []);
 
-  return statuses
+  return statuses;
 }

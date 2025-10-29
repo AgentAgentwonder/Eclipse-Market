@@ -38,7 +38,8 @@ export function PaperTradingTutorial() {
     {
       icon: FileText,
       title: 'Welcome to Paper Trading',
-      description: 'Practice trading strategies with $10,000 virtual balance. No real money is at risk.',
+      description:
+        'Practice trading strategies with $10,000 virtual balance. No real money is at risk.',
       points: [
         'Learn trading strategies safely',
         'Track your performance metrics',
@@ -71,7 +72,7 @@ export function PaperTradingTutorial() {
     {
       icon: Settings,
       title: 'Ready to Go Live?',
-      description: 'When you\'re ready to trade with real money, switch modes in Settings.',
+      description: "When you're ready to trade with real money, switch modes in Settings.",
       points: [
         'Go to Settings > Trading Execution',
         'Toggle off Paper Trading Mode',
@@ -130,7 +131,10 @@ export function PaperTradingTutorial() {
 
                 <div className="space-y-2">
                   {step.points.map((point, idx) => (
-                    <div key={idx} className="flex items-start gap-3 p-3 bg-slate-800/50 rounded-lg">
+                    <div
+                      key={idx}
+                      className="flex items-start gap-3 p-3 bg-slate-800/50 rounded-lg"
+                    >
                       <div className="w-6 h-6 rounded-full bg-orange-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
                         <span className="text-xs font-bold text-orange-400">{idx + 1}</span>
                       </div>
@@ -148,8 +152,8 @@ export function PaperTradingTutorial() {
                         idx === currentStep
                           ? 'bg-orange-500'
                           : idx < currentStep
-                          ? 'bg-orange-500/50'
-                          : 'bg-slate-700'
+                            ? 'bg-orange-500/50'
+                            : 'bg-slate-700'
                       }`}
                     />
                   ))}

@@ -1,5 +1,5 @@
-import { motion } from 'framer-motion'
-import { TrendingUp, BarChart3 } from 'lucide-react'
+import { motion } from 'framer-motion';
+import { TrendingUp, BarChart3 } from 'lucide-react';
 
 export default function Stocks() {
   return (
@@ -22,5 +22,5 @@ export default function Stocks() {
         </motion.div>
       </div>
     </div>
-  )
+  );
 }

@@ -1,53 +1,57 @@
-import { useState, useEffect, useRef } from 'react'
-import { ChevronDown, Wallet, Plus, Settings as SettingsIcon, Users } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useWalletStore } from '../../store/walletStore'
+import { useState, useEffect, useRef } from 'react';
+import { ChevronDown, Wallet, Plus, Settings as SettingsIcon, Users } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useWalletStore } from '../../store/walletStore';
 
 interface WalletSwitcherProps {
-  onAddWallet?: () => void
-  onManageGroups?: () => void
-  onWalletSettings?: (walletId: string) => void
+  onAddWallet?: () => void;
+  onManageGroups?: () => void;
+  onWalletSettings?: (walletId: string) => void;
 }
 
-export function WalletSwitcher({ onAddWallet, onManageGroups, onWalletSettings }: WalletSwitcherProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
+export function WalletSwitcher({
+  onAddWallet,
+  onManageGroups,
+  onWalletSettings,
+}: WalletSwitcherProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const wallets = useWalletStore((state) => state.wallets)
-  const activeWalletId = useWalletStore((state) => state.activeWalletId)
-  const aggregatedPortfolio = useWalletStore((state) => state.aggregatedPortfolio)
-  const setActiveWallet = useWalletStore((state) => state.setActiveWallet)
-  const listWallets = useWalletStore((state) => state.listWallets)
-  const getAggregatedPortfolio = useWalletStore((state) => state.getAggregatedPortfolio)
+  const wallets = useWalletStore(state => state.wallets);
+  const activeWalletId = useWalletStore(state => state.activeWalletId);
+  const aggregatedPortfolio = useWalletStore(state => state.aggregatedPortfolio);
+  const setActiveWallet = useWalletStore(state => state.setActiveWallet);
+  const listWallets = useWalletStore(state => state.listWallets);
+  const getAggregatedPortfolio = useWalletStore(state => state.getAggregatedPortfolio);
 
   useEffect(() => {
-    listWallets()
-    getAggregatedPortfolio()
-  }, [listWallets, getAggregatedPortfolio])
+    listWallets();
+    getAggregatedPortfolio();
+  }, [listWallets, getAggregatedPortfolio]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
+        setIsOpen(false);
       }
-    }
+    };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
     }
-  }, [isOpen])
+  }, [isOpen]);
 
-  const activeWallet = wallets.find(w => w.id === activeWalletId)
+  const activeWallet = wallets.find(w => w.id === activeWalletId);
 
   const handleWalletSelect = async (walletId: string) => {
     try {
-      await setActiveWallet(walletId)
-      setIsOpen(false)
+      await setActiveWallet(walletId);
+      setIsOpen(false);
     } catch (error) {
-      console.error('Failed to switch wallet:', error)
+      console.error('Failed to switch wallet:', error);
     }
-  }
+  };
 
   if (wallets.length === 0) {
     return (
@@ -60,7 +64,7 @@ export function WalletSwitcher({ onAddWallet, onManageGroups, onWalletSettings }
           Add Wallet
         </span>
       </button>
-    )
+    );
   }
 
   return (
@@ -100,7 +104,9 @@ export function WalletSwitcher({ onAddWallet, onManageGroups, onWalletSettings }
                 <div className="grid grid-cols-2 gap-2">
                   <div className="px-3 py-2 rounded-lg bg-purple-500/10">
                     <div className="text-xs text-gray-400">Total Balance</div>
-                    <div className="text-sm font-bold">{aggregatedPortfolio.totalBalance.toFixed(4)} SOL</div>
+                    <div className="text-sm font-bold">
+                      {aggregatedPortfolio.totalBalance.toFixed(4)} SOL
+                    </div>
                   </div>
                   <div className="px-3 py-2 rounded-lg bg-purple-500/10">
                     <div className="text-xs text-gray-400">Total Wallets</div>
@@ -108,13 +114,18 @@ export function WalletSwitcher({ onAddWallet, onManageGroups, onWalletSettings }
                   </div>
                   <div className="px-3 py-2 rounded-lg bg-green-500/10">
                     <div className="text-xs text-gray-400">Realized P&L</div>
-                    <div className={`text-sm font-bold ${aggregatedPortfolio.totalRealizedPnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      {aggregatedPortfolio.totalRealizedPnl >= 0 ? '+' : ''}{aggregatedPortfolio.totalRealizedPnl.toFixed(2)} SOL
+                    <div
+                      className={`text-sm font-bold ${aggregatedPortfolio.totalRealizedPnl >= 0 ? 'text-green-400' : 'text-red-400'}`}
+                    >
+                      {aggregatedPortfolio.totalRealizedPnl >= 0 ? '+' : ''}
+                      {aggregatedPortfolio.totalRealizedPnl.toFixed(2)} SOL
                     </div>
                   </div>
                   <div className="px-3 py-2 rounded-lg bg-blue-500/10">
                     <div className="text-xs text-gray-400">Total Volume</div>
-                    <div className="text-sm font-bold">{aggregatedPortfolio.totalVolume.toFixed(2)} SOL</div>
+                    <div className="text-sm font-bold">
+                      {aggregatedPortfolio.totalVolume.toFixed(2)} SOL
+                    </div>
                   </div>
                 </div>
               </div>
@@ -123,7 +134,7 @@ export function WalletSwitcher({ onAddWallet, onManageGroups, onWalletSettings }
             <div className="max-h-80 overflow-y-auto">
               <div className="p-2">
                 <h3 className="text-xs font-medium text-gray-400 px-2 py-1 uppercase">Wallets</h3>
-                {wallets.map((wallet) => (
+                {wallets.map(wallet => (
                   <button
                     key={wallet.id}
                     onClick={() => handleWalletSelect(wallet.id)}
@@ -146,10 +157,10 @@ export function WalletSwitcher({ onAddWallet, onManageGroups, onWalletSettings }
                       <span className="text-sm font-bold">{wallet.balance.toFixed(4)}</span>
                       {onWalletSettings && (
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onWalletSettings(wallet.id)
-                            setIsOpen(false)
+                          onClick={e => {
+                            e.stopPropagation();
+                            onWalletSettings(wallet.id);
+                            setIsOpen(false);
                           }}
                           className="p-1 hover:bg-white/10 rounded transition-all"
                         >
@@ -166,8 +177,8 @@ export function WalletSwitcher({ onAddWallet, onManageGroups, onWalletSettings }
               {onAddWallet && (
                 <button
                   onClick={() => {
-                    onAddWallet()
-                    setIsOpen(false)
+                    onAddWallet();
+                    setIsOpen(false);
                   }}
                   className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 transition-all"
                 >
@@ -178,8 +189,8 @@ export function WalletSwitcher({ onAddWallet, onManageGroups, onWalletSettings }
               {onManageGroups && (
                 <button
                   onClick={() => {
-                    onManageGroups()
-                    setIsOpen(false)
+                    onManageGroups();
+                    setIsOpen(false);
                   }}
                   className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 transition-all"
                 >
@@ -192,5 +203,5 @@ export function WalletSwitcher({ onAddWallet, onManageGroups, onWalletSettings }
         )}
       </AnimatePresence>
     </div>
-  )
+  );
 }

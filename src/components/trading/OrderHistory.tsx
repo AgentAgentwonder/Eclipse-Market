@@ -82,7 +82,7 @@ export function OrderHistory({ walletAddress, limit = 50 }: OrderHistoryProps) {
         <div className="p-6 text-sm text-gray-400">No order history</div>
       ) : (
         <div className="divide-y divide-gray-700">
-          {orders.map((order) => (
+          {orders.map(order => (
             <div key={order.id} className="p-4">
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center gap-2">
@@ -90,9 +90,11 @@ export function OrderHistory({ walletAddress, limit = 50 }: OrderHistoryProps) {
                   <div>
                     <div className="text-sm font-medium">
                       {ORDER_TYPE_LABELS[order.order_type]}
-                      <span className={`ml-2 uppercase font-semibold ${
-                        order.side === 'buy' ? 'text-green-400' : 'text-red-400'
-                      }`}>
+                      <span
+                        className={`ml-2 uppercase font-semibold ${
+                          order.side === 'buy' ? 'text-green-400' : 'text-red-400'
+                        }`}
+                      >
                         {order.side}
                       </span>
                     </div>
@@ -118,9 +120,7 @@ export function OrderHistory({ walletAddress, limit = 50 }: OrderHistoryProps) {
                 </div>
                 <div className="bg-gray-700/40 p-2 rounded">
                   <div className="text-gray-500">Status</div>
-                  <div className="text-gray-200 capitalize">
-                    {order.status.replace('_', ' ')}
-                  </div>
+                  <div className="text-gray-200 capitalize">{order.status.replace('_', ' ')}</div>
                 </div>
 
                 {order.limit_price && (
