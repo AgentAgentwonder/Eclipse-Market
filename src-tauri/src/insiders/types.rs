@@ -138,6 +138,113 @@ pub struct WalletStatistics {
     pub last_activity: Option<DateTime<Utc>>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+pub struct SmartMoneyWallet {
+    pub id: String,
+    pub wallet_address: String,
+    pub label: Option<String>,
+    pub total_trades: i64,
+    pub winning_trades: i64,
+    pub losing_trades: i64,
+    pub win_rate: f64,
+    pub total_pnl: f64,
+    pub avg_hold_time_hours: f64,
+    pub smart_money_score: f64,
+    pub is_smart_money: bool,
+    pub first_seen: String,
+    pub last_updated: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SmartMoneyClassification {
+    pub wallet_address: String,
+    pub is_smart_money: bool,
+    pub score: f64,
+    pub reason: String,
+    pub metrics: SmartMoneyMetrics,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SmartMoneyMetrics {
+    pub total_trades: i64,
+    pub win_rate: f64,
+    pub avg_profit_per_trade: f64,
+    pub sharpe_ratio: Option<f64>,
+    pub max_drawdown: Option<f64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WhaleAlert {
+    pub id: String,
+    pub wallet_address: String,
+    pub wallet_label: Option<String>,
+    pub activity_id: String,
+    pub tx_signature: String,
+    pub action_type: String,
+    pub token_symbol: Option<String>,
+    pub amount_usd: f64,
+    pub threshold: f64,
+    pub alert_sent: bool,
+    pub timestamp: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SmartMoneyConsensus {
+    pub token_mint: String,
+    pub token_symbol: Option<String>,
+    pub action: String,
+    pub smart_wallets_count: i64,
+    pub total_volume_usd: f64,
+    pub avg_price: f64,
+    pub consensus_strength: f64,
+    pub first_seen: DateTime<Utc>,
+    pub last_updated: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AlertConfig {
+    pub id: String,
+    pub alert_type: AlertType,
+    pub enabled: bool,
+    pub threshold: Option<f64>,
+    pub push_enabled: bool,
+    pub email_enabled: bool,
+    pub telegram_enabled: bool,
+    pub telegram_config_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum AlertType {
+    WhaleTransaction,
+    SmartMoneyBuy,
+    SmartMoneySell,
+    SmartMoneyConsensus,
+}
+
+impl AlertType {
+    pub fn as_str(&self) -> &str {
+        match self {
+            AlertType::WhaleTransaction => "whale_transaction",
+            AlertType::SmartMoneyBuy => "smart_money_buy",
+            AlertType::SmartMoneySell => "smart_money_sell",
+            AlertType::SmartMoneyConsensus => "smart_money_consensus",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SentimentComparison {
+    pub token_mint: String,
+    pub token_symbol: Option<String>,
+    pub smart_money_sentiment: f64,
+    pub retail_sentiment: f64,
+    pub divergence: f64,
+    pub smart_money_volume: f64,
+    pub retail_volume: f64,
+    pub timestamp: DateTime<Utc>,
+}
+
 pub struct WalletMonitorDatabase {
     pool: Pool<Sqlite>,
 }
@@ -195,6 +302,96 @@ impl WalletMonitorDatabase {
             CREATE INDEX IF NOT EXISTS idx_wallet_activities_wallet ON wallet_activities(wallet_address);
             CREATE INDEX IF NOT EXISTS idx_wallet_activities_time ON wallet_activities(timestamp);
             CREATE INDEX IF NOT EXISTS idx_wallet_activities_action ON wallet_activities(action_type);
+            "#,
+        )
+        .execute(&self.pool)
+        .await?;
+
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS smart_money_wallets (
+                id TEXT PRIMARY KEY,
+                wallet_address TEXT NOT NULL UNIQUE,
+                label TEXT,
+                total_trades INTEGER NOT NULL DEFAULT 0,
+                winning_trades INTEGER NOT NULL DEFAULT 0,
+                losing_trades INTEGER NOT NULL DEFAULT 0,
+                win_rate REAL NOT NULL DEFAULT 0.0,
+                total_pnl REAL NOT NULL DEFAULT 0.0,
+                avg_hold_time_hours REAL NOT NULL DEFAULT 0.0,
+                smart_money_score REAL NOT NULL DEFAULT 0.0,
+                is_smart_money INTEGER NOT NULL DEFAULT 0,
+                first_seen TEXT NOT NULL,
+                last_updated TEXT NOT NULL
+            )
+            "#,
+        )
+        .execute(&self.pool)
+        .await?;
+
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS whale_alerts (
+                id TEXT PRIMARY KEY,
+                wallet_address TEXT NOT NULL,
+                wallet_label TEXT,
+                activity_id TEXT NOT NULL,
+                tx_signature TEXT NOT NULL,
+                action_type TEXT NOT NULL,
+                token_symbol TEXT,
+                amount_usd REAL NOT NULL,
+                threshold REAL NOT NULL,
+                alert_sent INTEGER NOT NULL DEFAULT 0,
+                timestamp TEXT NOT NULL
+            )
+            "#,
+        )
+        .execute(&self.pool)
+        .await?;
+
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS alert_configs (
+                id TEXT PRIMARY KEY,
+                alert_type TEXT NOT NULL,
+                enabled INTEGER NOT NULL DEFAULT 1,
+                threshold REAL,
+                push_enabled INTEGER NOT NULL DEFAULT 1,
+                email_enabled INTEGER NOT NULL DEFAULT 0,
+                telegram_enabled INTEGER NOT NULL DEFAULT 0,
+                telegram_config_id TEXT
+            )
+            "#,
+        )
+        .execute(&self.pool)
+        .await?;
+
+        sqlx::query(
+            r#"
+            CREATE INDEX IF NOT EXISTS idx_smart_money_wallets_score ON smart_money_wallets(smart_money_score);
+            CREATE INDEX IF NOT EXISTS idx_smart_money_wallets_is_smart ON smart_money_wallets(is_smart_money);
+            CREATE INDEX IF NOT EXISTS idx_whale_alerts_timestamp ON whale_alerts(timestamp);
+            CREATE INDEX IF NOT EXISTS idx_whale_alerts_wallet ON whale_alerts(wallet_address);
+            CREATE INDEX IF NOT EXISTS idx_alert_configs_type ON alert_configs(alert_type);
+            "#,
+        )
+        .execute(&self.pool)
+        .await?;
+
+        self.insert_default_alert_configs().await?;
+
+        Ok(())
+    }
+
+    async fn insert_default_alert_configs(&self) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            r#"
+            INSERT OR IGNORE INTO alert_configs (id, alert_type, enabled, threshold, push_enabled, email_enabled, telegram_enabled)
+            VALUES 
+                ('whale_tx', 'whale_transaction', 1, 50000.0, 1, 0, 0),
+                ('smart_buy', 'smart_money_buy', 1, 10000.0, 1, 0, 0),
+                ('smart_sell', 'smart_money_sell', 1, 10000.0, 1, 0, 0),
+                ('consensus', 'smart_money_consensus', 1, NULL, 1, 0, 0)
             "#,
         )
         .execute(&self.pool)
@@ -416,5 +613,9 @@ impl WalletMonitorDatabase {
                 .and_then(|s| DateTime::parse_from_rfc3339(&s).ok())
                 .map(|dt| dt.with_timezone(&Utc)),
         })
+    }
+
+    pub fn pool(&self) -> Pool<Sqlite> {
+        self.pool.clone()
     }
 }
