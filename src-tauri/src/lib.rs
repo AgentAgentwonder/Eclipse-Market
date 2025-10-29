@@ -219,6 +219,8 @@ pub fn run() {
 
             trading::register_trading_state(app);
             trading::register_paper_trading_state(app);
+            trading::register_auto_trading_state(app);
+            trading::register_optimizer_state(app);
 
             // Initialize wallet monitor
             let monitor_handle = app.handle();
@@ -708,6 +710,27 @@ pub fn run() {
             get_order,
             acknowledge_order,
             update_order_prices,
+            
+            // Auto Trading Engine
+            auto_trading_create_strategy,
+            auto_trading_update_strategy,
+            auto_trading_delete_strategy,
+            auto_trading_start_strategy,
+            auto_trading_stop_strategy,
+            auto_trading_pause_strategy,
+            auto_trading_activate_kill_switch,
+            auto_trading_deactivate_kill_switch,
+            auto_trading_get_strategies,
+            auto_trading_get_strategy,
+            auto_trading_get_executions,
+            auto_trading_apply_parameters,
+            
+            // Backtesting & Optimization
+            backtest_run,
+            optimizer_start,
+            optimizer_cancel,
+            optimizer_get_runs,
+            optimizer_get_run,
             
             // Paper Trading Simulation
             paper_trading_init,
