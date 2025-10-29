@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   LineChart,
   Network,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { PhantomConnect } from './components/wallet/PhantomConnect';
@@ -23,6 +24,7 @@ import { WalletSwitcher } from './components/wallet/WalletSwitcher';
 import { AddWalletModal } from './components/wallet/AddWalletModal';
 import { GroupManagementModal } from './components/wallet/GroupManagementModal';
 import { WalletSettingsModal } from './components/wallet/WalletSettingsModal';
+import { ChainSelector } from './components/chains/ChainSelector';
 import { LockScreen } from './components/auth/LockScreen';
 import { ConnectionStatus } from './components/common/ConnectionStatus';
 import { PaperModeIndicator } from './components/trading/PaperModeIndicator';
@@ -43,6 +45,7 @@ import TokenFlow from './pages/TokenFlow';
 import { MarketSurveillance } from './pages/MarketSurveillance';
 import { PaperTradingDashboard } from './pages/PaperTrading/Dashboard';
 import SettingsPage from './pages/Settings';
+import MultiChain from './pages/MultiChain';
 import { BIOMETRIC_STATUS_EVENT } from './constants/events';
 import { useWalletStore } from './store/walletStore';
 import { usePaperTradingStore } from './store/paperTradingStore';
@@ -156,6 +159,7 @@ function App() {
       { id: 'dashboard', label: 'Dashboard', icon: Home, component: Dashboard },
       { id: 'coins', label: 'Coins', icon: TrendingUp, component: Coins },
       { id: 'portfolio', label: 'Portfolio', icon: Briefcase, component: Portfolio },
+      { id: 'multi-chain', label: 'Multi-Chain', icon: ArrowRightLeft, component: MultiChain },
       { id: 'multisig', label: 'Multisig', icon: Shield, component: Multisig },
       { id: 'stocks', label: 'Stocks', icon: BarChart3, component: Stocks },
       { id: 'insiders', label: 'Insiders', icon: Users, component: Insiders },
@@ -215,6 +219,7 @@ function App() {
             </div>
 
             <div className="flex items-center gap-4">
+              <ChainSelector />
               <WalletSwitcher
                 onAddWallet={() => setAddWalletModalOpen(true)}
                 onManageGroups={() => setGroupsModalOpen(true)}

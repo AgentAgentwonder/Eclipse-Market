@@ -9,6 +9,27 @@ use crate::security::keystore::{Keystore, KeystoreError};
 
 const KEYSTORE_STATE_KEY: &str = "wallet.multi_state";
 
+fn default_chain_id() -> String {
+    "solana".to_string()
+}
+
+fn infer_chain_id(network: &str) -> String {
+    let normalized = network.to_lowercase();
+    if normalized.contains("sol") {
+        "solana".to_string()
+    } else if normalized.contains("eth") {
+        "ethereum".to_string()
+    } else if normalized.contains("base") {
+        "base".to_string()
+    } else if normalized.contains("matic") || normalized.contains("polygon") {
+        "polygon".to_string()
+    } else if normalized.contains("arb") {
+        "arbitrum".to_string()
+    } else {
+        default_chain_id()
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WalletInfo {
@@ -16,6 +37,8 @@ pub struct WalletInfo {
     pub public_key: String,
     pub label: String,
     pub network: String,
+    #[serde(default = "default_chain_id")]
+    pub chain_id: String,
     pub wallet_type: WalletType,
     pub group_id: Option<String>,
     pub created_at: DateTime<Utc>,
@@ -118,6 +141,7 @@ pub struct AddWalletRequest {
     pub network: String,
     pub wallet_type: WalletType,
     pub group_id: Option<String>,
+    pub chain_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -127,6 +151,7 @@ pub struct UpdateWalletRequest {
     pub label: Option<String>,
     pub group_id: Option<Option<String>>,
     pub preferences: Option<WalletPreferences>,
+    pub chain_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -220,11 +245,15 @@ impl MultiWalletManager {
             }
         }
 
+        let chain_id = request.chain_id.clone()
+            .unwrap_or_else(|| infer_chain_id(&request.network));
+        
         let wallet = WalletInfo {
             id: wallet_id.clone(),
             public_key: request.public_key,
             label: request.label,
             network: request.network,
+            chain_id,
             wallet_type: request.wallet_type,
             group_id: request.group_id.clone(),
             created_at: now,
@@ -295,6 +324,10 @@ impl MultiWalletManager {
                     wallet.group_id = None;
                 }
             }
+        }
+
+        if let Some(chain_id) = request.chain_id {
+            wallet.chain_id = chain_id;
         }
 
         if let Some(preferences) = request.preferences {
