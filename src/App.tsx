@@ -1,3 +1,30 @@
+import { useEffect, useMemo, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Menu, X, Home, TrendingUp, BarChart3, Users, Bell, Settings, Briefcase, Loader2, FileText, Shield } from 'lucide-react'
+import { invoke } from '@tauri-apps/api/tauri'
+import { PhantomConnect } from './components/wallet/PhantomConnect'
+import { WalletSwitcher } from './components/wallet/WalletSwitcher'
+import { AddWalletModal } from './components/wallet/AddWalletModal'
+import { GroupManagementModal } from './components/wallet/GroupManagementModal'
+import { WalletSettingsModal } from './components/wallet/WalletSettingsModal'
+import { LockScreen } from './components/auth/LockScreen'
+import { ConnectionStatus } from './components/common/ConnectionStatus'
+import { PaperModeIndicator } from './components/trading/PaperModeIndicator'
+import { PaperTradingTutorial } from './components/trading/PaperTradingTutorial'
+import ProposalNotification from './components/wallet/ProposalNotification'
+import Dashboard from './pages/Dashboard'
+import Coins from './pages/Coins'
+import Stocks from './pages/Stocks'
+import Insiders from './pages/Insiders'
+import Trading from './pages/Trading'
+import Portfolio from './pages/Portfolio'
+import Multisig from './pages/Multisig'
+import { PaperTradingDashboard } from './pages/PaperTrading/Dashboard'
+import SettingsPage from './pages/Settings'
+import { BIOMETRIC_STATUS_EVENT } from './constants/events'
+import { useWalletStore } from './store/walletStore'
+import { usePaperTradingStore } from './store/paperTradingStore'
+import { useAlertNotifications } from './hooks/useAlertNotifications'
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -53,6 +80,20 @@ function App() {
   const [walletSettingsModalOpen, setWalletSettingsModalOpen] = useState(false);
   const [selectedWalletId, setSelectedWalletId] = useState<string | null>(null);
 
+  const [currentPage, setCurrentPage] = useState('dashboard')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [lockVisible, setLockVisible] = useState(false)
+  const [initializingLock, setInitializingLock] = useState(true)
+  const [addWalletModalOpen, setAddWalletModalOpen] = useState(false)
+  const [groupsModalOpen, setGroupsModalOpen] = useState(false)
+  const [walletSettingsModalOpen, setWalletSettingsModalOpen] = useState(false)
+  const [selectedWalletId, setSelectedWalletId] = useState<string | null>(null)
+
+  const wallets = useWalletStore((state) => state.wallets)
+  const refreshMultiWallet = useWalletStore((state) => state.refreshMultiWallet)
+  const { isPaperMode, togglePaperMode } = usePaperTradingStore()
+  const proposalNotifications = useWalletStore((state) => state.proposalNotifications)
+  const dismissProposalNotification = useWalletStore((state) => state.dismissProposalNotification)
   const wallets = useWalletStore(state => state.wallets);
   const refreshMultiWallet = useWalletStore(state => state.refreshMultiWallet);
   const { isPaperMode, togglePaperMode } = usePaperTradingStore();
@@ -125,6 +166,7 @@ function App() {
       { id: 'dashboard', label: 'Dashboard', icon: Home, component: Dashboard },
       { id: 'coins', label: 'Coins', icon: TrendingUp, component: Coins },
       { id: 'portfolio', label: 'Portfolio', icon: Briefcase, component: Portfolio },
+      { id: 'multisig', label: 'Multisig', icon: Shield, component: Multisig },
       { id: 'stocks', label: 'Stocks', icon: BarChart3, component: Stocks },
       { id: 'insiders', label: 'Insiders', icon: Users, component: Insiders },
       {
@@ -277,6 +319,15 @@ function App() {
           setSelectedWalletId(null);
         }}
         walletId={selectedWalletId}
+      />
+
+      <ProposalNotification
+        notifications={proposalNotifications}
+        onDismiss={dismissProposalNotification}
+        onOpenProposal={(id) => {
+          setCurrentPage('multisig')
+          dismissProposalNotification(id)
+        }}
       />
     </div>
   );
