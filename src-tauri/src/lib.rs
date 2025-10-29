@@ -17,6 +17,7 @@ mod notifications;
 mod portfolio;
 mod security;
 mod sentiment;
+mod stocks;
 mod stream_commands;
 mod token_flow;
 mod trading;
@@ -41,6 +42,7 @@ pub use market::*;
 pub use notifications::*;
 pub use portfolio::*;
 pub use sentiment::*;
+pub use stocks::*;
 pub use token_flow::*;
 pub use trading::*;
 pub use wallet::hardware_wallet::*;
@@ -436,10 +438,14 @@ pub fn run() {
              let shared_holder_analyzer: SharedHolderAnalyzer = Arc::new(RwLock::new(holder_analyzer));
              app.manage(shared_holder_analyzer.clone());
 
+             // Initialize stock cache state
+             let stock_cache: stocks::SharedStockCache = Arc::new(RwLock::new(stocks::StockCache::default()));
+             app.manage(stock_cache.clone());
+
              // Start background compression job (runs daily at 3 AM)
              let compression_job = shared_compression_manager.clone();
              tauri::async_runtime::spawn(async move {
-                 use chrono::Timelike;
+
                  use tokio::time::{sleep, Duration};
 
                  loop {
@@ -837,6 +843,17 @@ pub fn run() {
             drawing_sync,
             drawing_list_templates,
             drawing_save_templates,
+
+            // Stock commands
+            stocks::get_trending_stocks,
+            stocks::get_top_movers,
+            stocks::get_new_ipos,
+            stocks::get_earnings_calendar,
+            stocks::get_stock_news,
+            stocks::get_institutional_holdings,
+            stocks::get_insider_activity,
+            stocks::create_stock_alert,
+            stocks::get_stock_alerts,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
