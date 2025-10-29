@@ -16,8 +16,8 @@ interface OrderFormSuggestionState {
   consumeSuggestion: () => void;
 }
 
-export const useOrderFormSuggestionStore = create<OrderFormSuggestionState>((set) => ({
+export const useOrderFormSuggestionStore = create<OrderFormSuggestionState>(set => ({
   suggestion: undefined,
-  setSuggestion: (suggestion) => set({ suggestion: { ...suggestion, id: Date.now() } }),
+  setSuggestion: suggestion => set({ suggestion: { ...suggestion, id: Date.now() } }),
   consumeSuggestion: () => set({ suggestion: undefined }),
 }));

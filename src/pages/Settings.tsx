@@ -1,6 +1,21 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Lock, Fingerprint, AlertCircle, AlertTriangle, CheckCircle, Eye, EyeOff, Usb, TrendingUp, Zap, FileText, Server, Bell } from 'lucide-react';
+import {
+  Shield,
+  Lock,
+  Fingerprint,
+  AlertCircle,
+  AlertTriangle,
+  CheckCircle,
+  Eye,
+  EyeOff,
+  Usb,
+  TrendingUp,
+  Zap,
+  FileText,
+  Server,
+  Bell,
+} from 'lucide-react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { BIOMETRIC_STATUS_EVENT } from '../constants/events';
 import HardwareWalletManager from '../components/wallet/HardwareWalletManager';
@@ -53,13 +68,15 @@ function Settings() {
   const [priorityEstimates, setPriorityEstimates] = useState<PriorityFeeEstimate[]>([]);
   const [networkLoading, setNetworkLoading] = useState(false);
   const [networkError, setNetworkError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'security' | 'hardware' | 'trading' | 'activity' | 'alerts'>('security');
+  const [activeTab, setActiveTab] = useState<
+    'security' | 'hardware' | 'trading' | 'activity' | 'alerts'
+  >('security');
   const [paperModeDialogOpen, setPaperModeDialogOpen] = useState(false);
   const [paperModeTarget, setPaperModeTarget] = useState<'paper' | 'live'>('paper');
   const [acknowledgeLiveTrading, setAcknowledgeLiveTrading] = useState(false);
 
   const { hardwareDevices, activeHardwareDevice, signingMethod } = useWalletStore();
-  
+
   const {
     slippage,
     setSlippageTolerance,
@@ -100,13 +117,9 @@ function Settings() {
       ]);
       setCongestionData(congestion);
       setPriorityEstimates(estimates);
-      
+
       // Update congestion data in store
-      updateCongestionData(
-        congestion.level,
-        congestion.averageFee,
-        congestion.medianFee
-      );
+      updateCongestionData(congestion.level, congestion.averageFee, congestion.medianFee);
     } catch (err) {
       console.error('Failed to load network data:', err);
       setNetworkError(String(err));
@@ -156,10 +169,8 @@ function Settings() {
       setSuccess('Biometric authentication enrolled successfully!');
       setEnrollPassword('');
       setEnrollConfirmPassword('');
-      
-      window.dispatchEvent(
-        new CustomEvent(BIOMETRIC_STATUS_EVENT, { detail: newStatus })
-      );
+
+      window.dispatchEvent(new CustomEvent(BIOMETRIC_STATUS_EVENT, { detail: newStatus }));
     } catch (err) {
       console.error('Failed to enroll biometric:', err);
       setError(String(err));
@@ -182,9 +193,7 @@ function Settings() {
       setStatus(newStatus);
       setSuccess('Biometric authentication disabled');
 
-      window.dispatchEvent(
-        new CustomEvent(BIOMETRIC_STATUS_EVENT, { detail: newStatus })
-      );
+      window.dispatchEvent(new CustomEvent(BIOMETRIC_STATUS_EVENT, { detail: newStatus }));
     } catch (err) {
       console.error('Failed to disable biometric:', err);
       setError(String(err));
@@ -269,11 +278,15 @@ function Settings() {
                       status?.enrolled
                         ? 'bg-green-500/20 text-green-400 border border-green-500/30'
                         : status?.available
-                        ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                        : 'bg-slate-500/20 text-slate-400 border border-slate-500/30'
+                          ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                          : 'bg-slate-500/20 text-slate-400 border border-slate-500/30'
                     }`}
                   >
-                    {status?.enrolled ? 'Enrolled' : status?.available ? 'Available' : 'Unavailable'}
+                    {status?.enrolled
+                      ? 'Enrolled'
+                      : status?.available
+                        ? 'Available'
+                        : 'Unavailable'}
                   </div>
                 </div>
 
@@ -283,7 +296,8 @@ function Settings() {
                     <div className="text-sm text-blue-400">
                       <p className="font-medium mb-1">Platform Information</p>
                       <p className="text-blue-400/80">
-                        Biometric authentication is not available on Linux. Only password-based authentication is supported.
+                        Biometric authentication is not available on Linux. Only password-based
+                        authentication is supported.
                       </p>
                     </div>
                   </div>
@@ -325,7 +339,8 @@ function Settings() {
                   <div className="p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl">
                     <h3 className="font-semibold mb-2">Enable Biometric Authentication</h3>
                     <p className="text-sm text-white/60 mb-4">
-                      Set a fallback password that can be used if biometric authentication fails or is unavailable.
+                      Set a fallback password that can be used if biometric authentication fails or
+                      is unavailable.
                     </p>
                   </div>
 
@@ -335,7 +350,7 @@ function Settings() {
                       <input
                         type={showEnrollPassword ? 'text' : 'password'}
                         value={enrollPassword}
-                        onChange={(e) => setEnrollPassword(e.target.value)}
+                        onChange={e => setEnrollPassword(e.target.value)}
                         placeholder="Enter password (min. 8 characters)"
                         className="w-full px-4 py-3 bg-slate-900/50 border border-purple-500/20 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:border-purple-500/50 transition-colors pr-12"
                         disabled={enrolling}
@@ -345,7 +360,11 @@ function Settings() {
                         onClick={() => setShowEnrollPassword(!showEnrollPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/60 transition-colors"
                       >
-                        {showEnrollPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        {showEnrollPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -356,7 +375,7 @@ function Settings() {
                       <input
                         type={showEnrollConfirmPassword ? 'text' : 'password'}
                         value={enrollConfirmPassword}
-                        onChange={(e) => setEnrollConfirmPassword(e.target.value)}
+                        onChange={e => setEnrollConfirmPassword(e.target.value)}
                         placeholder="Confirm password"
                         className="w-full px-4 py-3 bg-slate-900/50 border border-purple-500/20 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:border-purple-500/50 transition-colors pr-12"
                         disabled={enrolling}
@@ -366,7 +385,11 @@ function Settings() {
                         onClick={() => setShowEnrollConfirmPassword(!showEnrollConfirmPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/60 transition-colors"
                       >
-                        {showEnrollConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        {showEnrollConfirmPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -387,9 +410,12 @@ function Settings() {
               {status?.enrolled && (
                 <div className="space-y-4">
                   <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
-                    <h3 className="font-semibold mb-2 text-green-400">Biometric Authentication Active</h3>
+                    <h3 className="font-semibold mb-2 text-green-400">
+                      Biometric Authentication Active
+                    </h3>
                     <p className="text-sm text-white/60">
-                      Your app is protected with {getPlatformName()}. You will be prompted to authenticate when launching the app.
+                      Your app is protected with {getPlatformName()}. You will be prompted to
+                      authenticate when launching the app.
                     </p>
                   </div>
 
@@ -431,7 +457,9 @@ function Settings() {
             </div>
             <div>
               <h2 className="text-2xl font-bold">Price Alerts</h2>
-              <p className="text-white/60 text-sm">Manage watchlists and notification preferences</p>
+              <p className="text-white/60 text-sm">
+                Manage watchlists and notification preferences
+              </p>
             </div>
           </div>
 
@@ -501,7 +529,9 @@ function Settings() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-white/60">Type</span>
-                    <span className="font-medium capitalize">{activeHardwareDevice.deviceType}</span>
+                    <span className="font-medium capitalize">
+                      {activeHardwareDevice.deviceType}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-white/60">Status</span>
@@ -527,7 +557,9 @@ function Settings() {
               ) : (
                 <div className="p-4 bg-slate-900 rounded-xl border border-purple-500/10 text-center">
                   <p className="text-sm text-white/60">No hardware wallet connected.</p>
-                  <p className="text-xs text-white/40 mt-1">Connect a Ledger or Trezor device to get started.</p>
+                  <p className="text-xs text-white/40 mt-1">
+                    Connect a Ledger or Trezor device to get started.
+                  </p>
                 </div>
               )}
             </div>
@@ -542,7 +574,9 @@ function Settings() {
             </div>
             <div>
               <h2 className="text-2xl font-bold">Trading Execution</h2>
-              <p className="text-white/60 text-sm">Paper mode, slippage, MEV protection, and gas optimization</p>
+              <p className="text-white/60 text-sm">
+                Paper mode, slippage, MEV protection, and gas optimization
+              </p>
             </div>
           </div>
 
@@ -554,15 +588,13 @@ function Settings() {
                   <FileText className="w-5 h-5 text-orange-400" />
                   Paper Trading Mode
                 </h3>
-                <p className="text-sm text-white/60 mt-1">
-                  Practice trading with virtual balance
-                </p>
+                <p className="text-sm text-white/60 mt-1">Practice trading with virtual balance</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
                   checked={isPaperMode}
-                  onChange={(e) => {
+                  onChange={e => {
                     if (e.target.checked) {
                       setPaperModeTarget('paper');
                       setPaperModeDialogOpen(true);
@@ -585,7 +617,8 @@ function Settings() {
                     <div className="text-sm text-orange-400">
                       <p className="font-medium mb-1">Paper Mode Active</p>
                       <p className="text-orange-400/80">
-                        No real transactions will occur. All trades are simulated with virtual balance.
+                        No real transactions will occur. All trades are simulated with virtual
+                        balance.
                       </p>
                     </div>
                   </div>
@@ -597,15 +630,13 @@ function Settings() {
           {/* Slippage Configuration */}
           <div className="mb-6 p-4 bg-slate-900/50 rounded-2xl border border-purple-500/10 space-y-4">
             <h3 className="font-semibold text-lg">Slippage Tolerance</h3>
-            
+
             <div>
-              <label className="block text-sm font-medium mb-2">
-                Default Tolerance (bps)
-              </label>
+              <label className="block text-sm font-medium mb-2">Default Tolerance (bps)</label>
               <input
                 type="number"
                 value={slippage.tolerance}
-                onChange={(e) => setSlippageTolerance(parseInt(e.target.value) || 50)}
+                onChange={e => setSlippageTolerance(parseInt(e.target.value) || 50)}
                 className="w-full px-4 py-3 bg-slate-800 border border-purple-500/20 rounded-xl text-white focus:outline-none focus:border-purple-500/50 transition-colors"
               />
               <div className="text-xs text-white/60 mt-1">
@@ -614,13 +645,11 @@ function Settings() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">
-                Maximum Tolerance (bps)
-              </label>
+              <label className="block text-sm font-medium mb-2">Maximum Tolerance (bps)</label>
               <input
                 type="number"
                 value={slippage.maxTolerance}
-                onChange={(e) => setSlippageMaxTolerance(parseInt(e.target.value) || 1000)}
+                onChange={e => setSlippageMaxTolerance(parseInt(e.target.value) || 1000)}
                 className="w-full px-4 py-3 bg-slate-800 border border-purple-500/20 rounded-xl text-white focus:outline-none focus:border-purple-500/50 transition-colors"
               />
               <div className="text-xs text-white/60 mt-1">
@@ -632,7 +661,7 @@ function Settings() {
               <input
                 type="checkbox"
                 checked={slippage.autoAdjust}
-                onChange={(e) => setSlippageAutoAdjust(e.target.checked)}
+                onChange={e => setSlippageAutoAdjust(e.target.checked)}
                 className="w-5 h-5 rounded border-purple-500/30 bg-slate-800 text-purple-500 focus:ring-purple-500"
               />
               <div>
@@ -647,7 +676,7 @@ function Settings() {
               <input
                 type="checkbox"
                 checked={slippage.rejectAboveThreshold}
-                onChange={(e) => setSlippageRejectAbove(e.target.checked)}
+                onChange={e => setSlippageRejectAbove(e.target.checked)}
                 className="w-5 h-5 rounded border-purple-500/30 bg-slate-800 text-purple-500 focus:ring-purple-500"
               />
               <div>
@@ -667,15 +696,13 @@ function Settings() {
                   <Shield className="w-5 h-5 text-green-400" />
                   MEV Protection
                 </h3>
-                <p className="text-sm text-white/60 mt-1">
-                  Protect your trades from MEV attacks
-                </p>
+                <p className="text-sm text-white/60 mt-1">Protect your trades from MEV attacks</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
                   checked={mevProtection.enabled}
-                  onChange={(e) => toggleMEVProtection(e.target.checked)}
+                  onChange={e => toggleMEVProtection(e.target.checked)}
                   className="sr-only peer"
                 />
                 <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
@@ -688,7 +715,7 @@ function Settings() {
                   <input
                     type="checkbox"
                     checked={mevProtection.useJito}
-                    onChange={(e) => setJitoEnabled(e.target.checked)}
+                    onChange={e => setJitoEnabled(e.target.checked)}
                     className="w-5 h-5 rounded border-purple-500/30 bg-slate-800 text-purple-500 focus:ring-purple-500"
                   />
                   <div>
@@ -703,14 +730,12 @@ function Settings() {
                   <input
                     type="checkbox"
                     checked={mevProtection.usePrivateRPC}
-                    onChange={(e) => setPrivateRPCEnabled(e.target.checked)}
+                    onChange={e => setPrivateRPCEnabled(e.target.checked)}
                     className="w-5 h-5 rounded border-purple-500/30 bg-slate-800 text-purple-500 focus:ring-purple-500"
                   />
                   <div>
                     <div className="font-medium">Use private RPC</div>
-                    <div className="text-xs text-white/60">
-                      Route through private mempool
-                    </div>
+                    <div className="text-xs text-white/60">Route through private mempool</div>
                   </div>
                 </label>
 
@@ -761,8 +786,8 @@ function Settings() {
                           congestionData.level === 'high'
                             ? 'bg-red-500/20 text-red-400 border border-red-500/30'
                             : congestionData.level === 'medium'
-                            ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                            : 'bg-green-500/20 text-green-400 border border-green-500/30'
+                              ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                              : 'bg-green-500/20 text-green-400 border border-green-500/30'
                         }`}
                       >
                         {congestionData.level}
@@ -775,12 +800,10 @@ function Settings() {
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium mb-3">
-                    Priority Fee Preset
-                  </label>
+                  <label className="block text-sm font-medium mb-3">Priority Fee Preset</label>
                   <div className="grid grid-cols-3 gap-2">
-                    {['slow', 'normal', 'fast'].map((preset) => {
-                      const estimate = priorityEstimates.find((e) => e.preset === preset);
+                    {['slow', 'normal', 'fast'].map(preset => {
+                      const estimate = priorityEstimates.find(e => e.preset === preset);
                       return (
                         <button
                           key={preset}
@@ -816,7 +839,7 @@ function Settings() {
                     <input
                       type="number"
                       value={gasOptimization.customPriorityFee || ''}
-                      onChange={(e) => setCustomPriorityFee(parseInt(e.target.value) || 0)}
+                      onChange={e => setCustomPriorityFee(parseInt(e.target.value) || 0)}
                       className="w-full px-4 py-3 bg-slate-800 border border-purple-500/20 rounded-xl text-white focus:outline-none focus:border-purple-500/50 transition-colors"
                       placeholder="Enter custom fee"
                     />
@@ -827,9 +850,7 @@ function Settings() {
                   <div className="grid grid-cols-2 gap-3 mt-4">
                     <div className="p-3 bg-slate-800/50 rounded-lg">
                       <div className="text-xs text-white/60 mb-1">Avg Gas Cost</div>
-                      <div className="font-bold text-white">
-                        {averageGasCost.toFixed(6)} SOL
-                      </div>
+                      <div className="font-bold text-white">{averageGasCost.toFixed(6)} SOL</div>
                     </div>
                     {latestTrade && (
                       <div className="p-3 bg-slate-800/50 rounded-lg">
@@ -868,7 +889,9 @@ function Settings() {
             </div>
             <div>
               <h2 className="text-2xl font-bold">Wallet Activity</h2>
-              <p className="text-white/60 text-sm">Review recent wallet actions and investigate alerts</p>
+              <p className="text-white/60 text-sm">
+                Review recent wallet actions and investigate alerts
+              </p>
             </div>
           </div>
 
@@ -885,7 +908,9 @@ function Settings() {
             </div>
             <div>
               <h2 className="text-2xl font-bold">Event Sourcing Audit Trail</h2>
-              <p className="text-white/60 text-sm">Immutable event log for all state changes with replay capability</p>
+              <p className="text-white/60 text-sm">
+                Immutable event log for all state changes with replay capability
+              </p>
             </div>
           </div>
 
@@ -902,21 +927,30 @@ function Settings() {
               <Shield className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium text-white">Windows Hello</p>
-                <p>Requires Windows 10 or later with compatible biometric hardware (fingerprint reader, facial recognition camera, or PIN)</p>
+                <p>
+                  Requires Windows 10 or later with compatible biometric hardware (fingerprint
+                  reader, facial recognition camera, or PIN)
+                </p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Fingerprint className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium text-white">Touch ID</p>
-                <p>Requires macOS with Touch ID sensor (MacBook Pro, MacBook Air, iMac, or Magic Keyboard with Touch ID)</p>
+                <p>
+                  Requires macOS with Touch ID sensor (MacBook Pro, MacBook Air, iMac, or Magic
+                  Keyboard with Touch ID)
+                </p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Lock className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium text-white">Linux</p>
-                <p>Password-based authentication only. Biometric authentication is not currently supported on Linux systems.</p>
+                <p>
+                  Password-based authentication only. Biometric authentication is not currently
+                  supported on Linux systems.
+                </p>
               </div>
             </div>
           </div>
@@ -924,7 +958,9 @@ function Settings() {
       </motion.div>
 
       <AnimatePresence>
-        {showHardwareManager && <HardwareWalletManager onClose={() => setShowHardwareManager(false)} />}
+        {showHardwareManager && (
+          <HardwareWalletManager onClose={() => setShowHardwareManager(false)} />
+        )}
       </AnimatePresence>
 
       {/* Paper Mode Confirmation Modal */}
@@ -947,22 +983,22 @@ function Settings() {
               exit={{ opacity: 0, scale: 0.95 }}
               className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md"
             >
-              <div className={`bg-slate-900 border rounded-2xl shadow-2xl ${
-                paperModeTarget === 'live' 
-                  ? 'border-red-500/30' 
-                  : 'border-orange-500/30'
-              }`}>
-                <div className={`p-6 border-b ${
-                  paperModeTarget === 'live'
-                    ? 'border-red-500/20'
-                    : 'border-orange-500/20'
-                }`}>
+              <div
+                className={`bg-slate-900 border rounded-2xl shadow-2xl ${
+                  paperModeTarget === 'live' ? 'border-red-500/30' : 'border-orange-500/30'
+                }`}
+              >
+                <div
+                  className={`p-6 border-b ${
+                    paperModeTarget === 'live' ? 'border-red-500/20' : 'border-orange-500/20'
+                  }`}
+                >
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                      paperModeTarget === 'live'
-                        ? 'bg-red-500/20'
-                        : 'bg-orange-500/20'
-                    }`}>
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                        paperModeTarget === 'live' ? 'bg-red-500/20' : 'bg-orange-500/20'
+                      }`}
+                    >
                       {paperModeTarget === 'live' ? (
                         <AlertTriangle className="w-5 h-5 text-red-400" />
                       ) : (
@@ -971,13 +1007,14 @@ function Settings() {
                     </div>
                     <div>
                       <h3 className="text-lg font-bold">
-                        {paperModeTarget === 'paper' ? 'Enable Paper Trading Mode?' : 'Switch to Live Trading?'}
+                        {paperModeTarget === 'paper'
+                          ? 'Enable Paper Trading Mode?'
+                          : 'Switch to Live Trading?'}
                       </h3>
                       <p className="text-sm text-white/60">
-                        {paperModeTarget === 'paper' 
+                        {paperModeTarget === 'paper'
                           ? 'Practice trading with virtual balance'
-                          : 'Execute real trades with real money'
-                        }
+                          : 'Execute real trades with real money'}
                       </p>
                     </div>
                   </div>
@@ -990,7 +1027,9 @@ function Settings() {
                         <div className="flex items-start gap-2">
                           <CheckCircle className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
                           <div className="text-sm">
-                            <p className="font-medium text-orange-400 mb-2">Paper Trading Features:</p>
+                            <p className="font-medium text-orange-400 mb-2">
+                              Paper Trading Features:
+                            </p>
                             <ul className="space-y-1 text-orange-400/80">
                               <li>• Virtual $10,000 starting balance</li>
                               <li>• Practice trading strategies safely</li>
@@ -1013,8 +1052,8 @@ function Settings() {
                           <div className="text-sm text-red-400">
                             <p className="font-medium mb-1">Warning: Real Money at Risk</p>
                             <p className="text-red-400/80">
-                              Switching to live trading will execute real transactions with real money. 
-                              You will be responsible for all trades and fees.
+                              Switching to live trading will execute real transactions with real
+                              money. You will be responsible for all trades and fees.
                             </p>
                           </div>
                         </div>
@@ -1024,13 +1063,14 @@ function Settings() {
                         <input
                           type="checkbox"
                           checked={acknowledgeLiveTrading}
-                          onChange={(e) => setAcknowledgeLiveTrading(e.target.checked)}
+                          onChange={e => setAcknowledgeLiveTrading(e.target.checked)}
                           className="mt-1 w-5 h-5 rounded border-purple-500/30 bg-slate-800 text-purple-500 focus:ring-purple-500"
                         />
                         <div className="text-sm">
                           <p className="font-medium text-white">I understand and acknowledge</p>
                           <p className="text-white/60 mt-1">
-                            I understand that real trades will execute and I am responsible for all transactions.
+                            I understand that real trades will execute and I am responsible for all
+                            transactions.
                           </p>
                         </div>
                       </label>

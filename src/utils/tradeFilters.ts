@@ -4,7 +4,7 @@ export function filterTrades(
   trades: EnhancedTradeMetrics[],
   filters: TradeFilters
 ): EnhancedTradeMetrics[] {
-  return trades.filter((trade) => {
+  return trades.filter(trade => {
     if (filters.dateRange?.start && new Date(trade.timestamp) < filters.dateRange.start) {
       return false;
     }
@@ -41,12 +41,7 @@ export function filterTrades(
 
     if (filters.searchQuery && filters.searchQuery.trim() !== '') {
       const query = filters.searchQuery.toLowerCase();
-      const searchableText = [
-        trade.txSignature,
-        trade.fromToken,
-        trade.toToken,
-        trade.id,
-      ]
+      const searchableText = [trade.txSignature, trade.fromToken, trade.toToken, trade.id]
         .filter(Boolean)
         .join(' ')
         .toLowerCase();

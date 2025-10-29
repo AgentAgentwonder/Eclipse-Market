@@ -28,8 +28,17 @@ export function SwapForm({ jupiter, wallet }: SwapFormProps) {
   const [confirmationStep, setConfirmationStep] = useState(false);
   const [marketVolatility, setMarketVolatility] = useState(1);
 
-  const { loadingQuote, loadingSwap, quoteError, swapError, currentQuote, fetchQuote, executeSwap, clearQuote } = jupiter;
-  
+  const {
+    loadingQuote,
+    loadingSwap,
+    quoteError,
+    swapError,
+    currentQuote,
+    fetchQuote,
+    executeSwap,
+    clearQuote,
+  } = jupiter;
+
   const {
     slippage,
     mevProtection,
@@ -42,9 +51,7 @@ export function SwapForm({ jupiter, wallet }: SwapFormProps) {
   const slippageBps = slippage.tolerance;
   const effectiveSlippageBps = Math.max(
     1,
-    Math.round(
-      slippage.autoAdjust ? getRecommendedSlippage(marketVolatility) : slippage.tolerance
-    )
+    Math.round(slippage.autoAdjust ? getRecommendedSlippage(marketVolatility) : slippage.tolerance)
   );
   const priorityFeeOption = getPriorityFeeForPreset(gasOptimization.priorityFeePreset);
   const priorityFee =
@@ -69,7 +76,15 @@ export function SwapForm({ jupiter, wallet }: SwapFormProps) {
     if (result) {
       setMarketVolatility(Math.max(1, result.route.priceImpactPct || 1));
     }
-  }, [amount, fromToken.decimals, fromToken.mint, toToken.mint, effectiveSlippageBps, priorityFee, fetchQuote]);
+  }, [
+    amount,
+    fromToken.decimals,
+    fromToken.mint,
+    toToken.mint,
+    effectiveSlippageBps,
+    priorityFee,
+    fetchQuote,
+  ]);
 
   useEffect(() => {
     if (amount && parseFloat(amount) > 0 && fromToken && toToken) {
@@ -105,13 +120,13 @@ export function SwapForm({ jupiter, wallet }: SwapFormProps) {
     const result = await executeSwap(input);
     if (result) {
       // Record trade in history
-      const gasCost = (priorityFee / 1e9) || 0.000005; // estimate
+      const gasCost = priorityFee / 1e9 || 0.000005; // estimate
       const actualSlippage = currentQuote.route.priceImpactPct; // simplified
-      
+
       // If MEV protection is enabled, submit with protection
       let mevProtected = false;
       let mevSavings = 0;
-      
+
       if (mevProtection.enabled) {
         try {
           const mevConfig = {
@@ -119,7 +134,7 @@ export function SwapForm({ jupiter, wallet }: SwapFormProps) {
             useJito: mevProtection.useJito,
             usePrivateRpc: mevProtection.usePrivateRPC,
           };
-          
+
           const mevResult = await invoke<{
             protected: boolean;
             method?: string;
@@ -129,14 +144,14 @@ export function SwapForm({ jupiter, wallet }: SwapFormProps) {
             transactionBase64: result.transaction.base64,
             config: mevConfig,
           });
-          
+
           mevProtected = mevResult.protected;
           mevSavings = mevResult.estimatedSavings;
         } catch (err) {
           console.error('MEV protection failed:', err);
         }
       }
-      
+
       addTradeToHistory({
         slippage: actualSlippage,
         mevProtected,
@@ -150,7 +165,7 @@ export function SwapForm({ jupiter, wallet }: SwapFormProps) {
         toToken: toToken.symbol,
         amount: amount,
       });
-      
+
       setConfirmationStep(false);
       setAmount('');
       clearQuote();
@@ -165,7 +180,7 @@ export function SwapForm({ jupiter, wallet }: SwapFormProps) {
 
   const renderRouteDetails = (quote: QuoteResult) => {
     const { route } = quote;
-    
+
     return (
       <div className="mt-4 p-3 bg-gray-700/50 rounded-lg space-y-2">
         <div className="flex justify-between text-sm">
@@ -243,13 +258,13 @@ export function SwapForm({ jupiter, wallet }: SwapFormProps) {
           <div className="flex gap-2">
             <select
               value={fromToken.symbol}
-              onChange={(e) => {
+              onChange={e => {
                 const token = COMMON_TOKENS.find(t => t.symbol === e.target.value);
                 if (token) setFromToken(token);
               }}
               className="bg-gray-800 p-2 rounded font-medium"
             >
-              {COMMON_TOKENS.map((token) => (
+              {COMMON_TOKENS.map(token => (
                 <option key={token.mint} value={token.symbol}>
                   {token.symbol}
                 </option>
@@ -258,7 +273,7 @@ export function SwapForm({ jupiter, wallet }: SwapFormProps) {
             <input
               type="number"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={e => setAmount(e.target.value)}
               className="flex-1 bg-gray-800 p-2 rounded text-right"
               placeholder="0.0"
               step="any"
@@ -280,13 +295,13 @@ export function SwapForm({ jupiter, wallet }: SwapFormProps) {
           <div className="flex gap-2">
             <select
               value={toToken.symbol}
-              onChange={(e) => {
+              onChange={e => {
                 const token = COMMON_TOKENS.find(t => t.symbol === e.target.value);
                 if (token) setToToken(token);
               }}
               className="bg-gray-800 p-2 rounded font-medium"
             >
-              {COMMON_TOKENS.map((token) => (
+              {COMMON_TOKENS.map(token => (
                 <option key={token.mint} value={token.symbol}>
                   {token.symbol}
                 </option>
@@ -341,13 +356,13 @@ export function SwapForm({ jupiter, wallet }: SwapFormProps) {
           loadingQuote || (!currentQuote && amount !== '')
             ? 'bg-gray-600 cursor-not-allowed'
             : wallet.connected
-            ? 'bg-purple-600 hover:bg-purple-700'
-            : 'bg-blue-600 hover:bg-blue-700'
+              ? 'bg-purple-600 hover:bg-purple-700'
+              : 'bg-blue-600 hover:bg-blue-700'
         }`}
       >
         {!wallet.connected ? 'Connect Wallet' : currentQuote ? 'Review Swap' : 'Enter Amount'}
       </button>
-      
+
       {currentQuote && (
         <TradeConfirmationModal
           isOpen={confirmationStep}

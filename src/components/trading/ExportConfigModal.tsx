@@ -24,19 +24,15 @@ export function ExportConfigModal({ isOpen, onClose, trades }: ExportConfigModal
     start: '',
     end: '',
   });
-  const [timezone, setTimezone] = useState(
-    Intl.DateTimeFormat().resolvedOptions().timeZone
-  );
+  const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
 
   useEffect(() => {
     setColumns(getColumnsForPreset(preset));
   }, [preset]);
 
   const handleToggleColumn = (key: string) => {
-    setColumns((prev) =>
-      prev.map((col) =>
-        col.key === key ? { ...col, enabled: !col.enabled } : col
-      )
+    setColumns(prev =>
+      prev.map(col => (col.key === key ? { ...col, enabled: !col.enabled } : col))
     );
   };
 
@@ -57,14 +53,12 @@ export function ExportConfigModal({ isOpen, onClose, trades }: ExportConfigModal
 
     if (dateRange.start) {
       filteredTrades = filteredTrades.filter(
-        (t) => new Date(t.timestamp) >= new Date(dateRange.start)
+        t => new Date(t.timestamp) >= new Date(dateRange.start)
       );
     }
 
     if (dateRange.end) {
-      filteredTrades = filteredTrades.filter(
-        (t) => new Date(t.timestamp) <= new Date(dateRange.end)
-      );
+      filteredTrades = filteredTrades.filter(t => new Date(t.timestamp) <= new Date(dateRange.end));
     }
 
     exportTrades(filteredTrades, config);
@@ -86,7 +80,7 @@ export function ExportConfigModal({ isOpen, onClose, trades }: ExportConfigModal
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             className="bg-slate-800/95 backdrop-blur-xl rounded-3xl border border-purple-500/20 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           >
             <div className="sticky top-0 bg-slate-800/95 backdrop-blur-xl border-b border-purple-500/20 p-6 flex items-center justify-between z-10">
               <div>
@@ -94,9 +88,7 @@ export function ExportConfigModal({ isOpen, onClose, trades }: ExportConfigModal
                   <FileText className="w-6 h-6" />
                   Export Configuration
                 </h2>
-                <p className="text-white/60 text-sm mt-1">
-                  Configure your trade export settings
-                </p>
+                <p className="text-white/60 text-sm mt-1">Configure your trade export settings</p>
               </div>
               <button
                 onClick={onClose}
@@ -122,9 +114,7 @@ export function ExportConfigModal({ isOpen, onClose, trades }: ExportConfigModal
                     }`}
                   >
                     <div className="font-semibold">CSV</div>
-                    <div className="text-xs text-white/60 mt-1">
-                      Comma-separated values
-                    </div>
+                    <div className="text-xs text-white/60 mt-1">Comma-separated values</div>
                   </button>
                   <button
                     onClick={() => setFormat('xlsx')}
@@ -135,9 +125,7 @@ export function ExportConfigModal({ isOpen, onClose, trades }: ExportConfigModal
                     }`}
                   >
                     <div className="font-semibold">XLSX</div>
-                    <div className="text-xs text-white/60 mt-1">
-                      Microsoft Excel format
-                    </div>
+                    <div className="text-xs text-white/60 mt-1">Microsoft Excel format</div>
                   </button>
                 </div>
               </div>
@@ -148,19 +136,21 @@ export function ExportConfigModal({ isOpen, onClose, trades }: ExportConfigModal
                   Export Preset
                 </label>
                 <div className="grid grid-cols-2 gap-2">
-                  {(['tax_report', 'performance', 'trade_journal', 'custom'] as ExportPreset[]).map((p) => (
-                    <button
-                      key={p}
-                      onClick={() => setPreset(p)}
-                      className={`p-3 rounded-xl border text-sm transition-all ${
-                        preset === p
-                          ? 'bg-purple-500/20 border-purple-500/50'
-                          : 'bg-slate-900/50 border-purple-500/10 hover:border-purple-500/30'
-                      }`}
-                    >
-                      {p.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
-                    </button>
-                  ))}
+                  {(['tax_report', 'performance', 'trade_journal', 'custom'] as ExportPreset[]).map(
+                    p => (
+                      <button
+                        key={p}
+                        onClick={() => setPreset(p)}
+                        className={`p-3 rounded-xl border text-sm transition-all ${
+                          preset === p
+                            ? 'bg-purple-500/20 border-purple-500/50'
+                            : 'bg-slate-900/50 border-purple-500/10 hover:border-purple-500/30'
+                        }`}
+                      >
+                        {p.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </button>
+                    )
+                  )}
                 </div>
               </div>
 
@@ -171,28 +161,20 @@ export function ExportConfigModal({ isOpen, onClose, trades }: ExportConfigModal
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-white/60 mb-1 block">
-                      Start Date
-                    </label>
+                    <label className="text-xs text-white/60 mb-1 block">Start Date</label>
                     <input
                       type="date"
                       value={dateRange.start}
-                      onChange={(e) =>
-                        setDateRange((prev) => ({ ...prev, start: e.target.value }))
-                      }
+                      onChange={e => setDateRange(prev => ({ ...prev, start: e.target.value }))}
                       className="w-full px-3 py-2 bg-slate-900/50 border border-purple-500/20 rounded-lg focus:border-purple-500/50 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-white/60 mb-1 block">
-                      End Date
-                    </label>
+                    <label className="text-xs text-white/60 mb-1 block">End Date</label>
                     <input
                       type="date"
                       value={dateRange.end}
-                      onChange={(e) =>
-                        setDateRange((prev) => ({ ...prev, end: e.target.value }))
-                      }
+                      onChange={e => setDateRange(prev => ({ ...prev, end: e.target.value }))}
                       className="w-full px-3 py-2 bg-slate-900/50 border border-purple-500/20 rounded-lg focus:border-purple-500/50 focus:outline-none"
                     />
                   </div>
@@ -203,7 +185,7 @@ export function ExportConfigModal({ isOpen, onClose, trades }: ExportConfigModal
                 <label className="text-sm font-semibold">Timezone</label>
                 <select
                   value={timezone}
-                  onChange={(e) => setTimezone(e.target.value)}
+                  onChange={e => setTimezone(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-900/50 border border-purple-500/20 rounded-lg focus:border-purple-500/50 focus:outline-none"
                 >
                   <option value="UTC">UTC</option>
@@ -223,10 +205,10 @@ export function ExportConfigModal({ isOpen, onClose, trades }: ExportConfigModal
 
               <div className="space-y-3">
                 <label className="text-sm font-semibold">
-                  Columns ({columns.filter((c) => c.enabled).length} selected)
+                  Columns ({columns.filter(c => c.enabled).length} selected)
                 </label>
                 <div className="max-h-60 overflow-y-auto space-y-2 p-3 bg-slate-900/30 rounded-xl">
-                  {columns.map((col) => (
+                  {columns.map(col => (
                     <button
                       key={col.key}
                       onClick={() => handleToggleColumn(col.key)}
@@ -254,7 +236,7 @@ export function ExportConfigModal({ isOpen, onClose, trades }: ExportConfigModal
                 </button>
                 <button
                   onClick={handleExport}
-                  disabled={columns.filter((c) => c.enabled).length === 0}
+                  disabled={columns.filter(c => c.enabled).length === 0}
                   className="flex-1 px-4 py-3 bg-purple-500 hover:bg-purple-600 rounded-xl transition-colors font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Download className="w-5 h-5" />

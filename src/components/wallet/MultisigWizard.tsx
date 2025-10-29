@@ -1,151 +1,151 @@
-import React, { useState } from 'react'
-import { invoke } from '@tauri-apps/api/tauri'
-import { X, Check, Plus, Trash2, Info } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import React, { useState } from 'react';
+import { invoke } from '@tauri-apps/api/tauri';
+import { X, Check, Plus, Trash2, Info } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface MultisigWizardProps {
-  isOpen: boolean
-  onClose: () => void
-  onSuccess?: (wallet: MultisigWallet) => void
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess?: (wallet: MultisigWallet) => void;
 }
 
 interface MultisigWallet {
-  id: string
-  name: string
-  address: string
-  threshold: number
-  members: string[]
-  createdAt: string
-  balance: number
+  id: string;
+  name: string;
+  address: string;
+  threshold: number;
+  members: string[];
+  createdAt: string;
+  balance: number;
 }
 
-type Step = 'name' | 'members' | 'threshold' | 'review'
+type Step = 'name' | 'members' | 'threshold' | 'review';
 
 const MultisigWizard: React.FC<MultisigWizardProps> = ({ isOpen, onClose, onSuccess }) => {
-  const [currentStep, setCurrentStep] = useState<Step>('name')
-  const [walletName, setWalletName] = useState('')
-  const [members, setMembers] = useState<string[]>([''])
-  const [threshold, setThreshold] = useState(2)
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [currentStep, setCurrentStep] = useState<Step>('name');
+  const [walletName, setWalletName] = useState('');
+  const [members, setMembers] = useState<string[]>(['']);
+  const [threshold, setThreshold] = useState(2);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const steps: Step[] = ['name', 'members', 'threshold', 'review']
-  const stepIndex = steps.indexOf(currentStep)
+  const steps: Step[] = ['name', 'members', 'threshold', 'review'];
+  const stepIndex = steps.indexOf(currentStep);
 
   const validateAddress = (address: string): boolean => {
     // Basic Solana address validation (32-44 chars, base58)
-    const solanaRegex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/
-    return solanaRegex.test(address.trim())
-  }
+    const solanaRegex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+    return solanaRegex.test(address.trim());
+  };
 
   const addMember = () => {
-    setMembers([...members, ''])
-  }
+    setMembers([...members, '']);
+  };
 
   const removeMember = (index: number) => {
     if (members.length > 1) {
-      setMembers(members.filter((_, i) => i !== index))
+      setMembers(members.filter((_, i) => i !== index));
       if (threshold > members.length - 1) {
-        setThreshold(members.length - 1)
+        setThreshold(members.length - 1);
       }
     }
-  }
+  };
 
   const updateMember = (index: number, value: string) => {
-    const newMembers = [...members]
-    newMembers[index] = value
-    setMembers(newMembers)
-  }
+    const newMembers = [...members];
+    newMembers[index] = value;
+    setMembers(newMembers);
+  };
 
   const canProceed = (): boolean => {
     switch (currentStep) {
       case 'name':
-        return walletName.trim().length > 0
+        return walletName.trim().length > 0;
       case 'members':
-        const validMembers = members.filter(m => m.trim() !== '')
-        if (validMembers.length < 2) return false
-        return validMembers.every(m => validateAddress(m))
+        const validMembers = members.filter(m => m.trim() !== '');
+        if (validMembers.length < 2) return false;
+        return validMembers.every(m => validateAddress(m));
       case 'threshold':
-        const memberCount = members.filter(m => m.trim() !== '').length
-        return threshold >= 1 && threshold <= memberCount
+        const memberCount = members.filter(m => m.trim() !== '').length;
+        return threshold >= 1 && threshold <= memberCount;
       case 'review':
-        return true
+        return true;
       default:
-        return false
+        return false;
     }
-  }
+  };
 
   const handleNext = () => {
-    if (!canProceed()) return
-    
-    const nextIndex = stepIndex + 1
+    if (!canProceed()) return;
+
+    const nextIndex = stepIndex + 1;
     if (nextIndex < steps.length) {
-      setCurrentStep(steps[nextIndex])
-      setError(null)
+      setCurrentStep(steps[nextIndex]);
+      setError(null);
     }
-  }
+  };
 
   const handleBack = () => {
-    const prevIndex = stepIndex - 1
+    const prevIndex = stepIndex - 1;
     if (prevIndex >= 0) {
-      setCurrentStep(steps[prevIndex])
-      setError(null)
+      setCurrentStep(steps[prevIndex]);
+      setError(null);
     }
-  }
+  };
 
   const handleCreate = async () => {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
 
     try {
-      const validMembers = members.filter(m => m.trim() !== '')
-      
+      const validMembers = members.filter(m => m.trim() !== '');
+
       const wallet = await invoke<MultisigWallet>('create_multisig_wallet', {
         request: {
           name: walletName,
           members: validMembers,
           threshold,
         },
-      })
+      });
 
       if (onSuccess) {
-        onSuccess(wallet)
+        onSuccess(wallet);
       }
-      
-      handleClose()
+
+      handleClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleClose = () => {
-    setCurrentStep('name')
-    setWalletName('')
-    setMembers([''])
-    setThreshold(2)
-    setError(null)
-    setLoading(false)
-    onClose()
-  }
+    setCurrentStep('name');
+    setWalletName('');
+    setMembers(['']);
+    setThreshold(2);
+    setError(null);
+    setLoading(false);
+    onClose();
+  };
 
   const getThresholdPresets = () => {
-    const memberCount = members.filter(m => m.trim() !== '').length
-    const presets = []
-    
-    if (memberCount >= 2) presets.push({ label: '1-of-2', value: 1 })
-    if (memberCount >= 2) presets.push({ label: '2-of-2', value: 2 })
-    if (memberCount >= 3) presets.push({ label: '2-of-3', value: 2 })
-    if (memberCount >= 3) presets.push({ label: '3-of-3', value: 3 })
-    if (memberCount >= 5) presets.push({ label: '3-of-5', value: 3 })
-    if (memberCount >= 5) presets.push({ label: '4-of-5', value: 4 })
-    if (memberCount >= 5) presets.push({ label: '5-of-5', value: 5 })
-    
-    return presets
-  }
+    const memberCount = members.filter(m => m.trim() !== '').length;
+    const presets = [];
 
-  if (!isOpen) return null
+    if (memberCount >= 2) presets.push({ label: '1-of-2', value: 1 });
+    if (memberCount >= 2) presets.push({ label: '2-of-2', value: 2 });
+    if (memberCount >= 3) presets.push({ label: '2-of-3', value: 2 });
+    if (memberCount >= 3) presets.push({ label: '3-of-3', value: 3 });
+    if (memberCount >= 5) presets.push({ label: '3-of-5', value: 3 });
+    if (memberCount >= 5) presets.push({ label: '4-of-5', value: 4 });
+    if (memberCount >= 5) presets.push({ label: '5-of-5', value: 5 });
+
+    return presets;
+  };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -207,7 +207,7 @@ const MultisigWizard: React.FC<MultisigWizardProps> = ({ isOpen, onClose, onSucc
                 <input
                   type="text"
                   value={walletName}
-                  onChange={(e) => setWalletName(e.target.value)}
+                  onChange={e => setWalletName(e.target.value)}
                   placeholder="e.g., Team Treasury"
                   className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
                   autoFocus
@@ -223,8 +223,10 @@ const MultisigWizard: React.FC<MultisigWizardProps> = ({ isOpen, onClose, onSucc
                 exit={{ opacity: 0, x: -20 }}
               >
                 <h3 className="text-lg font-medium text-white mb-4">Add Members</h3>
-                <p className="text-gray-400 mb-4">Add wallet addresses of all members (minimum 2)</p>
-                
+                <p className="text-gray-400 mb-4">
+                  Add wallet addresses of all members (minimum 2)
+                </p>
+
                 <div className="space-y-3">
                   {members.map((member, index) => (
                     <div key={index} className="flex items-center gap-2">
@@ -232,7 +234,7 @@ const MultisigWizard: React.FC<MultisigWizardProps> = ({ isOpen, onClose, onSucc
                         <input
                           type="text"
                           value={member}
-                          onChange={(e) => updateMember(index, e.target.value)}
+                          onChange={e => updateMember(index, e.target.value)}
                           placeholder="Solana wallet address"
                           className={`w-full px-4 py-2 bg-gray-900 border rounded-lg text-white focus:outline-none ${
                             member.trim() && !validateAddress(member)
@@ -281,13 +283,13 @@ const MultisigWizard: React.FC<MultisigWizardProps> = ({ isOpen, onClose, onSucc
                 <div className="bg-blue-900/20 border border-blue-700 rounded-lg p-4 mb-6 flex items-start gap-3">
                   <Info size={20} className="text-blue-400 flex-shrink-0 mt-0.5" />
                   <p className="text-sm text-blue-300">
-                    The threshold determines how many members must sign a transaction before it can be executed.
-                    For example, 3-of-5 means 3 out of 5 members must approve.
+                    The threshold determines how many members must sign a transaction before it can
+                    be executed. For example, 3-of-5 means 3 out of 5 members must approve.
                   </p>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-                  {getThresholdPresets().map((preset) => (
+                  {getThresholdPresets().map(preset => (
                     <button
                       key={preset.label}
                       onClick={() => setThreshold(preset.value)}
@@ -309,7 +311,7 @@ const MultisigWizard: React.FC<MultisigWizardProps> = ({ isOpen, onClose, onSucc
                     min="1"
                     max={members.filter(m => m.trim() !== '').length}
                     value={threshold}
-                    onChange={(e) => setThreshold(Math.max(1, parseInt(e.target.value) || 1))}
+                    onChange={e => setThreshold(Math.max(1, parseInt(e.target.value) || 1))}
                     className="w-24 px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
                   />
                   <span className="text-gray-400">
@@ -327,7 +329,9 @@ const MultisigWizard: React.FC<MultisigWizardProps> = ({ isOpen, onClose, onSucc
                 exit={{ opacity: 0, x: -20 }}
               >
                 <h3 className="text-lg font-medium text-white mb-4">Review & Create</h3>
-                <p className="text-gray-400 mb-6">Please review your multisig wallet configuration</p>
+                <p className="text-gray-400 mb-6">
+                  Please review your multisig wallet configuration
+                </p>
 
                 <div className="space-y-4">
                   <div className="bg-gray-900 rounded-lg p-4">
@@ -338,21 +342,24 @@ const MultisigWizard: React.FC<MultisigWizardProps> = ({ isOpen, onClose, onSucc
                   <div className="bg-gray-900 rounded-lg p-4">
                     <label className="text-gray-400 text-sm">Threshold</label>
                     <p className="text-white font-medium">
-                      {threshold} of {members.filter(m => m.trim() !== '').length} signatures required
+                      {threshold} of {members.filter(m => m.trim() !== '').length} signatures
+                      required
                     </p>
                   </div>
 
                   <div className="bg-gray-900 rounded-lg p-4">
                     <label className="text-gray-400 text-sm mb-2 block">Members</label>
                     <div className="space-y-2">
-                      {members.filter(m => m.trim() !== '').map((member, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs">
-                            {index + 1}
+                      {members
+                        .filter(m => m.trim() !== '')
+                        .map((member, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs">
+                              {index + 1}
+                            </div>
+                            <p className="text-white font-mono text-sm truncate">{member}</p>
                           </div>
-                          <p className="text-white font-mono text-sm truncate">{member}</p>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   </div>
                 </div>
@@ -376,10 +383,7 @@ const MultisigWizard: React.FC<MultisigWizardProps> = ({ isOpen, onClose, onSucc
             Back
           </button>
           <div className="flex gap-3">
-            <button
-              onClick={handleClose}
-              className="px-4 py-2 text-gray-400 hover:text-white"
-            >
+            <button onClick={handleClose} className="px-4 py-2 text-gray-400 hover:text-white">
               Cancel
             </button>
             {currentStep !== 'review' ? (
@@ -403,7 +407,7 @@ const MultisigWizard: React.FC<MultisigWizardProps> = ({ isOpen, onClose, onSucc
         </div>
       </motion.div>
     </div>
-  )
-}
+  );
+};
 
-export default MultisigWizard
+export default MultisigWizard;

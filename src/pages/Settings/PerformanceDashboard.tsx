@@ -1,8 +1,27 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Zap, Activity, Clock, TrendingUp, Play, RotateCcw, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import {
+  Zap,
+  Activity,
+  Clock,
+  TrendingUp,
+  Play,
+  RotateCcw,
+  CheckCircle,
+  XCircle,
+  Loader2,
+} from 'lucide-react';
 import { invoke } from '@tauri-apps/api/tauri';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from 'recharts';
 
 interface LatencyStats {
   p50: number;
@@ -44,7 +63,7 @@ export function PerformanceDashboard() {
     try {
       const data = await invoke<PerformanceMetrics>('get_performance_metrics');
       setMetrics(data);
-      
+
       // Add to history
       setLatencyHistory(prev => {
         const newPoint: LatencyHistoryPoint = {
@@ -53,7 +72,7 @@ export function PerformanceDashboard() {
           p95: data.latency.p95,
           p99: data.latency.p99,
         };
-        
+
         // Keep last 50 points
         const updated = [...prev, newPoint];
         if (updated.length > 50) {
@@ -61,7 +80,7 @@ export function PerformanceDashboard() {
         }
         return updated;
       });
-      
+
       setError(null);
     } catch (err) {
       console.error('Failed to load performance metrics:', err);
@@ -77,7 +96,7 @@ export function PerformanceDashboard() {
 
   useEffect(() => {
     if (!autoRefresh) return;
-    
+
     const interval = setInterval(() => {
       loadMetrics();
     }, 1000);
@@ -89,7 +108,7 @@ export function PerformanceDashboard() {
     setTesting(true);
     setTestResult(null);
     setError(null);
-    
+
     try {
       const result = await invoke<PerformanceMetrics>('run_performance_test', {
         numUpdates: 10000,
@@ -159,7 +178,7 @@ export function PerformanceDashboard() {
             <p className="text-white/60 text-sm">Real-time price engine metrics</p>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <button
             onClick={() => setAutoRefresh(!autoRefresh)}
@@ -209,9 +228,11 @@ export function PerformanceDashboard() {
                 <XCircle className="w-4 h-4 text-red-400" />
               )}
             </div>
-            <div className={`text-2xl font-bold ${
-              isP95Passing(metrics.latency.p95) ? 'text-green-400' : 'text-red-400'
-            }`}>
+            <div
+              className={`text-2xl font-bold ${
+                isP95Passing(metrics.latency.p95) ? 'text-green-400' : 'text-red-400'
+              }`}
+            >
               {formatLatency(metrics.latency.p95)}
             </div>
             <div className="text-xs text-white/40 mt-1">Target: &lt;1ms</div>
@@ -254,11 +275,16 @@ export function PerformanceDashboard() {
                 <XAxis
                   dataKey="timestamp"
                   stroke="#94a3b8"
-                  tickFormatter={(ts) => new Date(ts).toLocaleTimeString()}
+                  tickFormatter={ts => new Date(ts).toLocaleTimeString()}
                 />
                 <YAxis
                   stroke="#94a3b8"
-                  label={{ value: 'Latency (μs)', angle: -90, position: 'insideLeft', fill: '#94a3b8' }}
+                  label={{
+                    value: 'Latency (μs)',
+                    angle: -90,
+                    position: 'insideLeft',
+                    fill: '#94a3b8',
+                  }}
                 />
                 <Tooltip
                   contentStyle={{
@@ -267,12 +293,33 @@ export function PerformanceDashboard() {
                     borderRadius: '0.5rem',
                   }}
                   formatter={(value: number) => formatLatency(value)}
-                  labelFormatter={(ts) => new Date(ts).toLocaleTimeString()}
+                  labelFormatter={ts => new Date(ts).toLocaleTimeString()}
                 />
                 <Legend />
-                <Line type="monotone" dataKey="p50" stroke="#3b82f6" name="P50" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="p95" stroke="#ef4444" name="P95" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="p99" stroke="#8b5cf6" name="P99" strokeWidth={2} dot={false} />
+                <Line
+                  type="monotone"
+                  dataKey="p50"
+                  stroke="#3b82f6"
+                  name="P50"
+                  strokeWidth={2}
+                  dot={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="p95"
+                  stroke="#ef4444"
+                  name="P95"
+                  strokeWidth={2}
+                  dot={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="p99"
+                  stroke="#8b5cf6"
+                  name="P99"
+                  strokeWidth={2}
+                  dot={false}
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -328,7 +375,8 @@ export function PerformanceDashboard() {
                 <span className="font-mono">
                   {metrics.messages_received > 0
                     ? ((metrics.errors / metrics.messages_received) * 100).toFixed(4)
-                    : '0.0000'}%
+                    : '0.0000'}
+                  %
                 </span>
               </div>
               <div className="flex justify-between">
@@ -346,7 +394,7 @@ export function PerformanceDashboard() {
         <p className="text-white/60 text-sm mb-4">
           Run a benchmark test with 10,000 price updates to measure end-to-end latency.
         </p>
-        
+
         <motion.button
           onClick={runTest}
           disabled={testing}
@@ -390,21 +438,25 @@ export function PerformanceDashboard() {
             <div className="grid md:grid-cols-3 gap-4">
               <div className="p-4 bg-slate-900/50 rounded-xl">
                 <div className="text-white/60 text-sm mb-1">P95 Latency</div>
-                <div className={`text-xl font-bold ${
-                  isP95Passing(testResult.latency.p95) ? 'text-green-400' : 'text-red-400'
-                }`}>
+                <div
+                  className={`text-xl font-bold ${
+                    isP95Passing(testResult.latency.p95) ? 'text-green-400' : 'text-red-400'
+                  }`}
+                >
                   {formatLatency(testResult.latency.p95)}
                 </div>
               </div>
-              
+
               <div className="p-4 bg-slate-900/50 rounded-xl">
                 <div className="text-white/60 text-sm mb-1">Throughput</div>
                 <div className="text-xl font-bold">{formatThroughput(testResult.throughput)}</div>
               </div>
-              
+
               <div className="p-4 bg-slate-900/50 rounded-xl">
                 <div className="text-white/60 text-sm mb-1">Messages</div>
-                <div className="text-xl font-bold">{testResult.messages_processed.toLocaleString()}</div>
+                <div className="text-xl font-bold">
+                  {testResult.messages_processed.toLocaleString()}
+                </div>
               </div>
             </div>
           </motion.div>

@@ -84,16 +84,14 @@ export function TrendingCoins({
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold">Trending Coins</h2>
-          <p className="text-sm text-gray-400">
-            Last updated: {lastRefresh.toLocaleTimeString()}
-          </p>
+          <p className="text-sm text-gray-400">Last updated: {lastRefresh.toLocaleTimeString()}</p>
         </div>
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
               checked={autoRefresh}
-              onChange={(e) => setAutoRefresh(e.target.checked)}
+              onChange={e => setAutoRefresh(e.target.checked)}
               className="rounded"
             />
             Auto-refresh (60s)
@@ -233,283 +231,282 @@ export function TrendingCoins({
   );
 }
 
-type SortOption = 'trend_score' | 'price_change' | 'volume_change' | 'market_cap'
+type SortOption = 'trend_score' | 'price_change' | 'volume_change' | 'market_cap';
 
 interface TrendingCoinsProps {
-  searchQuery: string
-  onSelectCoin?: (coin: TrendingCoinData) => void
+  searchQuery: string;
+  onSelectCoin?: (coin: TrendingCoinData) => void;
 }
 
-const WATCHLIST_STORAGE_KEY = 'coin_watchlist'
-const BIRDEYE_API_STORAGE_KEY = 'birdeye_api_key'
+const WATCHLIST_STORAGE_KEY = 'coin_watchlist';
+const BIRDEYE_API_STORAGE_KEY = 'birdeye_api_key';
 
 function formatSortLabel(option: SortOption) {
   switch (option) {
     case 'trend_score':
-      return 'Trend score'
+      return 'Trend score';
     case 'price_change':
-      return 'Price change'
+      return 'Price change';
     case 'volume_change':
-      return 'Volume change'
+      return 'Volume change';
     case 'market_cap':
-      return 'Market cap'
+      return 'Market cap';
     default:
-      return option
+      return option;
   }
 }
 
 function generateSparklineData(priceChange: number) {
-  const dataPoints = 24
-  const data: number[] = []
-  const basePrice = 100
+  const dataPoints = 24;
+  const data: number[] = [];
+  const basePrice = 100;
 
   for (let i = 0; i < dataPoints; i++) {
-    const progress = i / (dataPoints - 1)
-    const noise = (Math.random() - 0.5) * 5
-    const trend = basePrice + (priceChange * progress) + noise
-    data.push(Number(trend.toFixed(2)))
+    const progress = i / (dataPoints - 1);
+    const noise = (Math.random() - 0.5) * 5;
+    const trend = basePrice + priceChange * progress + noise;
+    data.push(Number(trend.toFixed(2)));
   }
 
-  return data
+  return data;
 }
 
 export default function TrendingCoins({ searchQuery, onSelectCoin }: TrendingCoinsProps) {
-  const [coins, setCoins] = useState<TrendingCoinData[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
-  const [sortBy, setSortBy] = useState<SortOption>('trend_score')
-  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true)
-  const [isWindowActive, setIsWindowActive] = useState(true)
-  const [watchlist, setWatchlist] = useState<Set<string>>(new Set())
-  const [sentiment, setSentiment] = useState<Record<string, CoinSentimentData>>({})
-  const [sparklineMap, setSparklineMap] = useState<Record<string, number[]>>({})
-  const [apiKey, setApiKey] = useState<string | null>(null)
-  const [showSortMenu, setShowSortMenu] = useState(false)
+  const [coins, setCoins] = useState<TrendingCoinData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [sortBy, setSortBy] = useState<SortOption>('trend_score');
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
+  const [isWindowActive, setIsWindowActive] = useState(true);
+  const [watchlist, setWatchlist] = useState<Set<string>>(new Set());
+  const [sentiment, setSentiment] = useState<Record<string, CoinSentimentData>>({});
+  const [sparklineMap, setSparklineMap] = useState<Record<string, number[]>>({});
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [showSortMenu, setShowSortMenu] = useState(false);
 
-  const sortMenuRef = useRef<HTMLDivElement | null>(null)
+  const sortMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined') return;
 
-    const storedKey = localStorage.getItem(BIRDEYE_API_STORAGE_KEY)
+    const storedKey = localStorage.getItem(BIRDEYE_API_STORAGE_KEY);
     if (storedKey) {
-      setApiKey(storedKey)
+      setApiKey(storedKey);
     }
 
-    const storedWatchlist = localStorage.getItem(WATCHLIST_STORAGE_KEY)
+    const storedWatchlist = localStorage.getItem(WATCHLIST_STORAGE_KEY);
     if (storedWatchlist) {
       try {
-        const parsed = JSON.parse(storedWatchlist) as string[]
-        setWatchlist(new Set(parsed))
+        const parsed = JSON.parse(storedWatchlist) as string[];
+        setWatchlist(new Set(parsed));
       } catch (err) {
-        console.error('Failed to parse watchlist from storage', err)
+        console.error('Failed to parse watchlist from storage', err);
       }
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(Array.from(watchlist)))
-  }, [watchlist])
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(Array.from(watchlist)));
+  }, [watchlist]);
 
   const loadSentiment = useCallback(
     async (items: TrendingCoinData[]) => {
-      if (items.length === 0) return
+      if (items.length === 0) return;
 
       const sentimentEntries = await Promise.all(
-        items.map(async (coin) => {
+        items.map(async coin => {
           try {
-            const params: Record<string, unknown> = { symbol: coin.symbol }
+            const params: Record<string, unknown> = { symbol: coin.symbol };
             if (apiKey) {
-              params.apiKey = apiKey
+              params.apiKey = apiKey;
             }
 
-            const data = await invoke<CoinSentimentData>('get_coin_sentiment', params)
-            return [coin.symbol, data] as const
+            const data = await invoke<CoinSentimentData>('get_coin_sentiment', params);
+            return [coin.symbol, data] as const;
           } catch (err) {
-            console.error(`Failed to fetch sentiment for ${coin.symbol}:`, err)
-            return null
+            console.error(`Failed to fetch sentiment for ${coin.symbol}:`, err);
+            return null;
           }
         })
-      )
+      );
 
-      const map: Record<string, CoinSentimentData> = {}
-      sentimentEntries.forEach((entry) => {
-        if (!entry) return
-        const [symbol, data] = entry
-        map[symbol] = data
-      })
+      const map: Record<string, CoinSentimentData> = {};
+      sentimentEntries.forEach(entry => {
+        if (!entry) return;
+        const [symbol, data] = entry;
+        map[symbol] = data;
+      });
 
-      setSentiment((prev) => ({ ...prev, ...map }))
+      setSentiment(prev => ({ ...prev, ...map }));
     },
     [apiKey]
-  )
+  );
 
   const fetchTrendingCoins = useCallback(async () => {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
 
-      const params: Record<string, unknown> = { limit: 30 }
+      const params: Record<string, unknown> = { limit: 30 };
       if (apiKey) {
-        params.apiKey = apiKey
+        params.apiKey = apiKey;
       }
 
-      const result = await invoke<TrendingCoinData[]>('get_trending_coins', params)
-      setCoins(result)
-      setLastUpdated(new Date())
+      const result = await invoke<TrendingCoinData[]>('get_trending_coins', params);
+      setCoins(result);
+      setLastUpdated(new Date());
       setSparklineMap(
         result.reduce<Record<string, number[]>>((acc, coin) => {
-          acc[coin.address] = generateSparklineData(coin.price_change_24h)
-          return acc
+          acc[coin.address] = generateSparklineData(coin.price_change_24h);
+          return acc;
         }, {})
-      )
+      );
 
-      await loadSentiment(result.slice(0, 6))
+      await loadSentiment(result.slice(0, 6));
     } catch (err) {
-      console.error('Failed to fetch trending coins:', err)
-      setError(String(err))
+      console.error('Failed to fetch trending coins:', err);
+      setError(String(err));
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [apiKey, loadSentiment])
+  }, [apiKey, loadSentiment]);
 
   const handleRefresh = useCallback(async () => {
     try {
-      await invoke('refresh_trending')
+      await invoke('refresh_trending');
     } catch (err) {
-      console.error('Failed to clear trending cache:', err)
+      console.error('Failed to clear trending cache:', err);
     }
-    await fetchTrendingCoins()
-  }, [fetchTrendingCoins])
+    await fetchTrendingCoins();
+  }, [fetchTrendingCoins]);
 
   useEffect(() => {
-    fetchTrendingCoins()
-  }, [fetchTrendingCoins])
+    fetchTrendingCoins();
+  }, [fetchTrendingCoins]);
 
   useEffect(() => {
-    if (!autoRefreshEnabled || !isWindowActive) return
+    if (!autoRefreshEnabled || !isWindowActive) return;
 
     const interval = setInterval(() => {
-      fetchTrendingCoins()
-    }, 60_000)
+      fetchTrendingCoins();
+    }, 60_000);
 
-    return () => clearInterval(interval)
-  }, [autoRefreshEnabled, isWindowActive, fetchTrendingCoins])
+    return () => clearInterval(interval);
+  }, [autoRefreshEnabled, isWindowActive, fetchTrendingCoins]);
 
   useEffect(() => {
     const handleVisibility = () => {
-      setIsWindowActive(!document.hidden)
-    }
+      setIsWindowActive(!document.hidden);
+    };
 
-    const handleFocus = () => setIsWindowActive(true)
-    const handleBlur = () => setIsWindowActive(false)
+    const handleFocus = () => setIsWindowActive(true);
+    const handleBlur = () => setIsWindowActive(false);
 
-    document.addEventListener('visibilitychange', handleVisibility)
-    window.addEventListener('focus', handleFocus)
-    window.addEventListener('blur', handleBlur)
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibility)
-      window.removeEventListener('focus', handleFocus)
-      window.removeEventListener('blur', handleBlur)
-    }
-  }, [])
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, []);
 
   useEffect(() => {
-    if (!showSortMenu) return
+    if (!showSortMenu) return;
 
     const handleClick = (event: MouseEvent) => {
-      if (!sortMenuRef.current) return
+      if (!sortMenuRef.current) return;
       if (!sortMenuRef.current.contains(event.target as Node)) {
-        setShowSortMenu(false)
+        setShowSortMenu(false);
       }
-    }
+    };
 
-    window.addEventListener('mousedown', handleClick)
-    return () => window.removeEventListener('mousedown', handleClick)
-  }, [showSortMenu])
+    window.addEventListener('mousedown', handleClick);
+    return () => window.removeEventListener('mousedown', handleClick);
+  }, [showSortMenu]);
 
   const toggleWatchlist = (address: string) => {
-    setWatchlist((prev) => {
-      const next = new Set(prev)
+    setWatchlist(prev => {
+      const next = new Set(prev);
       if (next.has(address)) {
-        next.delete(address)
+        next.delete(address);
       } else {
-        next.add(address)
+        next.add(address);
       }
-      return next
-    })
-  }
+      return next;
+    });
+  };
 
   const filteredCoins = useMemo(() => {
-    if (!searchQuery) return coins
+    if (!searchQuery) return coins;
 
-    const lower = searchQuery.toLowerCase()
+    const lower = searchQuery.toLowerCase();
     return coins.filter(
-      (coin) =>
-        coin.symbol.toLowerCase().includes(lower) || coin.name.toLowerCase().includes(lower)
-    )
-  }, [coins, searchQuery])
+      coin => coin.symbol.toLowerCase().includes(lower) || coin.name.toLowerCase().includes(lower)
+    );
+  }, [coins, searchQuery]);
 
   const sortedCoins = useMemo(() => {
-    const sorted = [...filteredCoins]
+    const sorted = [...filteredCoins];
 
     switch (sortBy) {
       case 'trend_score':
-        return sorted.sort((a, b) => b.trend_score - a.trend_score)
+        return sorted.sort((a, b) => b.trend_score - a.trend_score);
       case 'price_change':
-        return sorted.sort((a, b) => b.price_change_24h - a.price_change_24h)
+        return sorted.sort((a, b) => b.price_change_24h - a.price_change_24h);
       case 'volume_change':
-        return sorted.sort((a, b) => b.volume_change_24h - a.volume_change_24h)
+        return sorted.sort((a, b) => b.volume_change_24h - a.volume_change_24h);
       case 'market_cap':
-        return sorted.sort((a, b) => b.market_cap - a.market_cap)
+        return sorted.sort((a, b) => b.market_cap - a.market_cap);
       default:
-        return sorted
+        return sorted;
     }
-  }, [filteredCoins, sortBy])
+  }, [filteredCoins, sortBy]);
 
   const getTimeSinceUpdate = () => {
-    if (!lastUpdated) return '—'
-    const seconds = Math.floor((Date.now() - lastUpdated.getTime()) / 1000)
-    if (seconds < 60) return `${seconds}s ago`
-    const minutes = Math.floor(seconds / 60)
-    if (minutes < 60) return `${minutes}m ago`
-    const hours = Math.floor(minutes / 60)
-    return `${hours}h ago`
-  }
+    if (!lastUpdated) return '—';
+    const seconds = Math.floor((Date.now() - lastUpdated.getTime()) / 1000);
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours}h ago`;
+  };
 
   const formatNumber = (num: number) => {
     if (num >= 1_000_000_000) {
-      return `$${(num / 1_000_000_000).toFixed(2)}B`
+      return `$${(num / 1_000_000_000).toFixed(2)}B`;
     }
     if (num >= 1_000_000) {
-      return `$${(num / 1_000_000).toFixed(2)}M`
+      return `$${(num / 1_000_000).toFixed(2)}M`;
     }
     if (num >= 1_000) {
-      return `$${(num / 1_000).toFixed(2)}K`
+      return `$${(num / 1_000).toFixed(2)}K`;
     }
-    return `$${num.toFixed(2)}`
-  }
+    return `$${num.toFixed(2)}`;
+  };
 
   const formatPrice = (price: number) => {
     if (price < 0.01) {
-      return `$${price.toFixed(6)}`
+      return `$${price.toFixed(6)}`;
     }
     if (price < 1) {
-      return `$${price.toFixed(4)}`
+      return `$${price.toFixed(4)}`;
     }
-    return `$${price.toFixed(2)}`
-  }
+    return `$${price.toFixed(2)}`;
+  };
 
   const getSentimentColor = (score: number) => {
-    if (score > 0.3) return 'text-green-400'
-    if (score < -0.3) return 'text-red-400'
-    return 'text-gray-400'
-  }
+    if (score > 0.3) return 'text-green-400';
+    if (score < -0.3) return 'text-red-400';
+    return 'text-gray-400';
+  };
 
-  const autoRefreshPaused = !autoRefreshEnabled || !isWindowActive
+  const autoRefreshPaused = !autoRefreshEnabled || !isWindowActive;
 
   if (error && coins.length === 0) {
     return (
@@ -524,7 +521,7 @@ export default function TrendingCoins({ searchQuery, onSelectCoin }: TrendingCoi
           </button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -549,7 +546,7 @@ export default function TrendingCoins({ searchQuery, onSelectCoin }: TrendingCoi
           <div className="flex items-center gap-2">
             <label className="text-sm text-gray-400">Auto-refresh</label>
             <button
-              onClick={() => setAutoRefreshEnabled((prev) => !prev)}
+              onClick={() => setAutoRefreshEnabled(prev => !prev)}
               className={`w-12 h-6 rounded-full transition-all ${
                 autoRefreshEnabled ? 'bg-purple-500' : 'bg-gray-600'
               }`}
@@ -571,9 +568,9 @@ export default function TrendingCoins({ searchQuery, onSelectCoin }: TrendingCoi
           </button>
           <div ref={sortMenuRef} className="relative">
             <button
-              onClick={(event) => {
-                event.stopPropagation()
-                setShowSortMenu((prev) => !prev)
+              onClick={event => {
+                event.stopPropagation();
+                setShowSortMenu(prev => !prev);
               }}
               className="flex items-center gap-2 px-4 py-2 bg-slate-700/50 hover:bg-slate-700 rounded-lg transition-all"
             >
@@ -582,12 +579,14 @@ export default function TrendingCoins({ searchQuery, onSelectCoin }: TrendingCoi
             </button>
             {showSortMenu && (
               <div className="absolute right-0 mt-2 w-48 bg-slate-800 border border-purple-500/20 rounded-lg shadow-xl z-20">
-                {(['trend_score', 'price_change', 'volume_change', 'market_cap'] as SortOption[]).map((option) => (
+                {(
+                  ['trend_score', 'price_change', 'volume_change', 'market_cap'] as SortOption[]
+                ).map(option => (
                   <button
                     key={option}
                     onClick={() => {
-                      setSortBy(option)
-                      setShowSortMenu(false)
+                      setSortBy(option);
+                      setShowSortMenu(false);
                     }}
                     className="w-full px-4 py-2 text-left hover:bg-purple-500/20 transition-all first:rounded-t-lg last:rounded-b-lg capitalize"
                   >
@@ -628,11 +627,7 @@ export default function TrendingCoins({ searchQuery, onSelectCoin }: TrendingCoi
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   {coin.logo_uri ? (
-                    <img
-                      src={coin.logo_uri}
-                      alt={coin.symbol}
-                      className="w-12 h-12 rounded-full"
-                    />
+                    <img src={coin.logo_uri} alt={coin.symbol} className="w-12 h-12 rounded-full" />
                   ) : (
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold shadow-lg">
                       {coin.symbol.substring(0, 2)}
@@ -644,9 +639,9 @@ export default function TrendingCoins({ searchQuery, onSelectCoin }: TrendingCoi
                   </div>
                 </div>
                 <button
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    toggleWatchlist(coin.address)
+                  onClick={event => {
+                    event.stopPropagation();
+                    toggleWatchlist(coin.address);
                   }}
                   className="p-2 hover:bg-slate-700/50 rounded-lg transition-all"
                 >
@@ -723,9 +718,7 @@ export default function TrendingCoins({ searchQuery, onSelectCoin }: TrendingCoi
                         style={{ width: `${Math.min(coin.trend_score, 100)}%` }}
                       />
                     </div>
-                    <span className="font-bold text-purple-400">
-                      {coin.trend_score.toFixed(0)}
-                    </span>
+                    <span className="font-bold text-purple-400">{coin.trend_score.toFixed(0)}</span>
                   </div>
                 </div>
               </div>
@@ -734,31 +727,35 @@ export default function TrendingCoins({ searchQuery, onSelectCoin }: TrendingCoi
                 <div className="mb-4 p-3 bg-slate-700/30 rounded-lg">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-400">Sentiment</span>
-                    <span className={`font-semibold ${getSentimentColor(sentiment[coin.symbol].score)}`}>
+                    <span
+                      className={`font-semibold ${getSentimentColor(sentiment[coin.symbol].score)}`}
+                    >
                       {sentiment[coin.symbol].label}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-gray-400 mt-1">
                     <span>{sentiment[coin.symbol].mentions} mentions</span>
-                    <span>{(sentiment[coin.symbol].positive_ratio * 100).toFixed(0)}% positive</span>
+                    <span>
+                      {(sentiment[coin.symbol].positive_ratio * 100).toFixed(0)}% positive
+                    </span>
                   </div>
                 </div>
               )}
 
               <div className="flex gap-2">
                 <button
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    onSelectCoin?.(coin)
+                  onClick={event => {
+                    event.stopPropagation();
+                    onSelectCoin?.(coin);
                   }}
                   className="flex-1 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 font-medium transition-all"
                 >
                   View chart
                 </button>
                 <button
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    toggleWatchlist(coin.address)
+                  onClick={event => {
+                    event.stopPropagation();
+                    toggleWatchlist(coin.address);
                   }}
                   className={`px-4 py-2 rounded-xl font-medium transition-all ${
                     watchlist.has(coin.address)
@@ -780,5 +777,5 @@ export default function TrendingCoins({ searchQuery, onSelectCoin }: TrendingCoi
         </div>
       )}
     </div>
-  )
+  );
 }

@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react'
-import { WifiOff, RefreshCw } from 'lucide-react'
-import { useStream } from '../../contexts/StreamContext'
+import { useMemo, useState } from 'react';
+import { WifiOff, RefreshCw } from 'lucide-react';
+import { useStream } from '../../contexts/StreamContext';
 
 interface ConnectionStatusProps {
-  className?: string
+  className?: string;
 }
 
 const stateColors: Record<string, string> = {
@@ -13,30 +13,31 @@ const stateColors: Record<string, string> = {
   Disconnected: 'bg-red-400',
   Failed: 'bg-red-500',
   Fallback: 'bg-yellow-300',
-}
+};
 
 export function ConnectionStatus({ className }: ConnectionStatusProps) {
-  const { statuses, isAnyConnected, isFallbackActive, reconnect } = useStream()
-  const [expanded, setExpanded] = useState(false)
-  const [pendingProvider, setPendingProvider] = useState<string | null>(null)
+  const { statuses, isAnyConnected, isFallbackActive, reconnect } = useStream();
+  const [expanded, setExpanded] = useState(false);
+  const [pendingProvider, setPendingProvider] = useState<string | null>(null);
 
   const overallState = useMemo(() => {
     if (isAnyConnected && !isFallbackActive) {
-      return 'Connected'
+      return 'Connected';
     }
     if (isFallbackActive) {
-      return 'Fallback'
+      return 'Fallback';
     }
-    return 'Disconnected'
-  }, [isAnyConnected, isFallbackActive])
+    return 'Disconnected';
+  }, [isAnyConnected, isFallbackActive]);
 
-  const indicatorColor = stateColors[overallState] || 'bg-slate-500'
-  const label = overallState === 'Connected' ? 'Live' : overallState === 'Fallback' ? 'Delayed' : 'Offline'
+  const indicatorColor = stateColors[overallState] || 'bg-slate-500';
+  const label =
+    overallState === 'Connected' ? 'Live' : overallState === 'Fallback' ? 'Delayed' : 'Offline';
 
   return (
     <div className={`relative ${className ?? ''}`}>
       <button
-        onClick={() => setExpanded((prev) => !prev)}
+        onClick={() => setExpanded(prev => !prev)}
         className="flex items-center gap-2 px-3 py-1 rounded-xl border border-purple-500/40 bg-slate-900/60 hover:bg-slate-900/80 transition"
       >
         <span className={`w-2 h-2 rounded-full ${indicatorColor} animate-pulse`} aria-hidden />
@@ -54,9 +55,9 @@ export function ConnectionStatus({ className }: ConnectionStatusProps) {
           </div>
 
           <div className="space-y-3">
-            {statuses.map((status) => {
-              const color = stateColors[status.state] || 'bg-slate-500'
-              const isPending = pendingProvider === status.provider
+            {statuses.map(status => {
+              const color = stateColors[status.state] || 'bg-slate-500';
+              const isPending = pendingProvider === status.provider;
 
               return (
                 <div key={status.provider} className="rounded-lg border border-purple-500/20 p-3">
@@ -67,11 +68,11 @@ export function ConnectionStatus({ className }: ConnectionStatusProps) {
                     </div>
                     <button
                       onClick={async () => {
-                        setPendingProvider(status.provider)
+                        setPendingProvider(status.provider);
                         try {
-                          await reconnect(status.provider)
+                          await reconnect(status.provider);
                         } finally {
-                          setPendingProvider(null)
+                          setPendingProvider(null);
                         }
                       }}
                       className="text-xs flex items-center gap-1 px-2 py-1 rounded-md border border-purple-500/30 hover:bg-purple-500/20"
@@ -103,20 +104,23 @@ export function ConnectionStatus({ className }: ConnectionStatusProps) {
                     </div>
                     <div>
                       <dt className="text-slate-400">Subscriptions</dt>
-                      <dd>{status.subscriptions.prices.length + status.subscriptions.wallets.length}</dd>
+                      <dd>
+                        {status.subscriptions.prices.length + status.subscriptions.wallets.length}
+                      </dd>
                     </div>
                   </dl>
                   {status.fallback?.active && (
                     <p className="text-xs text-yellow-400 mt-2">
-                      Fallback polling {status.fallback.intervalMs / 1000}s • {status.fallback.reason ?? 'Unstable connection'}
+                      Fallback polling {status.fallback.intervalMs / 1000}s •{' '}
+                      {status.fallback.reason ?? 'Unstable connection'}
                     </p>
                   )}
                 </div>
-              )
+              );
             })}
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }

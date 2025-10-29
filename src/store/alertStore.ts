@@ -55,10 +55,20 @@ interface AlertStateStore {
   } | null;
 
   fetchAlerts: () => Promise<void>;
-  createAlert: (payload: Omit<PriceAlert, 'id' | 'state' | 'createdAt' | 'updatedAt' | 'lastTriggeredAt' | 'cooldownUntil'>) => Promise<PriceAlert>;
+  createAlert: (
+    payload: Omit<
+      PriceAlert,
+      'id' | 'state' | 'createdAt' | 'updatedAt' | 'lastTriggeredAt' | 'cooldownUntil'
+    >
+  ) => Promise<PriceAlert>;
   updateAlert: (id: string, payload: Partial<PriceAlert>) => Promise<PriceAlert>;
   deleteAlert: (id: string) => Promise<void>;
-  testAlert: (id: string, currentPrice: number, price24hAgo?: number | null, volume24h?: number | null) => Promise<AlertTestResult>;
+  testAlert: (
+    id: string,
+    currentPrice: number,
+    price24hAgo?: number | null,
+    volume24h?: number | null
+  ) => Promise<AlertTestResult>;
   setLastTriggerEvent: (event: AlertStateStore['lastTriggerEvent']) => void;
 }
 
@@ -79,7 +89,7 @@ export const useAlertStore = create<AlertStateStore>((set, get) => ({
     }
   },
 
-  createAlert: async (payload) => {
+  createAlert: async payload => {
     set({ error: null });
     try {
       const alert = await invoke<PriceAlert>('alert_create', {
@@ -93,7 +103,7 @@ export const useAlertStore = create<AlertStateStore>((set, get) => ({
           cooldownMinutes: payload.cooldownMinutes,
         },
       });
-      set((state) => ({ alerts: [alert, ...state.alerts] }));
+      set(state => ({ alerts: [alert, ...state.alerts] }));
       return alert;
     } catch (error) {
       set({ error: String(error) });
@@ -114,8 +124,8 @@ export const useAlertStore = create<AlertStateStore>((set, get) => ({
           state: payload.state,
         },
       });
-      set((state) => ({
-        alerts: state.alerts.map((a) => (a.id === id ? alert : a)),
+      set(state => ({
+        alerts: state.alerts.map(a => (a.id === id ? alert : a)),
       }));
       return alert;
     } catch (error) {
@@ -124,11 +134,11 @@ export const useAlertStore = create<AlertStateStore>((set, get) => ({
     }
   },
 
-  deleteAlert: async (id) => {
+  deleteAlert: async id => {
     set({ error: null });
     try {
       await invoke('alert_delete', { id });
-      set((state) => ({ alerts: state.alerts.filter((a) => a.id !== id) }));
+      set(state => ({ alerts: state.alerts.filter(a => a.id !== id) }));
     } catch (error) {
       set({ error: String(error) });
       throw error;
@@ -151,5 +161,5 @@ export const useAlertStore = create<AlertStateStore>((set, get) => ({
     }
   },
 
-  setLastTriggerEvent: (event) => set({ lastTriggerEvent: event }),
+  setLastTriggerEvent: event => set({ lastTriggerEvent: event }),
 }));

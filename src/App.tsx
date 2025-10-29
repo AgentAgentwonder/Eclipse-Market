@@ -1,113 +1,124 @@
-import { useEffect, useMemo, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, Home, TrendingUp, BarChart3, Users, Bell, Settings, Briefcase, Loader2, FileText } from 'lucide-react'
-import { invoke } from '@tauri-apps/api/tauri'
-import { PhantomConnect } from './components/wallet/PhantomConnect'
-import { WalletSwitcher } from './components/wallet/WalletSwitcher'
-import { AddWalletModal } from './components/wallet/AddWalletModal'
-import { GroupManagementModal } from './components/wallet/GroupManagementModal'
-import { WalletSettingsModal } from './components/wallet/WalletSettingsModal'
-import { LockScreen } from './components/auth/LockScreen'
-import { ConnectionStatus } from './components/common/ConnectionStatus'
-import { PaperModeIndicator } from './components/trading/PaperModeIndicator'
-import { PaperTradingTutorial } from './components/trading/PaperTradingTutorial'
-import Dashboard from './pages/Dashboard'
-import Coins from './pages/Coins'
-import Stocks from './pages/Stocks'
-import Insiders from './pages/Insiders'
-import Trading from './pages/Trading'
-import Portfolio from './pages/Portfolio'
-import { PaperTradingDashboard } from './pages/PaperTrading/Dashboard'
-import SettingsPage from './pages/Settings'
-import { BIOMETRIC_STATUS_EVENT } from './constants/events'
-import { useWalletStore } from './store/walletStore'
-import { usePaperTradingStore } from './store/paperTradingStore'
-import { useAlertNotifications } from './hooks/useAlertNotifications'
+import { useEffect, useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Menu,
+  X,
+  Home,
+  TrendingUp,
+  BarChart3,
+  Users,
+  Bell,
+  Settings,
+  Briefcase,
+  Loader2,
+  FileText,
+} from 'lucide-react';
+import { invoke } from '@tauri-apps/api/tauri';
+import { PhantomConnect } from './components/wallet/PhantomConnect';
+import { WalletSwitcher } from './components/wallet/WalletSwitcher';
+import { AddWalletModal } from './components/wallet/AddWalletModal';
+import { GroupManagementModal } from './components/wallet/GroupManagementModal';
+import { WalletSettingsModal } from './components/wallet/WalletSettingsModal';
+import { LockScreen } from './components/auth/LockScreen';
+import { ConnectionStatus } from './components/common/ConnectionStatus';
+import { PaperModeIndicator } from './components/trading/PaperModeIndicator';
+import { PaperTradingTutorial } from './components/trading/PaperTradingTutorial';
+import Dashboard from './pages/Dashboard';
+import Coins from './pages/Coins';
+import Stocks from './pages/Stocks';
+import Insiders from './pages/Insiders';
+import Trading from './pages/Trading';
+import Portfolio from './pages/Portfolio';
+import { PaperTradingDashboard } from './pages/PaperTrading/Dashboard';
+import SettingsPage from './pages/Settings';
+import { BIOMETRIC_STATUS_EVENT } from './constants/events';
+import { useWalletStore } from './store/walletStore';
+import { usePaperTradingStore } from './store/paperTradingStore';
+import { useAlertNotifications } from './hooks/useAlertNotifications';
 
 type BiometricStatus = {
-  available: boolean
-  enrolled: boolean
-  fallbackConfigured: boolean
-  platform: 'WindowsHello' | 'TouchId' | 'PasswordOnly'
-}
+  available: boolean;
+  enrolled: boolean;
+  fallbackConfigured: boolean;
+  platform: 'WindowsHello' | 'TouchId' | 'PasswordOnly';
+};
 
 function App() {
+  const [currentPage, setCurrentPage] = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [lockVisible, setLockVisible] = useState(false);
+  const [initializingLock, setInitializingLock] = useState(true);
+  const [addWalletModalOpen, setAddWalletModalOpen] = useState(false);
+  const [groupsModalOpen, setGroupsModalOpen] = useState(false);
+  const [walletSettingsModalOpen, setWalletSettingsModalOpen] = useState(false);
+  const [selectedWalletId, setSelectedWalletId] = useState<string | null>(null);
 
-  const [currentPage, setCurrentPage] = useState('dashboard')
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [lockVisible, setLockVisible] = useState(false)
-  const [initializingLock, setInitializingLock] = useState(true)
-  const [addWalletModalOpen, setAddWalletModalOpen] = useState(false)
-  const [groupsModalOpen, setGroupsModalOpen] = useState(false)
-  const [walletSettingsModalOpen, setWalletSettingsModalOpen] = useState(false)
-  const [selectedWalletId, setSelectedWalletId] = useState<string | null>(null)
+  const wallets = useWalletStore(state => state.wallets);
+  const refreshMultiWallet = useWalletStore(state => state.refreshMultiWallet);
+  const { isPaperMode, togglePaperMode } = usePaperTradingStore();
 
-  const wallets = useWalletStore((state) => state.wallets)
-  const refreshMultiWallet = useWalletStore((state) => state.refreshMultiWallet)
-  const { isPaperMode, togglePaperMode } = usePaperTradingStore()
-
-  useAlertNotifications()
+  useAlertNotifications();
 
   useEffect(() => {
     const hydrate = async () => {
       try {
-        const status = await invoke<BiometricStatus>('biometric_get_status')
-        setLockVisible(Boolean(status.enrolled))
+        const status = await invoke<BiometricStatus>('biometric_get_status');
+        setLockVisible(Boolean(status.enrolled));
       } catch (error) {
-        console.error('Failed to hydrate biometric status', error)
-        setLockVisible(false)
+        console.error('Failed to hydrate biometric status', error);
+        setLockVisible(false);
       } finally {
-        setInitializingLock(false)
+        setInitializingLock(false);
       }
-    }
+    };
 
-    hydrate()
-  }, [])
+    hydrate();
+  }, []);
 
   useEffect(() => {
-    refreshMultiWallet().catch((error) => {
-      console.error('Failed to refresh multi-wallet state', error)
-    })
-  }, [refreshMultiWallet])
+    refreshMultiWallet().catch(error => {
+      console.error('Failed to refresh multi-wallet state', error);
+    });
+  }, [refreshMultiWallet]);
 
   useEffect(() => {
     const handleVisibility = async () => {
-      if (document.visibilityState !== 'visible') return
+      if (document.visibilityState !== 'visible') return;
       try {
-        const status = await invoke<BiometricStatus>('biometric_get_status')
+        const status = await invoke<BiometricStatus>('biometric_get_status');
         if (status.enrolled) {
-          setLockVisible(true)
+          setLockVisible(true);
         }
       } catch (error) {
-        console.error('Failed to refresh biometric status on resume', error)
+        console.error('Failed to refresh biometric status on resume', error);
       }
-    }
+    };
 
-    document.addEventListener('visibilitychange', handleVisibility)
+    document.addEventListener('visibilitychange', handleVisibility);
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibility)
-    }
-  }, [])
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, []);
 
   useEffect(() => {
     const handler = (event: Event) => {
-      const detail = (event as CustomEvent<BiometricStatus>).detail
+      const detail = (event as CustomEvent<BiometricStatus>).detail;
       if (detail) {
-        setLockVisible(detail.enrolled)
+        setLockVisible(detail.enrolled);
       }
-    }
+    };
 
-    window.addEventListener(BIOMETRIC_STATUS_EVENT, handler as EventListener)
+    window.addEventListener(BIOMETRIC_STATUS_EVENT, handler as EventListener);
     return () => {
-      window.removeEventListener(BIOMETRIC_STATUS_EVENT, handler as EventListener)
-    }
-  }, [])
+      window.removeEventListener(BIOMETRIC_STATUS_EVENT, handler as EventListener);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isPaperMode && currentPage === 'paper-trading') {
-      setCurrentPage('trading')
+      setCurrentPage('trading');
     }
-  }, [isPaperMode, currentPage])
+  }, [isPaperMode, currentPage]);
 
   const pages = useMemo(() => {
     const basePages = [
@@ -135,22 +146,24 @@ function App() {
     }
 
     return basePages;
-  }, [isPaperMode])
+  }, [isPaperMode]);
 
-  const CurrentPageComponent = pages.find(p => p.id === currentPage)?.component || Dashboard
+  const CurrentPageComponent = pages.find(p => p.id === currentPage)?.component || Dashboard;
 
   const handleSwitchToLive = () => {
-    setCurrentPage('settings')
+    setCurrentPage('settings');
     // Let the user switch in Settings
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
       {/* Paper Mode Indicator Banner */}
       <PaperModeIndicator onSwitchToLive={handleSwitchToLive} />
-      
+
       {/* Top Bar */}
-      <header className={`sticky z-40 backdrop-blur-xl bg-slate-900/80 border-b border-purple-500/20 ${isPaperMode ? 'top-[52px]' : 'top-0'}`}>
+      <header
+        className={`sticky z-40 backdrop-blur-xl bg-slate-900/80 border-b border-purple-500/20 ${isPaperMode ? 'top-[52px]' : 'top-0'}`}
+      >
         <div className="max-w-[1800px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-8">
@@ -172,9 +185,9 @@ function App() {
               <WalletSwitcher
                 onAddWallet={() => setAddWalletModalOpen(true)}
                 onManageGroups={() => setGroupsModalOpen(true)}
-                onWalletSettings={(walletId) => {
-                  setSelectedWalletId(walletId)
-                  setWalletSettingsModalOpen(true)
+                onWalletSettings={walletId => {
+                  setSelectedWalletId(walletId);
+                  setWalletSettingsModalOpen(true);
                 }}
               />
               <PhantomConnect />
@@ -209,12 +222,12 @@ function App() {
                 </div>
 
                 <nav className="space-y-2">
-                  {pages.map((page) => (
+                  {pages.map(page => (
                     <button
                       key={page.id}
                       onClick={() => {
-                        setCurrentPage(page.id)
-                        setSidebarOpen(false)
+                        setCurrentPage(page.id);
+                        setSidebarOpen(false);
                       }}
                       className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all ${
                         currentPage === page.id
@@ -249,32 +262,24 @@ function App() {
       </main>
 
       {/* Lock Screen */}
-      {!initializingLock && lockVisible && (
-        <LockScreen onUnlock={() => setLockVisible(false)} />
-      )}
+      {!initializingLock && lockVisible && <LockScreen onUnlock={() => setLockVisible(false)} />}
 
       {/* Paper Trading Tutorial */}
       <PaperTradingTutorial />
 
       {/* Multi-Wallet Modals */}
-      <AddWalletModal
-        isOpen={addWalletModalOpen}
-        onClose={() => setAddWalletModalOpen(false)}
-      />
-      <GroupManagementModal
-        isOpen={groupsModalOpen}
-        onClose={() => setGroupsModalOpen(false)}
-      />
+      <AddWalletModal isOpen={addWalletModalOpen} onClose={() => setAddWalletModalOpen(false)} />
+      <GroupManagementModal isOpen={groupsModalOpen} onClose={() => setGroupsModalOpen(false)} />
       <WalletSettingsModal
         isOpen={walletSettingsModalOpen}
         onClose={() => {
-          setWalletSettingsModalOpen(false)
-          setSelectedWalletId(null)
+          setWalletSettingsModalOpen(false);
+          setSelectedWalletId(null);
         }}
         walletId={selectedWalletId}
       />
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

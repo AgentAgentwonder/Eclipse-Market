@@ -22,44 +22,44 @@ export function ApiSettings() {
   return (
     <div className="bg-gray-800 p-4 rounded-lg">
       <h2 className="text-lg font-semibold mb-4">API Integration</h2>
-      
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm mb-1">Service</label>
-          <select 
-            value={service} 
-            onChange={(e) => setService(e.target.value)}
+          <select
+            value={service}
+            onChange={e => setService(e.target.value)}
             className="w-full bg-gray-700 p-2 rounded"
           >
             <option value="helius">Helius</option>
             <option value="birdeye">Birdeye</option>
           </select>
         </div>
-        
+
         <div>
           <label className="block text-sm mb-1">API Key</label>
           <input
             type="password"
             value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
+            onChange={e => setApiKey(e.target.value)}
             className="w-full bg-gray-700 p-2 rounded"
             placeholder="Enter API key"
           />
         </div>
-        
+
         <div>
           <label className="block text-sm mb-1">Endpoint Path</label>
           <input
             type="text"
             value={path}
-            onChange={(e) => setPath(e.target.value)}
+            onChange={e => setPath(e.target.value)}
             className="w-full bg-gray-700 p-2 rounded"
             placeholder="/v1/endpoint"
           />
         </div>
-        
-        <button 
-          type="submit" 
+
+        <button
+          type="submit"
           disabled={loading}
           className={`px-4 py-2 rounded ${
             loading ? 'bg-gray-600' : 'bg-purple-600 hover:bg-purple-700'
@@ -68,7 +68,7 @@ export function ApiSettings() {
           {loading ? 'Fetching...' : 'Fetch Data'}
         </button>
       </form>
-      
+
       {response && (
         <div className="mt-4 p-4 bg-gray-900 rounded overflow-auto max-h-64">
           <pre>{JSON.stringify(response, null, 2)}</pre>

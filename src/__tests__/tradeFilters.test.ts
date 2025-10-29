@@ -48,7 +48,7 @@ describe('filterTrades', () => {
 
     const filtered = filterTrades(trades, filters);
     expect(filtered).toHaveLength(2);
-    expect(filtered.map((t) => t.id)).toEqual(['trade-2', 'trade-3']);
+    expect(filtered.map(t => t.id)).toEqual(['trade-2', 'trade-3']);
   });
 
   it('should filter trades by token', () => {
@@ -64,7 +64,7 @@ describe('filterTrades', () => {
 
     const filtered = filterTrades(trades, filters);
     expect(filtered).toHaveLength(2);
-    expect(filtered.map((t) => t.id)).toEqual(['trade-1', 'trade-3']);
+    expect(filtered.map(t => t.id)).toEqual(['trade-1', 'trade-3']);
   });
 
   it('should filter trades by side', () => {
@@ -80,7 +80,7 @@ describe('filterTrades', () => {
 
     const filtered = filterTrades(trades, filters);
     expect(filtered).toHaveLength(2);
-    expect(filtered.map((t) => t.id)).toEqual(['trade-1', 'trade-3']);
+    expect(filtered.map(t => t.id)).toEqual(['trade-1', 'trade-3']);
   });
 
   it('should filter trades by status', () => {
@@ -96,7 +96,7 @@ describe('filterTrades', () => {
 
     const filtered = filterTrades(trades, filters);
     expect(filtered).toHaveLength(2);
-    expect(filtered.map((t) => t.id)).toEqual(['trade-1', 'trade-3']);
+    expect(filtered.map(t => t.id)).toEqual(['trade-1', 'trade-3']);
   });
 
   it('should filter trades by P&L range', () => {
@@ -147,7 +147,7 @@ describe('filterTrades', () => {
 
     const filtered = filterTrades(trades, filters);
     expect(filtered).toHaveLength(2);
-    expect(filtered.map((t) => t.id)).toEqual(['trade-1', 'trade-3']);
+    expect(filtered.map(t => t.id)).toEqual(['trade-1', 'trade-3']);
   });
 
   it('should filter trades by paper trade status', () => {
@@ -163,7 +163,7 @@ describe('filterTrades', () => {
 
     const filtered = filterTrades(trades, filters);
     expect(filtered).toHaveLength(2);
-    expect(filtered.map((t) => t.id)).toEqual(['trade-1', 'trade-3']);
+    expect(filtered.map(t => t.id)).toEqual(['trade-1', 'trade-3']);
   });
 });
 
@@ -176,7 +176,7 @@ describe('sortTrades', () => {
     ];
 
     const sorted = sortTrades(trades, 'timestamp', 'asc');
-    expect(sorted.map((t) => t.id)).toEqual(['trade-2', 'trade-3', 'trade-1']);
+    expect(sorted.map(t => t.id)).toEqual(['trade-2', 'trade-3', 'trade-1']);
   });
 
   it('should sort trades by timestamp descending', () => {
@@ -187,7 +187,7 @@ describe('sortTrades', () => {
     ];
 
     const sorted = sortTrades(trades, 'timestamp', 'desc');
-    expect(sorted.map((t) => t.id)).toEqual(['trade-2', 'trade-3', 'trade-1']);
+    expect(sorted.map(t => t.id)).toEqual(['trade-2', 'trade-3', 'trade-1']);
   });
 
   it('should sort trades by P&L', () => {
@@ -198,7 +198,7 @@ describe('sortTrades', () => {
     ];
 
     const sorted = sortTrades(trades, 'pnl', 'desc');
-    expect(sorted.map((t) => t.id)).toEqual(['trade-3', 'trade-1', 'trade-2']);
+    expect(sorted.map(t => t.id)).toEqual(['trade-3', 'trade-1', 'trade-2']);
   });
 });
 
@@ -214,17 +214,17 @@ describe('paginateTrades', () => {
 
     const page1 = paginateTrades(trades, 1, 2);
     expect(page1.trades).toHaveLength(2);
-    expect(page1.trades.map((t) => t.id)).toEqual(['trade-1', 'trade-2']);
+    expect(page1.trades.map(t => t.id)).toEqual(['trade-1', 'trade-2']);
     expect(page1.totalPages).toBe(3);
     expect(page1.totalCount).toBe(5);
 
     const page2 = paginateTrades(trades, 2, 2);
     expect(page2.trades).toHaveLength(2);
-    expect(page2.trades.map((t) => t.id)).toEqual(['trade-3', 'trade-4']);
+    expect(page2.trades.map(t => t.id)).toEqual(['trade-3', 'trade-4']);
 
     const page3 = paginateTrades(trades, 3, 2);
     expect(page3.trades).toHaveLength(1);
-    expect(page3.trades.map((t) => t.id)).toEqual(['trade-5']);
+    expect(page3.trades.map(t => t.id)).toEqual(['trade-5']);
   });
 });
 

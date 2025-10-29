@@ -21,53 +21,46 @@ export function AutomationRule() {
   return (
     <div className="bg-gray-800 p-4 rounded-lg">
       <h2 className="text-lg font-semibold mb-4">Create Automation Rule</h2>
-      
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm mb-1">Rule Name</label>
           <input
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={e => setName(e.target.value)}
             className="w-full bg-gray-700 p-2 rounded"
             required
           />
         </div>
-        
+
         <div>
           <label className="block text-sm mb-1">Condition</label>
           <textarea
             value={condition}
-            onChange={(e) => setCondition(e.target.value)}
+            onChange={e => setCondition(e.target.value)}
             className="w-full bg-gray-700 p-2 rounded h-20"
             placeholder="bid > 100 && ask < 105"
             required
           />
         </div>
-        
+
         <div>
           <label className="block text-sm mb-1">Action</label>
           <textarea
             value={action}
-            onChange={(e) => setAction(e.target.value)}
+            onChange={e => setAction(e.target.value)}
             className="w-full bg-gray-700 p-2 rounded h-20"
             placeholder="execute_swap('SOL', 'USDC', 1.0)"
             required
           />
         </div>
-        
-        <button 
-          type="submit" 
-          className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded"
-        >
+
+        <button type="submit" className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded">
           Create Rule
         </button>
-        
-        {success && (
-          <div className="text-green-400 text-sm mt-2">
-            Rule created successfully!
-          </div>
-        )}
+
+        {success && <div className="text-green-400 text-sm mt-2">Rule created successfully!</div>}
       </form>
     </div>
   );

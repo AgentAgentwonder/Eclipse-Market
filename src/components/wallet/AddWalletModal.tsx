@@ -1,45 +1,45 @@
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { X, Loader2 } from 'lucide-react'
-import { useWallet } from '@solana/wallet-adapter-react'
-import { useWalletStore, AddWalletRequest, WalletType } from '../../store/walletStore'
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Loader2 } from 'lucide-react';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { useWalletStore, AddWalletRequest, WalletType } from '../../store/walletStore';
 
 interface AddWalletModalProps {
-  isOpen: boolean
-  onClose: () => void
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 const modalVariants = {
   hidden: { opacity: 0, scale: 0.95 },
   visible: { opacity: 1, scale: 1 },
-}
+};
 
 export function AddWalletModal({ isOpen, onClose }: AddWalletModalProps) {
-  const { publicKey, wallet } = useWallet()
-  const addWallet = useWalletStore((state) => state.addWallet)
-  const groups = useWalletStore((state) => state.groups)
-  const isLoading = useWalletStore((state) => state.multiWalletLoading)
+  const { publicKey, wallet } = useWallet();
+  const addWallet = useWalletStore(state => state.addWallet);
+  const groups = useWalletStore(state => state.groups);
+  const isLoading = useWalletStore(state => state.multiWalletLoading);
 
   const [formState, setFormState] = useState<{
-    label: string
-    publicKey: string
-    network: string
-    walletType: WalletType
-    groupId?: string
+    label: string;
+    publicKey: string;
+    network: string;
+    walletType: WalletType;
+    groupId?: string;
   }>({
     label: '',
     publicKey: publicKey?.toBase58() ?? '',
     network: 'devnet',
     walletType: 'phantom',
     groupId: undefined,
-  })
+  });
 
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async () => {
     if (!formState.label.trim() || !formState.publicKey.trim()) {
-      setError('Please fill in all required fields')
-      return
+      setError('Please fill in all required fields');
+      return;
     }
 
     const payload: AddWalletRequest = {
@@ -48,39 +48,39 @@ export function AddWalletModal({ isOpen, onClose }: AddWalletModalProps) {
       network: formState.network,
       walletType: formState.walletType,
       groupId: formState.groupId || null,
-    }
+    };
 
     try {
-      await addWallet(payload)
-      onClose()
+      await addWallet(payload);
+      onClose();
       setFormState({
         label: '',
         publicKey: '',
         network: 'devnet',
         walletType: 'phantom',
         groupId: undefined,
-      })
-      setError(null)
+      });
+      setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add wallet')
+      setError(err instanceof Error ? err.message : 'Failed to add wallet');
     }
-  }
+  };
 
   const handleUseConnected = () => {
     if (publicKey) {
-      setFormState((state) => ({
+      setFormState(state => ({
         ...state,
         publicKey: publicKey.toBase58(),
         label: wallet?.adapter.name ?? 'Phantom Wallet',
-        walletType: wallet?.adapter.name.toLowerCase().includes('ledger') 
-          ? 'hardware_ledger' 
+        walletType: wallet?.adapter.name.toLowerCase().includes('ledger')
+          ? 'hardware_ledger'
           : wallet?.adapter.name.toLowerCase().includes('trezor')
-          ? 'hardware_trezor'
-          : 'phantom',
-      }))
-      setError(null)
+            ? 'hardware_trezor'
+            : 'phantom',
+      }));
+      setError(null);
     }
-  }
+  };
 
   return (
     <AnimatePresence>
@@ -119,7 +119,8 @@ export function AddWalletModal({ isOpen, onClose }: AddWalletModalProps) {
                     onClick={handleUseConnected}
                     className="w-full px-4 py-2 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 transition-all text-sm"
                   >
-                    {wallet?.adapter.name} - {publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}
+                    {wallet?.adapter.name} - {publicKey.toBase58().slice(0, 4)}...
+                    {publicKey.toBase58().slice(-4)}
                   </button>
                 </div>
               )}
@@ -128,7 +129,7 @@ export function AddWalletModal({ isOpen, onClose }: AddWalletModalProps) {
                 <label className="text-sm text-gray-300">Wallet Label</label>
                 <input
                   value={formState.label}
-                  onChange={(e) => setFormState((state) => ({ ...state, label: e.target.value }))}
+                  onChange={e => setFormState(state => ({ ...state, label: e.target.value }))}
                   className="mt-1 w-full px-3 py-2 bg-slate-900 border border-purple-500/30 rounded-lg focus:outline-none focus:border-purple-500"
                   placeholder="My Trading Wallet"
                 />
@@ -138,7 +139,7 @@ export function AddWalletModal({ isOpen, onClose }: AddWalletModalProps) {
                 <label className="text-sm text-gray-300">Public Key</label>
                 <input
                   value={formState.publicKey}
-                  onChange={(e) => setFormState((state) => ({ ...state, publicKey: e.target.value }))}
+                  onChange={e => setFormState(state => ({ ...state, publicKey: e.target.value }))}
                   className="mt-1 w-full px-3 py-2 bg-slate-900 border border-purple-500/30 rounded-lg focus:outline-none focus:border-purple-500 font-mono text-sm"
                   placeholder="Enter Solana public key"
                 />
@@ -148,7 +149,7 @@ export function AddWalletModal({ isOpen, onClose }: AddWalletModalProps) {
                 <label className="text-sm text-gray-300">Network</label>
                 <select
                   value={formState.network}
-                  onChange={(e) => setFormState((state) => ({ ...state, network: e.target.value }))}
+                  onChange={e => setFormState(state => ({ ...state, network: e.target.value }))}
                   className="mt-1 w-full px-3 py-2 bg-slate-900 border border-purple-500/30 rounded-lg focus:outline-none focus:border-purple-500"
                 >
                   <option value="devnet">Devnet</option>
@@ -161,7 +162,9 @@ export function AddWalletModal({ isOpen, onClose }: AddWalletModalProps) {
                 <label className="text-sm text-gray-300">Wallet Type</label>
                 <select
                   value={formState.walletType}
-                  onChange={(e) => setFormState((state) => ({ ...state, walletType: e.target.value as WalletType }))}
+                  onChange={e =>
+                    setFormState(state => ({ ...state, walletType: e.target.value as WalletType }))
+                  }
                   className="mt-1 w-full px-3 py-2 bg-slate-900 border border-purple-500/30 rounded-lg focus:outline-none focus:border-purple-500"
                 >
                   <option value="phantom">Phantom</option>
@@ -176,12 +179,16 @@ export function AddWalletModal({ isOpen, onClose }: AddWalletModalProps) {
                   <label className="text-sm text-gray-300">Assign to Group (Optional)</label>
                   <select
                     value={formState.groupId ?? ''}
-                    onChange={(e) => setFormState((state) => ({ ...state, groupId: e.target.value || undefined }))}
+                    onChange={e =>
+                      setFormState(state => ({ ...state, groupId: e.target.value || undefined }))
+                    }
                     className="mt-1 w-full px-3 py-2 bg-slate-900 border border-purple-500/30 rounded-lg focus:outline-none focus:border-purple-500"
                   >
                     <option value="">No Group</option>
-                    {groups.map((group) => (
-                      <option key={group.id} value={group.id}>{group.name}</option>
+                    {groups.map(group => (
+                      <option key={group.id} value={group.id}>
+                        {group.name}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -214,5 +221,5 @@ export function AddWalletModal({ isOpen, onClose }: AddWalletModalProps) {
         </motion.div>
       )}
     </AnimatePresence>
-  )
+  );
 }

@@ -131,7 +131,7 @@ const AlertsManager = ({ isOpen, onClose, prefilledSymbol, prefilledMint }: Aler
 
           <div className="flex-1 overflow-y-auto p-6">
             <div className="space-y-4">
-              {alerts.map((alert) => (
+              {alerts.map(alert => (
                 <motion.div
                   key={alert.id}
                   className="bg-slate-800/60 border border-purple-500/10 rounded-2xl p-6 hover:border-purple-500/30 transition"
@@ -193,7 +193,7 @@ const AlertsManager = ({ isOpen, onClose, prefilledSymbol, prefilledMint }: Aler
                     <div>
                       <p className="text-slate-400 mb-1">Notification Channels</p>
                       <div className="flex gap-2 flex-wrap">
-                        {alert.notificationChannels.map((channel) => (
+                        {alert.notificationChannels.map(channel => (
                           <span
                             key={channel}
                             className="px-2 py-1 rounded-lg bg-purple-500/20 text-purple-300 text-xs"

@@ -1,32 +1,32 @@
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { X, Loader2, Trash2 } from 'lucide-react'
-import { useWalletStore, UpdateWalletRequest, WalletPreferences } from '../../store/walletStore'
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Loader2, Trash2 } from 'lucide-react';
+import { useWalletStore, UpdateWalletRequest, WalletPreferences } from '../../store/walletStore';
 
 interface WalletSettingsModalProps {
-  isOpen: boolean
-  onClose: () => void
-  walletId: string | null
+  isOpen: boolean;
+  onClose: () => void;
+  walletId: string | null;
 }
 
 const modalVariants = {
   hidden: { opacity: 0, scale: 0.95 },
   visible: { opacity: 1, scale: 1 },
-}
+};
 
 export function WalletSettingsModal({ isOpen, onClose, walletId }: WalletSettingsModalProps) {
-  const wallets = useWalletStore((state) => state.wallets)
-  const groups = useWalletStore((state) => state.groups)
-  const updateWallet = useWalletStore((state) => state.updateWallet)
-  const removeWallet = useWalletStore((state) => state.removeWallet)
-  const isLoading = useWalletStore((state) => state.multiWalletLoading)
-  
-  const wallet = wallets.find(w => w.id === walletId)
-  
+  const wallets = useWalletStore(state => state.wallets);
+  const groups = useWalletStore(state => state.groups);
+  const updateWallet = useWalletStore(state => state.updateWallet);
+  const removeWallet = useWalletStore(state => state.removeWallet);
+  const isLoading = useWalletStore(state => state.multiWalletLoading);
+
+  const wallet = wallets.find(w => w.id === walletId);
+
   const [formState, setFormState] = useState<{
-    label: string
-    groupId?: string | null
-    preferences: WalletPreferences
+    label: string;
+    groupId?: string | null;
+    preferences: WalletPreferences;
   }>({
     label: '',
     groupId: undefined,
@@ -38,9 +38,9 @@ export function WalletSettingsModal({ isOpen, onClose, walletId }: WalletSetting
       notificationsEnabled: true,
       isolationMode: false,
     },
-  })
+  });
 
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (wallet) {
@@ -48,14 +48,14 @@ export function WalletSettingsModal({ isOpen, onClose, walletId }: WalletSetting
         label: wallet.label,
         groupId: wallet.groupId ?? null,
         preferences: wallet.preferences,
-      })
+      });
     }
-  }, [wallet])
+  }, [wallet]);
 
   const handleSubmit = async () => {
     if (!walletId || !formState.label.trim()) {
-      setError('Please fill in all required fields')
-      return
+      setError('Please fill in all required fields');
+      return;
     }
 
     const payload: UpdateWalletRequest = {
@@ -63,31 +63,31 @@ export function WalletSettingsModal({ isOpen, onClose, walletId }: WalletSetting
       label: formState.label,
       groupId: formState.groupId,
       preferences: formState.preferences,
-    }
+    };
 
     try {
-      await updateWallet(payload)
-      onClose()
-      setError(null)
+      await updateWallet(payload);
+      onClose();
+      setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update wallet')
+      setError(err instanceof Error ? err.message : 'Failed to update wallet');
     }
-  }
+  };
 
   const handleDelete = async () => {
-    if (!walletId) return
-    
+    if (!walletId) return;
+
     if (confirm('Are you sure you want to remove this wallet?')) {
       try {
-        await removeWallet(walletId)
-        onClose()
+        await removeWallet(walletId);
+        onClose();
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to remove wallet')
+        setError(err instanceof Error ? err.message : 'Failed to remove wallet');
       }
     }
-  }
+  };
 
-  if (!wallet) return null
+  if (!wallet) return null;
 
   return (
     <AnimatePresence>
@@ -123,7 +123,7 @@ export function WalletSettingsModal({ isOpen, onClose, walletId }: WalletSetting
                 <label className="text-sm text-gray-300">Wallet Label</label>
                 <input
                   value={formState.label}
-                  onChange={(e) => setFormState((state) => ({ ...state, label: e.target.value }))}
+                  onChange={e => setFormState(state => ({ ...state, label: e.target.value }))}
                   className="mt-1 w-full px-3 py-2 bg-slate-900 border border-purple-500/30 rounded-lg focus:outline-none focus:border-purple-500"
                   placeholder="My Trading Wallet"
                 />
@@ -141,29 +141,37 @@ export function WalletSettingsModal({ isOpen, onClose, walletId }: WalletSetting
                   <label className="text-sm text-gray-300">Assign to Group</label>
                   <select
                     value={formState.groupId ?? ''}
-                    onChange={(e) => setFormState((state) => ({ ...state, groupId: e.target.value || null }))}
+                    onChange={e =>
+                      setFormState(state => ({ ...state, groupId: e.target.value || null }))
+                    }
                     className="mt-1 w-full px-3 py-2 bg-slate-900 border border-purple-500/30 rounded-lg focus:outline-none focus:border-purple-500"
                   >
                     <option value="">No Group</option>
-                    {groups.map((group) => (
-                      <option key={group.id} value={group.id}>{group.name}</option>
+                    {groups.map(group => (
+                      <option key={group.id} value={group.id}>
+                        {group.name}
+                      </option>
                     ))}
                   </select>
                 </div>
               )}
 
               <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-gray-300 border-b border-purple-500/20 pb-2">Trading Preferences</h3>
-                
+                <h3 className="text-sm font-semibold text-gray-300 border-b border-purple-500/20 pb-2">
+                  Trading Preferences
+                </h3>
+
                 <div className="flex items-center justify-between">
                   <label className="text-sm text-gray-300">Enable Trading</label>
                   <input
                     type="checkbox"
                     checked={formState.preferences.tradingEnabled}
-                    onChange={(e) => setFormState((state) => ({
-                      ...state,
-                      preferences: { ...state.preferences, tradingEnabled: e.target.checked },
-                    }))}
+                    onChange={e =>
+                      setFormState(state => ({
+                        ...state,
+                        preferences: { ...state.preferences, tradingEnabled: e.target.checked },
+                      }))
+                    }
                     className="h-4 w-4 text-purple-500 bg-slate-900 border-purple-500 rounded focus:ring-purple-500"
                   />
                 </div>
@@ -173,10 +181,12 @@ export function WalletSettingsModal({ isOpen, onClose, walletId }: WalletSetting
                   <input
                     type="checkbox"
                     checked={formState.preferences.isolationMode}
-                    onChange={(e) => setFormState((state) => ({
-                      ...state,
-                      preferences: { ...state.preferences, isolationMode: e.target.checked },
-                    }))}
+                    onChange={e =>
+                      setFormState(state => ({
+                        ...state,
+                        preferences: { ...state.preferences, isolationMode: e.target.checked },
+                      }))
+                    }
                     className="h-4 w-4 text-purple-500 bg-slate-900 border-purple-500 rounded focus:ring-purple-500"
                   />
                 </div>
@@ -186,10 +196,15 @@ export function WalletSettingsModal({ isOpen, onClose, walletId }: WalletSetting
                   <input
                     type="checkbox"
                     checked={formState.preferences.notificationsEnabled}
-                    onChange={(e) => setFormState((state) => ({
-                      ...state,
-                      preferences: { ...state.preferences, notificationsEnabled: e.target.checked },
-                    }))}
+                    onChange={e =>
+                      setFormState(state => ({
+                        ...state,
+                        preferences: {
+                          ...state.preferences,
+                          notificationsEnabled: e.target.checked,
+                        },
+                      }))
+                    }
                     className="h-4 w-4 text-purple-500 bg-slate-900 border-purple-500 rounded focus:ring-purple-500"
                   />
                 </div>
@@ -199,13 +214,15 @@ export function WalletSettingsModal({ isOpen, onClose, walletId }: WalletSetting
                   <input
                     type="number"
                     value={formState.preferences.autoApproveLimit ?? ''}
-                    onChange={(e) => setFormState((state) => ({
-                      ...state,
-                      preferences: {
-                        ...state.preferences,
-                        autoApproveLimit: e.target.value ? Number(e.target.value) : null,
-                      },
-                    }))}
+                    onChange={e =>
+                      setFormState(state => ({
+                        ...state,
+                        preferences: {
+                          ...state.preferences,
+                          autoApproveLimit: e.target.value ? Number(e.target.value) : null,
+                        },
+                      }))
+                    }
                     className="mt-1 w-full px-3 py-2 bg-slate-900 border border-purple-500/30 rounded-lg focus:outline-none focus:border-purple-500"
                     placeholder="No limit"
                     min={0}
@@ -218,13 +235,15 @@ export function WalletSettingsModal({ isOpen, onClose, walletId }: WalletSetting
                   <input
                     type="number"
                     value={formState.preferences.maxSlippage ?? ''}
-                    onChange={(e) => setFormState((state) => ({
-                      ...state,
-                      preferences: {
-                        ...state.preferences,
-                        maxSlippage: e.target.value ? Number(e.target.value) : null,
-                      },
-                    }))}
+                    onChange={e =>
+                      setFormState(state => ({
+                        ...state,
+                        preferences: {
+                          ...state.preferences,
+                          maxSlippage: e.target.value ? Number(e.target.value) : null,
+                        },
+                      }))
+                    }
                     className="mt-1 w-full px-3 py-2 bg-slate-900 border border-purple-500/30 rounded-lg focus:outline-none focus:border-purple-500"
                     placeholder="Default"
                     min={0}
@@ -233,17 +252,21 @@ export function WalletSettingsModal({ isOpen, onClose, walletId }: WalletSetting
                 </div>
 
                 <div>
-                  <label className="text-sm text-gray-300">Default Priority Fee (microlamports)</label>
+                  <label className="text-sm text-gray-300">
+                    Default Priority Fee (microlamports)
+                  </label>
                   <input
                     type="number"
                     value={formState.preferences.defaultPriorityFee ?? ''}
-                    onChange={(e) => setFormState((state) => ({
-                      ...state,
-                      preferences: {
-                        ...state.preferences,
-                        defaultPriorityFee: e.target.value ? Number(e.target.value) : null,
-                      },
-                    }))}
+                    onChange={e =>
+                      setFormState(state => ({
+                        ...state,
+                        preferences: {
+                          ...state.preferences,
+                          defaultPriorityFee: e.target.value ? Number(e.target.value) : null,
+                        },
+                      }))
+                    }
                     className="mt-1 w-full px-3 py-2 bg-slate-900 border border-purple-500/30 rounded-lg focus:outline-none focus:border-purple-500"
                     placeholder="Default"
                     min={0}
@@ -287,5 +310,5 @@ export function WalletSettingsModal({ isOpen, onClose, walletId }: WalletSetting
         </motion.div>
       )}
     </AnimatePresence>
-  )
+  );
 }

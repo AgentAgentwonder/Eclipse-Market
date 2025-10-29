@@ -30,12 +30,7 @@ export function Sparkline({
   const isPositive = data[data.length - 1] >= data[0];
 
   return (
-    <svg
-      width={width}
-      height={height}
-      className={className}
-      style={{ display: 'block' }}
-    >
+    <svg width={width} height={height} className={className} style={{ display: 'block' }}>
       <polyline
         fill="none"
         stroke={isPositive ? '#10b981' : '#ef4444'}

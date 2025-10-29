@@ -31,7 +31,11 @@ export function OrderForm({ fromToken, toToken, walletAddress, onOrderCreated }:
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [suggestionInfo, setSuggestionInfo] = useState<{ id: number; note?: string; source: string } | null>(null);
+  const [suggestionInfo, setSuggestionInfo] = useState<{
+    id: number;
+    note?: string;
+    source: string;
+  } | null>(null);
 
   const { slippage, gasOptimization, getPriorityFeeForPreset } = useTradingSettingsStore();
   const { suggestion, consumeSuggestion } = useOrderFormSuggestionStore();
@@ -51,7 +55,7 @@ export function OrderForm({ fromToken, toToken, walletAddress, onOrderCreated }:
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!walletAddress) {
       setError('Please connect your wallet first');
       return;
@@ -87,13 +91,13 @@ export function OrderForm({ fromToken, toToken, walletAddress, onOrderCreated }:
       };
 
       await invoke('create_order', { request });
-      
+
       setSuccess(true);
       setAmount('');
       setLimitPrice('');
       setStopPrice('');
       setTrailingPercent('');
-      
+
       onOrderCreated?.();
 
       setTimeout(() => setSuccess(false), 3000);
@@ -115,9 +119,7 @@ export function OrderForm({ fromToken, toToken, walletAddress, onOrderCreated }:
               <Lightbulb className="w-4 h-4 mt-0.5 text-purple-400 flex-shrink-0" />
               <div>
                 <p className="font-medium text-purple-300">Calculator suggestion applied</p>
-                {suggestionInfo.note && (
-                  <p className="text-gray-400 mt-1">{suggestionInfo.note}</p>
-                )}
+                {suggestionInfo.note && <p className="text-gray-400 mt-1">{suggestionInfo.note}</p>}
               </div>
             </div>
           </div>
@@ -126,20 +128,22 @@ export function OrderForm({ fromToken, toToken, walletAddress, onOrderCreated }:
         <div>
           <label className="block text-sm text-gray-400 mb-2">Order Type</label>
           <div className="grid grid-cols-2 gap-2">
-            {(['limit', 'stop_loss', 'take_profit', 'trailing_stop'] as OrderType[]).map((type) => (
+            {(['limit', 'stop_loss', 'take_profit', 'trailing_stop'] as OrderType[]).map(type => (
               <button
                 key={type}
                 type="button"
                 onClick={() => setOrderType(type)}
                 className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
-                  orderType === type
-                    ? 'bg-purple-600'
-                    : 'bg-gray-700 hover:bg-gray-600'
+                  orderType === type ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'
                 }`}
               >
-                {type === 'stop_loss' ? 'Stop Loss' : 
-                 type === 'take_profit' ? 'Take Profit' :
-                 type === 'trailing_stop' ? 'Trailing Stop' : 'Limit'}
+                {type === 'stop_loss'
+                  ? 'Stop Loss'
+                  : type === 'take_profit'
+                    ? 'Take Profit'
+                    : type === 'trailing_stop'
+                      ? 'Trailing Stop'
+                      : 'Limit'}
               </button>
             ))}
           </div>
@@ -152,9 +156,7 @@ export function OrderForm({ fromToken, toToken, walletAddress, onOrderCreated }:
               type="button"
               onClick={() => setSide('buy')}
               className={`px-3 py-2 rounded font-medium transition-colors ${
-                side === 'buy'
-                  ? 'bg-green-600'
-                  : 'bg-gray-700 hover:bg-gray-600'
+                side === 'buy' ? 'bg-green-600' : 'bg-gray-700 hover:bg-gray-600'
               }`}
             >
               Buy
@@ -163,9 +165,7 @@ export function OrderForm({ fromToken, toToken, walletAddress, onOrderCreated }:
               type="button"
               onClick={() => setSide('sell')}
               className={`px-3 py-2 rounded font-medium transition-colors ${
-                side === 'sell'
-                  ? 'bg-red-600'
-                  : 'bg-gray-700 hover:bg-gray-600'
+                side === 'sell' ? 'bg-red-600' : 'bg-gray-700 hover:bg-gray-600'
               }`}
             >
               Sell
@@ -174,13 +174,11 @@ export function OrderForm({ fromToken, toToken, walletAddress, onOrderCreated }:
         </div>
 
         <div>
-          <label className="block text-sm text-gray-400 mb-2">
-            Amount ({fromToken.symbol})
-          </label>
+          <label className="block text-sm text-gray-400 mb-2">Amount ({fromToken.symbol})</label>
           <input
             type="number"
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={e => setAmount(e.target.value)}
             placeholder="0.0"
             step="any"
             className="w-full bg-gray-700 px-3 py-2 rounded"
@@ -195,7 +193,7 @@ export function OrderForm({ fromToken, toToken, walletAddress, onOrderCreated }:
             <input
               type="number"
               value={limitPrice}
-              onChange={(e) => setLimitPrice(e.target.value)}
+              onChange={e => setLimitPrice(e.target.value)}
               placeholder="0.0"
               step="any"
               className="w-full bg-gray-700 px-3 py-2 rounded"
@@ -205,13 +203,11 @@ export function OrderForm({ fromToken, toToken, walletAddress, onOrderCreated }:
 
         {orderType === 'stop_loss' && (
           <div>
-            <label className="block text-sm text-gray-400 mb-2">
-              Stop Price (USD)
-            </label>
+            <label className="block text-sm text-gray-400 mb-2">Stop Price (USD)</label>
             <input
               type="number"
               value={stopPrice}
-              onChange={(e) => setStopPrice(e.target.value)}
+              onChange={e => setStopPrice(e.target.value)}
               placeholder="0.0"
               step="any"
               className="w-full bg-gray-700 px-3 py-2 rounded"
@@ -225,13 +221,11 @@ export function OrderForm({ fromToken, toToken, walletAddress, onOrderCreated }:
 
         {orderType === 'trailing_stop' && (
           <div>
-            <label className="block text-sm text-gray-400 mb-2">
-              Trailing Percentage (%)
-            </label>
+            <label className="block text-sm text-gray-400 mb-2">Trailing Percentage (%)</label>
             <input
               type="number"
               value={trailingPercent}
-              onChange={(e) => setTrailingPercent(e.target.value)}
+              onChange={e => setTrailingPercent(e.target.value)}
               placeholder="0.0"
               step="0.1"
               className="w-full bg-gray-700 px-3 py-2 rounded"
@@ -246,7 +240,9 @@ export function OrderForm({ fromToken, toToken, walletAddress, onOrderCreated }:
         <div className="bg-gray-700/50 p-3 rounded space-y-1 text-sm">
           <div className="flex justify-between">
             <span className="text-gray-400">Pair:</span>
-            <span>{fromToken.symbol}/{toToken.symbol}</span>
+            <span>
+              {fromToken.symbol}/{toToken.symbol}
+            </span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-400">Slippage:</span>

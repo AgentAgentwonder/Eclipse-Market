@@ -1,10 +1,10 @@
-import { useState } from 'react'
-import RealtimeChart from './RealtimeChart'
+import { useState } from 'react';
+import RealtimeChart from './RealtimeChart';
 
-const DEFAULT_SYMBOLS = ['SOL', 'BONK', 'JUP', 'WIF']
+const DEFAULT_SYMBOLS = ['SOL', 'BONK', 'JUP', 'WIF'];
 
 export function LiveChart() {
-  const [symbol, setSymbol] = useState('SOL')
+  const [symbol, setSymbol] = useState('SOL');
 
   return (
     <div className="space-y-4">
@@ -17,10 +17,10 @@ export function LiveChart() {
           <select
             id="chart-symbol"
             value={symbol}
-            onChange={(event) => setSymbol(event.target.value)}
+            onChange={event => setSymbol(event.target.value)}
             className="bg-slate-800 border border-purple-500/20 rounded-lg px-3 py-2 text-sm outline-none focus:border-purple-400 transition-colors"
           >
-            {DEFAULT_SYMBOLS.map((item) => (
+            {DEFAULT_SYMBOLS.map(item => (
               <option key={item} value={item}>
                 {item}
               </option>
@@ -31,5 +31,5 @@ export function LiveChart() {
 
       <RealtimeChart symbol={symbol} title={`${symbol} Live Price`} />
     </div>
-  )
+  );
 }

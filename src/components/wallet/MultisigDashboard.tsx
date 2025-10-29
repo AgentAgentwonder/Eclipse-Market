@@ -1,104 +1,104 @@
-import React, { useEffect, useState } from 'react'
-import { invoke } from '@tauri-apps/api/tauri'
-import { Users, Plus, AlertCircle, RefreshCw, FileText, CheckCircle } from 'lucide-react'
-import { motion } from 'framer-motion'
-import MultisigWizard from './MultisigWizard'
+import React, { useEffect, useState } from 'react';
+import { invoke } from '@tauri-apps/api/tauri';
+import { Users, Plus, AlertCircle, RefreshCw, FileText, CheckCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
+import MultisigWizard from './MultisigWizard';
 
 interface MultisigWallet {
-  id: string
-  name: string
-  address: string
-  threshold: number
-  members: string[]
-  createdAt: string
-  balance: number
+  id: string;
+  name: string;
+  address: string;
+  threshold: number;
+  members: string[];
+  createdAt: string;
+  balance: number;
 }
 
 interface MultisigProposal {
-  id: string
-  walletId: string
-  transactionData: string
-  status: 'pending' | 'approved' | 'executed' | 'rejected' | 'cancelled'
-  createdBy: string
-  createdAt: string
-  description?: string
-  signatures: ProposalSignature[]
-  executedAt?: string
-  txSignature?: string
+  id: string;
+  walletId: string;
+  transactionData: string;
+  status: 'pending' | 'approved' | 'executed' | 'rejected' | 'cancelled';
+  createdBy: string;
+  createdAt: string;
+  description?: string;
+  signatures: ProposalSignature[];
+  executedAt?: string;
+  txSignature?: string;
 }
 
 interface ProposalSignature {
-  id: string
-  proposalId: string
-  signer: string
-  signature: string
-  signedAt: string
+  id: string;
+  proposalId: string;
+  signer: string;
+  signature: string;
+  signedAt: string;
 }
 
 const MultisigDashboard: React.FC = () => {
-  const [wallets, setWallets] = useState<MultisigWallet[]>([])
-  const [selectedWallet, setSelectedWallet] = useState<MultisigWallet | null>(null)
-  const [proposals, setProposals] = useState<MultisigProposal[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [showWizard, setShowWizard] = useState(false)
+  const [wallets, setWallets] = useState<MultisigWallet[]>([]);
+  const [selectedWallet, setSelectedWallet] = useState<MultisigWallet | null>(null);
+  const [proposals, setProposals] = useState<MultisigProposal[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showWizard, setShowWizard] = useState(false);
 
   useEffect(() => {
-    loadWallets()
-  }, [])
+    loadWallets();
+  }, []);
 
   useEffect(() => {
     if (selectedWallet) {
-      loadProposals(selectedWallet.id)
+      loadProposals(selectedWallet.id);
     }
-  }, [selectedWallet])
+  }, [selectedWallet]);
 
   const loadWallets = async () => {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     try {
-      const result = await invoke<MultisigWallet[]>('list_multisig_wallets')
-      setWallets(result)
+      const result = await invoke<MultisigWallet[]>('list_multisig_wallets');
+      setWallets(result);
       if (result.length > 0 && !selectedWallet) {
-        setSelectedWallet(result[0])
+        setSelectedWallet(result[0]);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const loadProposals = async (walletId: string) => {
     try {
       const result = await invoke<MultisigProposal[]>('list_proposals', {
         walletId,
         statusFilter: null,
-      })
-      setProposals(result)
+      });
+      setProposals(result);
     } catch (err) {
-      console.error('Failed to load proposals:', err)
+      console.error('Failed to load proposals:', err);
     }
-  }
+  };
 
   const handleWalletCreated = (wallet: MultisigWallet) => {
-    setWallets([...wallets, wallet])
-    setSelectedWallet(wallet)
-  }
+    setWallets([...wallets, wallet]);
+    setSelectedWallet(wallet);
+  };
 
   const getPendingProposalsCount = (walletId: string) => {
-    return proposals.filter(p => p.walletId === walletId && p.status === 'pending').length
-  }
+    return proposals.filter(p => p.walletId === walletId && p.status === 'pending').length;
+  };
 
   const formatAddress = (address: string) => {
-    if (address.length < 12) return address
-    return `${address.slice(0, 6)}...${address.slice(-4)}`
-  }
+    if (address.length < 12) return address;
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-  }
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
 
   return (
     <div className="space-y-6">
@@ -144,7 +144,7 @@ const MultisigDashboard: React.FC = () => {
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Wallet List */}
           <div className="lg:col-span-1 space-y-3">
-            {wallets.map((wallet) => (
+            {wallets.map(wallet => (
               <motion.div
                 key={wallet.id}
                 whileHover={{ scale: 1.02 }}
@@ -173,9 +173,7 @@ const MultisigDashboard: React.FC = () => {
                       {wallet.threshold}/{wallet.members.length}
                     </span>
                   </div>
-                  <div className="text-gray-400">
-                    {wallet.balance.toFixed(2)} SOL
-                  </div>
+                  <div className="text-gray-400">{wallet.balance.toFixed(2)} SOL</div>
                 </div>
               </motion.div>
             ))}
@@ -185,9 +183,7 @@ const MultisigDashboard: React.FC = () => {
           {selectedWallet && (
             <div className="lg:col-span-2 space-y-4">
               <div className="bg-gray-800 rounded-lg p-6">
-                <h3 className="text-xl font-semibold text-white mb-4">
-                  {selectedWallet.name}
-                </h3>
+                <h3 className="text-xl font-semibold text-white mb-4">{selectedWallet.name}</h3>
 
                 <div className="grid grid-cols-2 gap-4 mb-6">
                   <div>
@@ -226,9 +222,7 @@ const MultisigDashboard: React.FC = () => {
                         <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-medium">
                           {index + 1}
                         </div>
-                        <p className="text-white font-mono text-sm truncate flex-1">
-                          {member}
-                        </p>
+                        <p className="text-white font-mono text-sm truncate flex-1">{member}</p>
                       </div>
                     ))}
                   </div>
@@ -254,7 +248,7 @@ const MultisigDashboard: React.FC = () => {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {proposals.slice(0, 5).map((proposal) => (
+                    {proposals.slice(0, 5).map(proposal => (
                       <div
                         key={proposal.id}
                         className="bg-gray-900 rounded-lg p-4 hover:bg-gray-800 transition-colors"
@@ -274,10 +268,10 @@ const MultisigDashboard: React.FC = () => {
                               proposal.status === 'pending'
                                 ? 'bg-yellow-900/30 text-yellow-400'
                                 : proposal.status === 'approved'
-                                ? 'bg-green-900/30 text-green-400'
-                                : proposal.status === 'executed'
-                                ? 'bg-blue-900/30 text-blue-400'
-                                : 'bg-gray-900/30 text-gray-400'
+                                  ? 'bg-green-900/30 text-green-400'
+                                  : proposal.status === 'executed'
+                                    ? 'bg-blue-900/30 text-blue-400'
+                                    : 'bg-gray-900/30 text-gray-400'
                             }`}
                           >
                             {proposal.status}
@@ -315,7 +309,7 @@ const MultisigDashboard: React.FC = () => {
         onSuccess={handleWalletCreated}
       />
     </div>
-  )
-}
+  );
+};
 
-export default MultisigDashboard
+export default MultisigDashboard;

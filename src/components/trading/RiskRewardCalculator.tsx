@@ -36,7 +36,7 @@ export function RiskRewardCalculator() {
       rewardAmount,
       riskRewardRatio,
       expectedValue,
-      breakEvenWinRate
+      breakEvenWinRate,
     };
 
     setResult(calculatedResult);
@@ -51,7 +51,7 @@ export function RiskRewardCalculator() {
       amount: parseFloat(positionSize),
       orderType: 'limit',
       source: 'risk_reward',
-      note: `Risk/Reward ${result.riskRewardRatio.toFixed(2)}R, Target $${parseFloat(takeProfitPrice).toFixed(2)}`
+      note: `Risk/Reward ${result.riskRewardRatio.toFixed(2)}R, Target $${parseFloat(takeProfitPrice).toFixed(2)}`,
     });
   };
 
@@ -69,7 +69,7 @@ export function RiskRewardCalculator() {
             <input
               type="number"
               value={entryPrice}
-              onChange={(e) => setEntryPrice(e.target.value)}
+              onChange={e => setEntryPrice(e.target.value)}
               placeholder="100"
               step="any"
               className="w-full bg-gray-700 px-3 py-2 rounded outline-none focus:ring-2 focus:ring-green-500"
@@ -80,7 +80,7 @@ export function RiskRewardCalculator() {
             <input
               type="number"
               value={stopLossPrice}
-              onChange={(e) => setStopLossPrice(e.target.value)}
+              onChange={e => setStopLossPrice(e.target.value)}
               placeholder="95"
               step="any"
               className="w-full bg-gray-700 px-3 py-2 rounded outline-none focus:ring-2 focus:ring-green-500"
@@ -94,7 +94,7 @@ export function RiskRewardCalculator() {
             <input
               type="number"
               value={takeProfitPrice}
-              onChange={(e) => setTakeProfitPrice(e.target.value)}
+              onChange={e => setTakeProfitPrice(e.target.value)}
               placeholder="120"
               step="any"
               className="w-full bg-gray-700 px-3 py-2 rounded outline-none focus:ring-2 focus:ring-green-500"
@@ -105,7 +105,7 @@ export function RiskRewardCalculator() {
             <input
               type="number"
               value={positionSize}
-              onChange={(e) => setPositionSize(e.target.value)}
+              onChange={e => setPositionSize(e.target.value)}
               placeholder="10"
               step="any"
               className="w-full bg-gray-700 px-3 py-2 rounded outline-none focus:ring-2 focus:ring-green-500"
@@ -118,7 +118,7 @@ export function RiskRewardCalculator() {
           <input
             type="number"
             value={winRate}
-            onChange={(e) => setWinRate(e.target.value)}
+            onChange={e => setWinRate(e.target.value)}
             placeholder="55"
             step="0.1"
             min="0"
@@ -149,7 +149,9 @@ export function RiskRewardCalculator() {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">Reward Amount:</span>
-                <span className="font-medium text-green-400">+${result.rewardAmount.toFixed(2)}</span>
+                <span className="font-medium text-green-400">
+                  +${result.rewardAmount.toFixed(2)}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">Risk/Reward Ratio:</span>
@@ -162,7 +164,9 @@ export function RiskRewardCalculator() {
               {result.expectedValue !== undefined && (
                 <div className="flex justify-between">
                   <span className="text-gray-400">Expected Value:</span>
-                  <span className={`font-medium ${result.expectedValue >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  <span
+                    className={`font-medium ${result.expectedValue >= 0 ? 'text-green-400' : 'text-red-400'}`}
+                  >
                     {result.expectedValue >= 0 ? '+' : ''}${result.expectedValue.toFixed(2)}
                   </span>
                 </div>

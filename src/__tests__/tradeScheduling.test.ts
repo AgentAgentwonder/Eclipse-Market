@@ -105,7 +105,7 @@ describe('getDueSchedules', () => {
 
     const due = getDueSchedules(schedules, now);
     expect(due).toHaveLength(2);
-    expect(due.map((s) => s.id)).toEqual(['schedule-1', 'schedule-3']);
+    expect(due.map(s => s.id)).toEqual(['schedule-1', 'schedule-3']);
   });
 
   it('should return empty array if no schedules are due', () => {
@@ -128,7 +128,7 @@ describe('advanceSchedule', () => {
     const schedule = createMockSchedule({ cadence: 'daily' });
 
     const advanced = advanceSchedule(schedule, now);
-    
+
     expect(advanced.lastRun).toBe('2024-01-01T12:00:00.000Z');
     expect(advanced.nextRun).toBe('2024-01-02T12:00:00.000Z');
   });

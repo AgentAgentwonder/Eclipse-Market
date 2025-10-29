@@ -15,9 +15,9 @@ export function useOrderNotifications() {
     let unlisten: UnlistenFn | undefined;
 
     const setupListener = async () => {
-      unlisten = await listen<OrderTriggeredEvent>('order_triggered', (event) => {
+      unlisten = await listen<OrderTriggeredEvent>('order_triggered', event => {
         const { order_type, symbol, side, trigger_price, amount } = event.payload;
-        
+
         showNotification({
           title: `Order Triggered: ${order_type}`,
           message: `${side.toUpperCase()} ${amount} ${symbol} at $${trigger_price.toFixed(4)}`,
@@ -34,7 +34,11 @@ export function useOrderNotifications() {
   }, []);
 }
 
-function showNotification(options: { title: string; message: string; type: 'success' | 'error' | 'info' }) {
+function showNotification(options: {
+  title: string;
+  message: string;
+  type: 'success' | 'error' | 'info';
+}) {
   if ('Notification' in window && Notification.permission === 'granted') {
     new Notification(options.title, {
       body: options.message,

@@ -9,13 +9,8 @@ interface PaperModeIndicatorProps {
 
 export function PaperModeIndicator({ onSwitchToLive }: PaperModeIndicatorProps) {
   const [showModal, setShowModal] = useState(false);
-  const { 
-    isPaperMode, 
-    virtualBalance, 
-    getTotalPnL, 
-    getTotalPnLPercent,
-    trades
-  } = usePaperTradingStore();
+  const { isPaperMode, virtualBalance, getTotalPnL, getTotalPnLPercent, trades } =
+    usePaperTradingStore();
 
   if (!isPaperMode) return null;
 
@@ -95,19 +90,28 @@ export function PaperModeIndicator({ onSwitchToLive }: PaperModeIndicatorProps) 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="p-4 bg-slate-800/50 rounded-xl">
                       <div className="text-xs text-white/60 mb-1">Total P&L</div>
-                      <div className={`text-lg font-bold flex items-center gap-1 ${
-                        totalPnL >= 0 ? 'text-green-400' : 'text-red-400'
-                      }`}>
-                        {totalPnL >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                      <div
+                        className={`text-lg font-bold flex items-center gap-1 ${
+                          totalPnL >= 0 ? 'text-green-400' : 'text-red-400'
+                        }`}
+                      >
+                        {totalPnL >= 0 ? (
+                          <TrendingUp className="w-4 h-4" />
+                        ) : (
+                          <TrendingDown className="w-4 h-4" />
+                        )}
                         ${Math.abs(totalPnL).toFixed(2)}
                       </div>
                     </div>
                     <div className="p-4 bg-slate-800/50 rounded-xl">
                       <div className="text-xs text-white/60 mb-1">P&L %</div>
-                      <div className={`text-lg font-bold ${
-                        totalPnLPercent >= 0 ? 'text-green-400' : 'text-red-400'
-                      }`}>
-                        {totalPnLPercent >= 0 ? '+' : ''}{totalPnLPercent.toFixed(2)}%
+                      <div
+                        className={`text-lg font-bold ${
+                          totalPnLPercent >= 0 ? 'text-green-400' : 'text-red-400'
+                        }`}
+                      >
+                        {totalPnLPercent >= 0 ? '+' : ''}
+                        {totalPnLPercent.toFixed(2)}%
                       </div>
                     </div>
                   </div>
@@ -132,7 +136,8 @@ export function PaperModeIndicator({ onSwitchToLive }: PaperModeIndicatorProps) 
                     <div className="flex items-start gap-2 mt-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
                       <AlertTriangle className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
                       <p className="text-xs text-yellow-400/80">
-                        Switching to live mode will execute real trades with real money. Confirm the switch in Settings when you are ready.
+                        Switching to live mode will execute real trades with real money. Confirm the
+                        switch in Settings when you are ready.
                       </p>
                     </div>
                   </div>

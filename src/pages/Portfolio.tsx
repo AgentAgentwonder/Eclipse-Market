@@ -1,26 +1,26 @@
 import { useState, useEffect, useMemo } from 'react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { motion } from 'framer-motion';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  RefreshCw, 
+import {
+  TrendingUp,
+  TrendingDown,
+  RefreshCw,
   PieChart as PieChartIcon,
   ArrowUpDown,
-  DollarSign
+  DollarSign,
 } from 'lucide-react';
-import { 
-  PieChart, 
-  Pie, 
-  Cell, 
-  ResponsiveContainer, 
-  Tooltip, 
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
   Legend,
   BarChart,
   Bar,
   XAxis,
   YAxis,
-  CartesianGrid
+  CartesianGrid,
 } from 'recharts';
 import { Position, PortfolioMetrics } from '../types/portfolio';
 
@@ -36,15 +36,17 @@ function Portfolio() {
   const [refreshing, setRefreshing] = useState(false);
   const [sortField, setSortField] = useState<SortField>('value');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-  const [selectedPeriod, setSelectedPeriod] = useState<'daily' | 'weekly' | 'monthly' | 'all'>('daily');
+  const [selectedPeriod, setSelectedPeriod] = useState<'daily' | 'weekly' | 'monthly' | 'all'>(
+    'daily'
+  );
 
   const fetchPortfolioData = async () => {
     try {
       const [metricsData, positionsData] = await Promise.all([
         invoke<PortfolioMetrics>('get_portfolio_metrics'),
-        invoke<Position[]>('get_positions')
+        invoke<Position[]>('get_positions'),
       ]);
-      
+
       setMetrics(metricsData);
       setPositions(positionsData);
     } catch (error) {
@@ -82,7 +84,7 @@ function Portfolio() {
 
       switch (sortField) {
         case 'symbol':
-          return sortDirection === 'asc' 
+          return sortDirection === 'asc'
             ? a.symbol.localeCompare(b.symbol)
             : b.symbol.localeCompare(a.symbol);
         case 'value':
@@ -115,20 +117,20 @@ function Portfolio() {
     return positions.map(p => ({
       name: p.symbol,
       value: p.allocation,
-      amount: p.totalValue
+      amount: p.totalValue,
     }));
   }, [positions]);
 
   const pnlData = useMemo(() => {
     return positions.map(p => ({
       name: p.symbol,
-      pnl: p.unrealizedPnl
+      pnl: p.unrealizedPnl,
     }));
   }, [positions]);
 
   const getPeriodPnl = () => {
     if (!metrics) return { value: 0, percent: 0 };
-    
+
     switch (selectedPeriod) {
       case 'daily':
         return { value: metrics.dailyPnl, percent: metrics.dailyPnlPercent };
@@ -184,7 +186,13 @@ function Portfolio() {
             <DollarSign className="w-5 h-5" />
             <h3 className="text-sm font-medium opacity-90">Total Value</h3>
           </div>
-          <p className="text-3xl font-bold">${metrics.totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          <p className="text-3xl font-bold">
+            $
+            {metrics.totalValue.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </p>
         </motion.div>
 
         <motion.div
@@ -197,8 +205,14 @@ function Portfolio() {
             <TrendingUp className="w-5 h-5 text-green-400" />
             <h3 className="text-sm font-medium text-gray-300">Realized P&L</h3>
           </div>
-          <p className={`text-2xl font-bold ${metrics.realizedPnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-            ${Math.abs(metrics.realizedPnl).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <p
+            className={`text-2xl font-bold ${metrics.realizedPnl >= 0 ? 'text-green-400' : 'text-red-400'}`}
+          >
+            $
+            {Math.abs(metrics.realizedPnl).toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
           </p>
         </motion.div>
 
@@ -216,8 +230,14 @@ function Portfolio() {
             )}
             <h3 className="text-sm font-medium text-gray-300">Unrealized P&L</h3>
           </div>
-          <p className={`text-2xl font-bold ${metrics.unrealizedPnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-            ${Math.abs(metrics.unrealizedPnl).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <p
+            className={`text-2xl font-bold ${metrics.unrealizedPnl >= 0 ? 'text-green-400' : 'text-red-400'}`}
+          >
+            $
+            {Math.abs(metrics.unrealizedPnl).toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
           </p>
         </motion.div>
 
@@ -230,7 +250,7 @@ function Portfolio() {
           <div className="mb-2">
             <select
               value={selectedPeriod}
-              onChange={(e) => setSelectedPeriod(e.target.value as any)}
+              onChange={e => setSelectedPeriod(e.target.value as any)}
               className="bg-gray-700 text-sm rounded px-2 py-1 outline-none"
             >
               <option value="daily">Daily P&L</option>
@@ -240,10 +260,15 @@ function Portfolio() {
             </select>
           </div>
           <p className={`text-2xl font-bold ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
-            {isPositive ? '+' : '-'}${Math.abs(periodPnl.value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {isPositive ? '+' : '-'}$
+            {Math.abs(periodPnl.value).toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
           </p>
           <p className={`text-sm ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
-            {isPositive ? '+' : ''}{periodPnl.percent.toFixed(2)}%
+            {isPositive ? '+' : ''}
+            {periodPnl.percent.toFixed(2)}%
           </p>
         </motion.div>
       </div>
@@ -270,14 +295,11 @@ function Portfolio() {
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip 
+              <Tooltip
                 formatter={(value: unknown, name: unknown, props: any) => {
                   const v = typeof value === 'number' ? value : 0;
                   const n = typeof name === 'string' ? name : '';
-                  return [
-                    `${v.toFixed(2)}% (${props.payload.amount.toLocaleString()})`,
-                    n
-                  ];
+                  return [`${v.toFixed(2)}% (${props.payload.amount.toLocaleString()})`, n];
                 }}
               />
             </PieChart>
@@ -294,7 +316,7 @@ function Portfolio() {
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
               <XAxis dataKey="name" stroke="#9ca3af" />
               <YAxis stroke="#9ca3af" />
-              <Tooltip 
+              <Tooltip
                 contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151' }}
                 formatter={(value: unknown) => {
                   const v = typeof value === 'number' ? value : 0;
@@ -322,7 +344,7 @@ function Portfolio() {
           <table className="w-full">
             <thead className="bg-gray-700/50">
               <tr>
-                <th 
+                <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-700"
                   onClick={() => handleSort('symbol')}
                 >
@@ -340,7 +362,7 @@ function Portfolio() {
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">
                   Avg Entry
                 </th>
-                <th 
+                <th
                   className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-700"
                   onClick={() => handleSort('value')}
                 >
@@ -349,7 +371,7 @@ function Portfolio() {
                     <ArrowUpDown className="w-3 h-3" />
                   </div>
                 </th>
-                <th 
+                <th
                   className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-700"
                   onClick={() => handleSort('pnl')}
                 >
@@ -358,7 +380,7 @@ function Portfolio() {
                     <ArrowUpDown className="w-3 h-3" />
                   </div>
                 </th>
-                <th 
+                <th
                   className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-700"
                   onClick={() => handleSort('pnlPercent')}
                 >
@@ -367,7 +389,7 @@ function Portfolio() {
                     <ArrowUpDown className="w-3 h-3" />
                   </div>
                 </th>
-                <th 
+                <th
                   className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-700"
                   onClick={() => handleSort('allocation')}
                 >
@@ -383,35 +405,61 @@ function Portfolio() {
                 <tr key={position.mint} className="hover:bg-gray-700/30 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="font-medium">{position.symbol}</div>
-                    <div className="text-xs text-gray-400 truncate max-w-[120px]">{position.mint}</div>
+                    <div className="text-xs text-gray-400 truncate max-w-[120px]">
+                      {position.mint}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
                     {position.amount.toLocaleString(undefined, { maximumFractionDigits: 6 })}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
-                    ${position.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+                    $
+                    {position.currentPrice.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 6,
+                    })}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-gray-400">
-                    ${position.avgEntryPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+                    $
+                    {position.avgEntryPrice.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 6,
+                    })}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right font-medium">
-                    ${position.totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    $
+                    {position.totalValue.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
                   </td>
-                  <td className={`px-6 py-4 whitespace-nowrap text-right font-medium ${
-                    position.unrealizedPnl >= 0 ? 'text-green-400' : 'text-red-400'
-                  }`}>
-                    {position.unrealizedPnl >= 0 ? '+' : '-'}${Math.abs(position.unrealizedPnl).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  <td
+                    className={`px-6 py-4 whitespace-nowrap text-right font-medium ${
+                      position.unrealizedPnl >= 0 ? 'text-green-400' : 'text-red-400'
+                    }`}
+                  >
+                    {position.unrealizedPnl >= 0 ? '+' : '-'}$
+                    {Math.abs(position.unrealizedPnl).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
                   </td>
-                  <td className={`px-6 py-4 whitespace-nowrap text-right font-medium ${
-                    position.unrealizedPnlPercent >= 0 ? 'text-green-400' : 'text-red-400'
-                  }`}>
-                    {position.unrealizedPnlPercent >= 0 ? '+' : ''}{position.unrealizedPnlPercent.toFixed(2)}%
+                  <td
+                    className={`px-6 py-4 whitespace-nowrap text-right font-medium ${
+                      position.unrealizedPnlPercent >= 0 ? 'text-green-400' : 'text-red-400'
+                    }`}
+                  >
+                    {position.unrealizedPnlPercent >= 0 ? '+' : ''}
+                    {position.unrealizedPnlPercent.toFixed(2)}%
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{
-                      backgroundColor: `${COLORS[index % COLORS.length]}20`,
-                      color: COLORS[index % COLORS.length]
-                    }}>
+                    <span
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                      style={{
+                        backgroundColor: `${COLORS[index % COLORS.length]}20`,
+                        color: COLORS[index % COLORS.length],
+                      }}
+                    >
                       {position.allocation.toFixed(2)}%
                     </span>
                   </td>

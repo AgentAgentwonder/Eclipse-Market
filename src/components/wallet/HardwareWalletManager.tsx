@@ -1,7 +1,16 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { invoke } from '@tauri-apps/api/tauri';
-import { Usb, Plug, PlugZap, RefreshCcw, Settings, AlertCircle, Loader2, CheckCircle } from 'lucide-react';
+import {
+  Usb,
+  Plug,
+  PlugZap,
+  RefreshCcw,
+  Settings,
+  AlertCircle,
+  Loader2,
+  CheckCircle,
+} from 'lucide-react';
 import {
   useWalletStore,
   HardwareWalletDevice,
@@ -63,7 +72,7 @@ function HardwareWalletManager({ onClose }: HardwareWalletManagerProps) {
       const devices = await invoke<HardwareWalletDevice[]>('list_hardware_wallets');
       setHardwareDevices(devices);
       if (activeHardwareDevice) {
-        const updated = devices.find((d) => d.deviceId === activeHardwareDevice.deviceId);
+        const updated = devices.find(d => d.deviceId === activeHardwareDevice.deviceId);
         if (updated) {
           setActiveHardwareDevice(updated);
         }
@@ -120,7 +129,7 @@ function HardwareWalletManager({ onClose }: HardwareWalletManagerProps) {
       const version = await invoke<FirmwareVersion>('get_firmware_version', {
         deviceId,
       });
-      setFirmwareVersions((prev) => ({ ...prev, [deviceId]: version }));
+      setFirmwareVersions(prev => ({ ...prev, [deviceId]: version }));
     } catch (err) {
       console.warn('Failed to fetch firmware version:', err);
     }
@@ -240,9 +249,7 @@ function HardwareWalletManager({ onClose }: HardwareWalletManagerProps) {
         <div className="p-6 border-b border-purple-500/20 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold">Hardware Wallet Manager</h2>
-            <p className="text-white/60 text-sm mt-1">
-              Manage connected Ledger and Trezor devices
-            </p>
+            <p className="text-white/60 text-sm mt-1">Manage connected Ledger and Trezor devices</p>
           </div>
           <div className="flex items-center gap-2">
             <motion.button
@@ -299,7 +306,7 @@ function HardwareWalletManager({ onClose }: HardwareWalletManagerProps) {
                     </motion.button>
                   </motion.div>
                 ) : (
-                  hardwareDevices.map((device) => renderDeviceCard(device))
+                  hardwareDevices.map(device => renderDeviceCard(device))
                 )}
               </AnimatePresence>
 
@@ -342,7 +349,7 @@ function HardwareWalletManager({ onClose }: HardwareWalletManagerProps) {
                 <div>
                   <p className="text-xs text-white/40 mb-1">Default Signing Method</p>
                   <div className="flex gap-2">
-                    {(['software', 'hardware'] as SigningMethod[]).map((method) => (
+                    {(['software', 'hardware'] as SigningMethod[]).map(method => (
                       <motion.button
                         key={method}
                         whileHover={{ scale: 1.02 }}
@@ -395,11 +402,15 @@ function HardwareWalletManager({ onClose }: HardwareWalletManagerProps) {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-white/60">Type:</span>
-                    <span className="font-medium capitalize">{activeHardwareDevice.deviceType}</span>
+                    <span className="font-medium capitalize">
+                      {activeHardwareDevice.deviceType}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-white/60">Status:</span>
-                    <span className={`font-medium ${activeHardwareDevice.connected ? 'text-green-400' : 'text-yellow-400'}`}>
+                    <span
+                      className={`font-medium ${activeHardwareDevice.connected ? 'text-green-400' : 'text-yellow-400'}`}
+                    >
                       {activeHardwareDevice.connected ? 'Connected' : 'Disconnected'}
                     </span>
                   </div>
@@ -414,7 +425,7 @@ function HardwareWalletManager({ onClose }: HardwareWalletManagerProps) {
         {showSetupWizard && (
           <HardwareWalletSetup
             onClose={() => setShowSetupWizard(false)}
-            onComplete={(device) => {
+            onComplete={device => {
               setShowSetupWizard(false);
               setActiveHardwareDevice(device);
               setSigningMethod('hardware');
