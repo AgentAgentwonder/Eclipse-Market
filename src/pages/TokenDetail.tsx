@@ -20,6 +20,7 @@ import { TopHoldersTable } from '../components/holders/TopHoldersTable';
 import { LargeTransfersTable } from '../components/holders/LargeTransfersTable';
 import { MetadataViewer } from '../components/holders/MetadataViewer';
 import { VerificationBadges } from '../components/holders/VerificationBadges';
+import { RiskAnalysisPanel } from '../components/risk/RiskAnalysisPanel';
 import {
   HolderDistribution,
   HolderTrend,
@@ -184,38 +185,43 @@ export default function TokenDetail({ tokenAddress, onBack }: TokenDetailProps) 
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-slate-800/50 backdrop-blur-sm border border-purple-500/20 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-gray-400 mb-2">
-            <Users className="w-4 h-4" />
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <div className="rounded-xl border border-purple-500/20 bg-slate-800/50 p-4 backdrop-blur-sm">
+          <div className="mb-2 flex items-center gap-2 text-gray-400">
+            <Users className="h-4 w-4" />
             <span className="text-sm">Total Holders</span>
           </div>
           <p className="text-2xl font-bold">{distribution.totalHolders.toLocaleString()}</p>
         </div>
 
-        <div className="bg-slate-800/50 backdrop-blur-sm border border-purple-500/20 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-gray-400 mb-2">
-            <Activity className="w-4 h-4" />
+        <div className="rounded-xl border border-purple-500/20 bg-slate-800/50 p-4 backdrop-blur-sm">
+          <div className="mb-2 flex items-center gap-2 text-gray-400">
+            <Activity className="h-4 w-4" />
             <span className="text-sm">Gini Coefficient</span>
           </div>
           <p className="text-2xl font-bold">{distribution.giniCoefficient.toFixed(3)}</p>
         </div>
 
-        <div className="bg-slate-800/50 backdrop-blur-sm border border-purple-500/20 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-gray-400 mb-2">
-            <AlertTriangle className="w-4 h-4" />
+        <div className="rounded-xl border border-purple-500/20 bg-slate-800/50 p-4 backdrop-blur-sm">
+          <div className="mb-2 flex items-center gap-2 text-gray-400">
+            <AlertTriangle className="h-4 w-4" />
             <span className="text-sm">Concentration Risk</span>
           </div>
           <p className={`text-2xl font-bold ${riskColor}`}>{distribution.concentrationRisk}</p>
         </div>
 
-        <div className="bg-slate-800/50 backdrop-blur-sm border border-purple-500/20 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-gray-400 mb-2">
-            <TrendingUp className="w-4 h-4" />
+        <div className="rounded-xl border border-purple-500/20 bg-slate-800/50 p-4 backdrop-blur-sm">
+          <div className="mb-2 flex items-center gap-2 text-gray-400">
+            <TrendingUp className="h-4 w-4" />
             <span className="text-sm">Top 10 Holdings</span>
           </div>
           <p className="text-2xl font-bold">{distribution.top10Percentage.toFixed(1)}%</p>
         </div>
+      </div>
+
+      {/* ML Risk Analysis */}
+      <div className="rounded-2xl border border-purple-500/20 bg-slate-900/40 p-6">
+        <RiskAnalysisPanel tokenAddress={tokenAddress} />
       </div>
 
       {/* Tabs */}
