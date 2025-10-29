@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Menu,
@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   LineChart,
   Network,
+  LayoutGrid,
 } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { PhantomConnect } from './components/wallet/PhantomConnect';
@@ -30,6 +31,7 @@ import { PaperTradingTutorial } from './components/trading/PaperTradingTutorial'
 import ProposalNotification from './components/wallet/ProposalNotification';
 import AlertNotificationContainer from './components/alerts/AlertNotificationContainer';
 import AlertChartModal from './components/alerts/AlertChartModal';
+import { WorkspaceTabs, WorkspaceSwitcher, GridLayoutContainer, WorkspaceToolbar } from './components/workspace';
 import Dashboard from './pages/Dashboard';
 import Coins from './pages/Coins';
 import Stocks from './pages/Stocks';
@@ -46,7 +48,11 @@ import SettingsPage from './pages/Settings';
 import { BIOMETRIC_STATUS_EVENT } from './constants/events';
 import { useWalletStore } from './store/walletStore';
 import { usePaperTradingStore } from './store/paperTradingStore';
+import { useWorkspaceStore } from './store/workspaceStore';
 import { useAlertNotifications } from './hooks/useAlertNotifications';
+import { useMonitorConfig } from './hooks/useMonitorConfig';
+import { createPanelDefinition } from './utils/workspace';
+import { PanelType } from './types/workspace';
 
 type BiometricStatus = {
   available: boolean;
@@ -66,14 +72,25 @@ function App() {
   const [selectedWalletId, setSelectedWalletId] = useState<string | null>(null);
   const [chartSymbol, setChartSymbol] = useState<string | null>(null);
   const [chartTimestamp, setChartTimestamp] = useState<string | null>(null);
+  const [useWorkspaceMode, setUseWorkspaceMode] = useState(true);
 
   const wallets = useWalletStore(state => state.wallets);
   const refreshMultiWallet = useWalletStore(state => state.refreshMultiWallet);
   const { isPaperMode } = usePaperTradingStore();
   const proposalNotifications = useWalletStore(state => state.proposalNotifications);
   const dismissProposalNotification = useWalletStore(state => state.dismissProposalNotification);
+  const activeWorkspaceId = useWorkspaceStore(state => state.activeWorkspaceId);
+  const workspaces = useWorkspaceStore(state => state.workspaces);
+  const addPanelToWorkspace = useWorkspaceStore(state => state.addPanel);
+  const setPanelMinimized = useWorkspaceStore(state => state.setPanelMinimized);
+
+  const activeWorkspace = useMemo(
+    () => workspaces.find(workspace => workspace.id === activeWorkspaceId),
+    [workspaces, activeWorkspaceId]
+  );
 
   useAlertNotifications();
+  useMonitorConfig();
 
   useEffect(() => {
     const hydrate = async () => {
@@ -153,23 +170,30 @@ function App() {
 
   const pages = useMemo(() => {
     const basePages = [
-      { id: 'dashboard', label: 'Dashboard', icon: Home, component: Dashboard },
-      { id: 'coins', label: 'Coins', icon: TrendingUp, component: Coins },
-      { id: 'portfolio', label: 'Portfolio', icon: Briefcase, component: Portfolio },
-      { id: 'multisig', label: 'Multisig', icon: Shield, component: Multisig },
-      { id: 'stocks', label: 'Stocks', icon: BarChart3, component: Stocks },
-      { id: 'insiders', label: 'Insiders', icon: Users, component: Insiders },
-      { id: 'token-flow', label: 'Token Flow', icon: Network, component: TokenFlow },
-      { id: 'surveillance', label: 'Market Surveillance', icon: AlertTriangle, component: MarketSurveillance },
+      { id: 'dashboard', label: 'Dashboard', icon: Home, component: Dashboard, panelType: 'dashboard' as PanelType },
+      { id: 'coins', label: 'Coins', icon: TrendingUp, component: Coins, panelType: 'coins' as PanelType },
+      { id: 'portfolio', label: 'Portfolio', icon: Briefcase, component: Portfolio, panelType: 'portfolio' as PanelType },
+      { id: 'multisig', label: 'Multisig', icon: Shield, component: Multisig, panelType: 'multisig' as PanelType },
+      { id: 'stocks', label: 'Stocks', icon: BarChart3, component: Stocks, panelType: 'stocks' as PanelType },
+      { id: 'insiders', label: 'Insiders', icon: Users, component: Insiders, panelType: 'insiders' as PanelType },
+      { id: 'token-flow', label: 'Token Flow', icon: Network, component: TokenFlow, panelType: 'token-flow' as PanelType },
+      {
+        id: 'surveillance',
+        label: 'Market Surveillance',
+        icon: AlertTriangle,
+        component: MarketSurveillance,
+        panelType: 'surveillance' as PanelType,
+      },
       {
         id: 'trading',
         label: isPaperMode ? 'Live Trading' : 'Trading',
         icon: Bell,
         component: Trading,
+        panelType: 'trading' as PanelType,
       },
-      { id: 'pro-charts', label: 'Pro Charts', icon: LineChart, component: ProCharts },
-      { id: 'api-health', label: 'API Health', icon: Activity, component: ApiHealth },
-      { id: 'settings', label: 'Settings', icon: Settings, component: SettingsPage },
+      { id: 'pro-charts', label: 'Pro Charts', icon: LineChart, component: ProCharts, panelType: 'pro-charts' as PanelType },
+      { id: 'api-health', label: 'API Health', icon: Activity, component: ApiHealth, panelType: 'api-health' as PanelType },
+      { id: 'settings', label: 'Settings', icon: Settings, component: SettingsPage, panelType: 'settings' as PanelType },
     ];
 
     if (isPaperMode) {
@@ -178,6 +202,7 @@ function App() {
         label: 'Paper Trading',
         icon: FileText,
         component: PaperTradingDashboard,
+        panelType: 'paper-trading' as PanelType,
       });
     }
 
@@ -189,6 +214,32 @@ function App() {
   const handleSwitchToLive = () => {
     setCurrentPage('settings');
   };
+
+  const handleAddPanelToWorkspace = useCallback(
+    (panelType: PanelType) => {
+      if (!activeWorkspaceId) return;
+
+      const { panel, layout } = createPanelDefinition(panelType);
+      addPanelToWorkspace(activeWorkspaceId, panel, layout);
+      setSidebarOpen(false);
+    },
+    [activeWorkspaceId, addPanelToWorkspace]
+  );
+
+  const ensurePanelForPage = useCallback(
+    (panelType: PanelType) => {
+      if (!useWorkspaceMode || !activeWorkspace) return;
+
+      const existingPanel = activeWorkspace.layout.panels.find(panel => panel.type === panelType);
+      if (existingPanel) {
+        setPanelMinimized(activeWorkspace.id, existingPanel.id, false);
+        return;
+      }
+
+      handleAddPanelToWorkspace(panelType);
+    },
+    [useWorkspaceMode, activeWorkspace, setPanelMinimized, handleAddPanelToWorkspace]
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
@@ -215,6 +266,19 @@ function App() {
             </div>
 
             <div className="flex items-center gap-4">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setUseWorkspaceMode(!useWorkspaceMode)}
+                className={`p-2 rounded-lg transition-all ${
+                  useWorkspaceMode
+                    ? 'bg-gradient-to-r from-purple-500 to-pink-500'
+                    : 'bg-slate-800/50 hover:bg-slate-800/70 border border-purple-500/20'
+                }`}
+                title={useWorkspaceMode ? 'Switch to Page Mode' : 'Switch to Workspace Mode'}
+              >
+                <LayoutGrid className="w-5 h-5" />
+              </motion.button>
               <WalletSwitcher
                 onAddWallet={() => setAddWalletModalOpen(true)}
                 onManageGroups={() => setGroupsModalOpen(true)}
@@ -258,8 +322,14 @@ function App() {
                     <button
                       key={page.id}
                       onClick={() => {
-                        setCurrentPage(page.id);
-                        setSidebarOpen(false);
+                        if (useWorkspaceMode) {
+                          setCurrentPage(page.id);
+                          ensurePanelForPage(page.panelType);
+                          setSidebarOpen(false);
+                        } else {
+                          setCurrentPage(page.id);
+                          setSidebarOpen(false);
+                        }
                       }}
                       className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all ${
                         currentPage === page.id
@@ -278,19 +348,27 @@ function App() {
         )}
       </AnimatePresence>
 
-      <main className="max-w-[1800px] mx-auto px-6 py-8">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentPage}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-          >
-            <CurrentPageComponent />
-          </motion.div>
-        </AnimatePresence>
-      </main>
+      {useWorkspaceMode ? (
+        <div className="max-w-[1800px] mx-auto px-6 py-8 space-y-6">
+          <WorkspaceTabs />
+          <WorkspaceToolbar />
+          <GridLayoutContainer />
+        </div>
+      ) : (
+        <main className="max-w-[1800px] mx-auto px-6 py-8">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentPage}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <CurrentPageComponent />
+            </motion.div>
+          </AnimatePresence>
+        </main>
+      )}
 
       {!initializingLock && lockVisible && <LockScreen onUnlock={() => setLockVisible(false)} />}
 
@@ -327,6 +405,8 @@ function App() {
           onQuickTrade={handleQuickTrade}
         />
       )}
+
+      <WorkspaceSwitcher />
     </div>
   );
 }
