@@ -44,6 +44,7 @@ pub use wallet::phantom::*;
 pub use webhooks::*;
 
 pub use wallet::multisig::*;
+pub use wallet::performance::*;
 
 use alerts::{AlertManager, SharedAlertManager};
 use api::{ApiHealthMonitor, SharedApiHealthMonitor};
@@ -55,6 +56,7 @@ use wallet::ledger::LedgerState;
 use wallet::phantom::{hydrate_wallet_state, WalletState};
 use wallet::multi_wallet::MultiWalletManager;
 use wallet::multisig::{MultisigDatabase, SharedMultisigDatabase};
+use wallet::performance::{PerformanceDatabase, SharedPerformanceDatabase};
 use security::keystore::Keystore;
 use security::activity_log::ActivityLogger;
 use data::event_store::{EventStore, SharedEventStore};
@@ -234,6 +236,26 @@ pub fn run() {
 
             let multisig_state: SharedMultisigDatabase = Arc::new(RwLock::new(multisig_db));
             app.manage(multisig_state.clone());
+
+            // Initialize performance database
+            let mut performance_db_path = app
+                .path_resolver()
+                .app_data_dir()
+                .ok_or_else(|| "Unable to resolve app data directory".to_string())?;
+
+            std::fs::create_dir_all(&performance_db_path)
+                .map_err(|e| format!("Failed to create app data directory: {e}"))?;
+
+            performance_db_path.push("performance.db");
+
+            let performance_db = tauri::async_runtime::block_on(PerformanceDatabase::new(performance_db_path))
+                .map_err(|e| {
+                    eprintln!("Failed to initialize performance database: {e}");
+                    Box::new(e) as Box<dyn Error>
+                })?;
+
+            let performance_state: SharedPerformanceDatabase = Arc::new(RwLock::new(performance_db));
+            app.manage(performance_state.clone());
 
              let automation_handle = app.handle();
              tauri::async_runtime::spawn(async move {
@@ -457,6 +479,17 @@ pub fn run() {
             multi_wallet_delete_group,
             multi_wallet_list_groups,
             multi_wallet_get_aggregated,
+            
+            // Wallet Performance
+            record_trade,
+            calculate_wallet_performance,
+            get_wallet_performance_data,
+            get_performance_score_history,
+            get_token_performance_breakdown,
+            get_timing_analysis_data,
+            get_best_worst_trades_data,
+            get_benchmark_comparison_data,
+            get_performance_alerts,
             
             // Multisig
             create_multisig_wallet,
