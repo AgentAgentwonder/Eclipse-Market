@@ -7,6 +7,8 @@ mod api_config;
 mod auth;
 mod bots;
 mod cache_commands;
+mod chains;
+mod bridges;
 mod chart_stream;
 mod core;
 mod drawings;
@@ -34,6 +36,8 @@ pub use api_analytics::*;
 pub use api_config::*;
 pub use auth::*;
 pub use bots::*;
+pub use chains::*;
+pub use bridges::*;
 pub use chart_stream::*;
 pub use core::*;
 pub use drawings::*;
@@ -85,6 +89,8 @@ use wallet::multi_wallet::MultiWalletManager;
 use wallet::phantom::{hydrate_wallet_state, WalletState};
 use core::cache_manager::{CacheType, SharedCacheManager};
 use market::{HolderAnalyzer, SharedHolderAnalyzer};
+use chains::{ChainManager, SharedChainManager};
+use bridges::{BridgeManager, SharedBridgeManager};
 
 async fn warm_cache_on_startup(
     _app_handle: tauri::AppHandle,
@@ -197,6 +203,12 @@ pub fn run() {
             app.manage(activity_logger);
             app.manage(api_config_manager);
             app.manage(api_health_state.clone());
+
+            let chain_manager: SharedChainManager = Arc::new(RwLock::new(ChainManager::new()));
+            app.manage(chain_manager.clone());
+
+            let bridge_manager: SharedBridgeManager = Arc::new(RwLock::new(BridgeManager::new()));
+            app.manage(bridge_manager.clone());
 
             let usage_tracker = api_analytics::initialize_usage_tracker(&app.handle()).map_err(|e| {
                 eprintln!("Failed to initialize API usage tracker: {e}");
@@ -931,6 +943,27 @@ pub fn run() {
             drawing_sync,
             drawing_list_templates,
             drawing_save_templates,
+
+            // Chain management
+            chain_get_active,
+            chain_set_active,
+            chain_list_chains,
+            chain_list_enabled,
+            chain_update_config,
+            chain_get_balance,
+            chain_get_fee_estimate,
+            chain_get_status,
+            chain_get_cross_chain_portfolio,
+
+            // Bridge integrations
+            bridge_get_quote,
+            bridge_create_transaction,
+            bridge_get_transaction,
+            bridge_list_transactions,
+            bridge_list_transactions_by_status,
+            bridge_update_transaction_status,
+            bridge_update_transaction_hash,
+            bridge_poll_status,
 
             // Stock commands
             stocks::get_trending_stocks,
