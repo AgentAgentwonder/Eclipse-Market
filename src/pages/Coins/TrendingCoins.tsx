@@ -231,33 +231,6 @@ export function TrendingCoins({
       </div>
     </div>
   );
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { motion } from 'framer-motion'
-import { TrendingUp, TrendingDown, RefreshCw, Star, ArrowUpDown, PauseCircle, PlayCircle } from 'lucide-react'
-import { invoke } from '@tauri-apps/api/tauri'
-import Sparkline from '../../components/Sparkline'
-
-export interface TrendingCoinData {
-  address: string
-  symbol: string
-  name: string
-  price: number
-  price_change_24h: number
-  volume_24h: number
-  volume_change_24h: number
-  market_cap: number
-  market_cap_change_24h: number
-  liquidity: number
-  trend_score: number
-  logo_uri: string | null
-}
-
-export interface CoinSentimentData {
-  symbol: string
-  score: number
-  label: string
-  mentions: number
-  positive_ratio: number
 }
 
 type SortOption = 'trend_score' | 'price_change' | 'volume_change' | 'market_cap'
