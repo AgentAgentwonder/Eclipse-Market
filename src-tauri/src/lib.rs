@@ -1,5 +1,6 @@
 mod ai;
 mod alerts;
+mod anomalies;
 mod api;
 mod api_analytics;
 mod api_config;
@@ -26,6 +27,7 @@ mod webhooks;
 
 pub use ai::*;
 pub use alerts::*;
+pub use anomalies::*;
 pub use api::*;
 pub use api_analytics::*;
 pub use api_config::*;
@@ -391,6 +393,16 @@ pub fn run() {
                  }
              });
 
+             // Initialize sentiment manager
+             let sentiment_manager = sentiment::SentimentManager::new();
+             let sentiment_state: sentiment::SharedSentimentManager = Arc::new(RwLock::new(sentiment_manager));
+             app.manage(sentiment_state.clone());
+
+             // Initialize anomaly detector
+             let anomaly_detector = anomalies::AnomalyDetector::new();
+             let anomaly_state: anomalies::SharedAnomalyDetector = Arc::new(RwLock::new(anomaly_detector));
+             app.manage(anomaly_state.clone());
+
              // Initialize event store
              let mut event_store_path = app
                  .path_resolver()
@@ -577,6 +589,14 @@ pub fn run() {
             // AI & Sentiment
             assess_risk,
             analyze_text_sentiment,
+            get_token_sentiment,
+            get_all_token_sentiments,
+            ingest_social_data,
+            get_sentiment_alerts,
+            update_sentiment_alert_config,
+            get_sentiment_alert_config,
+            dismiss_sentiment_alert,
+            fetch_social_mentions,
             // Market Data
             get_coin_price,
             get_price_history,
@@ -764,6 +784,17 @@ pub fn run() {
             cache_commands::update_ttl_config,
             cache_commands::reset_ttl_config,
             cache_commands::test_cache_performance,
+
+            // Market Surveillance & Anomaly Detection
+            add_price_data,
+            add_transaction_data,
+            get_anomalies,
+            get_active_anomalies,
+            dismiss_anomaly,
+            update_anomaly_detection_config,
+            get_anomaly_detection_config,
+            get_anomaly_statistics,
+            generate_mock_anomaly_data,
 
             // Event Sourcing & Audit Trail
             data::event_store::get_events_command,

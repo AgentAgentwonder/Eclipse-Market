@@ -13,7 +13,7 @@ import {
   Activity,
   FileText,
   Shield,
-  Activity,
+  AlertTriangle,
   LineChart,
   Network,
 } from 'lucide-react';
@@ -40,7 +40,7 @@ import Multisig from './pages/Multisig';
 import ApiHealth from './pages/ApiHealth';
 import ProCharts from './pages/ProCharts';
 import TokenFlow from './pages/TokenFlow';
-import ApiHealth from './pages/ApiHealth';
+import { MarketSurveillance } from './pages/MarketSurveillance';
 import { PaperTradingDashboard } from './pages/PaperTrading/Dashboard';
 import SettingsPage from './pages/Settings';
 import { BIOMETRIC_STATUS_EVENT } from './constants/events';
@@ -160,6 +160,7 @@ function App() {
       { id: 'stocks', label: 'Stocks', icon: BarChart3, component: Stocks },
       { id: 'insiders', label: 'Insiders', icon: Users, component: Insiders },
       { id: 'token-flow', label: 'Token Flow', icon: Network, component: TokenFlow },
+      { id: 'surveillance', label: 'Market Surveillance', icon: AlertTriangle, component: MarketSurveillance },
       {
         id: 'trading',
         label: isPaperMode ? 'Live Trading' : 'Trading',
