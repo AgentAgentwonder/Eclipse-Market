@@ -123,6 +123,25 @@ impl ActivityLogger {
     pub async fn new(app: &AppHandle) -> Result<Self, ActivityLogError> {
         let db_path = activity_log_path(app)?;
         let config_path = activity_config_path(app)?;
+        Self::new_with_paths(db_path, config_path).await
+    }
+
+    pub async fn new_with_paths(
+        db_path: PathBuf,
+        config_path: PathBuf,
+    ) -> Result<Self, ActivityLogError> {
+        if let Some(parent) = db_path.parent() {
+            if !parent.exists() {
+                fs::create_dir_all(parent)?;
+            }
+        }
+
+        if let Some(parent) = config_path.parent() {
+            if !parent.exists() {
+                fs::create_dir_all(parent)?;
+            }
+        }
+
         let db_url = format!("sqlite:{}?mode=rwc", db_path.display());
         let pool = SqlitePool::connect(&db_url).await?;
 
@@ -131,7 +150,7 @@ impl ActivityLogger {
         let logger = Self {
             pool,
             retention_days: Arc::new(RwLock::new(retention_days)),
-            config_path: Arc::new(config_path),
+            config_path: Arc::new(config_path.into()),
         };
 
         logger.initialize().await?;
