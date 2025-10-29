@@ -8,6 +8,8 @@ mod bots;
 mod cache_commands;
 mod chart_stream;
 mod core;
+mod drawings;
+mod indicators;
 mod insiders;
 mod data;
 mod market;
@@ -30,6 +32,8 @@ pub use auth::*;
 pub use bots::*;
 pub use chart_stream::*;
 pub use core::*;
+pub use drawings::*;
+pub use indicators::*;
 pub use insiders::*;
 pub use data::*;
 pub use market::*;
@@ -48,6 +52,8 @@ pub use wallet::performance::*;
 
 use alerts::{AlertManager, SharedAlertManager};
 use api::{ApiHealthMonitor, SharedApiHealthMonitor};
+use drawings::{DrawingManager, SharedDrawingManager};
+use indicators::{IndicatorManager, SharedIndicatorManager};
 use notifications::router::{NotificationRouter, SharedNotificationRouter};
 use portfolio::{SharedWatchlistManager, WatchlistManager};
 use webhooks::{WebhookManager, SharedWebhookManager};
@@ -339,6 +345,21 @@ pub fn run() {
 
              let notification_state: SharedNotificationRouter = Arc::new(RwLock::new(notification_router));
              app.manage(notification_state.clone());
+
+             // Initialize indicator manager
+             let app_data_dir = app
+                 .path_resolver()
+                 .app_data_dir()
+                 .ok_or_else(|| "Unable to resolve app data directory".to_string())?;
+             
+             let indicator_manager = IndicatorManager::new(app_data_dir.clone());
+             let indicator_state: SharedIndicatorManager = Arc::new(RwLock::new(indicator_manager));
+             app.manage(indicator_state.clone());
+
+             // Initialize drawing manager
+             let drawing_manager = DrawingManager::new(app_data_dir.clone());
+             let drawing_state: SharedDrawingManager = Arc::new(RwLock::new(drawing_manager));
+             app.manage(drawing_state.clone());
 
              // Initialize webhook manager
              let webhook_manager = tauri::async_runtime::block_on(async {
@@ -788,6 +809,23 @@ pub fn run() {
             market::holders::get_verification_status,
             market::holders::export_holder_data,
             market::holders::export_metadata_snapshot,
+
+            // Indicator & drawing commands
+            indicator_save_state,
+            indicator_load_state,
+            indicator_list_presets,
+            indicator_save_preset,
+            indicator_delete_preset,
+            indicator_update_preset,
+            indicator_list_alerts,
+            indicator_create_alert,
+            indicator_delete_alert,
+            indicator_update_alert,
+            drawing_list,
+            drawing_save,
+            drawing_sync,
+            drawing_list_templates,
+            drawing_save_templates,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
