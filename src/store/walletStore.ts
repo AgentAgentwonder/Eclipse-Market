@@ -52,6 +52,7 @@ export interface WalletInfo {
   publicKey: string;
   label: string;
   network: string;
+  chainId: string;
   walletType: WalletType;
   groupId?: string | null;
   createdAt: string;
@@ -145,6 +146,7 @@ export interface AddWalletRequest {
   network: string;
   walletType: WalletType;
   groupId?: string | null;
+  chainId?: string;
 }
 
 export interface UpdateWalletRequest {
@@ -152,6 +154,7 @@ export interface UpdateWalletRequest {
   label?: string;
   groupId?: string | null;
   preferences?: WalletPreferences;
+  chainId?: string;
 }
 
 export interface CreateGroupRequest {

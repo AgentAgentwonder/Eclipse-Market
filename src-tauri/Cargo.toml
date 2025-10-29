@@ -67,6 +67,8 @@ uuid = { version = "1.8.0", features = ["v4", "serde"] }
 base64 = "0.21.7"
 bincode = "1.3.3"
 cron = "0.12.0"
+async-trait = "0.1.82"
+hex = "0.4.3"
 
 # Performance optimization
 crossbeam = "0.8.4"
