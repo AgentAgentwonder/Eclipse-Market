@@ -2,7 +2,7 @@ import { invoke } from '@tauri-apps/api';
 import { useState, useEffect } from 'react';
 
 export function Diagnostics() {
-  const [status, setStatus] = useState<'ok'|'warning'|'error'>('ok');
+  const [status, setStatus] = useState<'ok' | 'warning' | 'error'>('ok');
 
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -17,11 +17,11 @@ export function Diagnostics() {
   }, []);
 
   return (
-    <div className={`px-3 py-1 rounded-full text-xs ${
-      status === 'ok' ? 'bg-green-500' :
-      status === 'warning' ? 'bg-yellow-500' :
-      'bg-red-500'
-    }`}>
+    <div
+      className={`px-3 py-1 rounded-full text-xs ${
+        status === 'ok' ? 'bg-green-500' : status === 'warning' ? 'bg-yellow-500' : 'bg-red-500'
+      }`}
+    >
       {status.toUpperCase()}
     </div>
   );

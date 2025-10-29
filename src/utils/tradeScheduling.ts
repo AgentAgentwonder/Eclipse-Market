@@ -42,18 +42,14 @@ export function getDueSchedules(
   schedules: ExportSchedule[],
   now: Date = new Date()
 ): ExportSchedule[] {
-  return schedules.filter((schedule) => isScheduleDue(schedule, now));
+  return schedules.filter(schedule => isScheduleDue(schedule, now));
 }
 
 export function advanceSchedule(
   schedule: ExportSchedule,
   runDate: Date = new Date()
 ): ExportSchedule {
-  const nextRun = computeNextRunDate(
-    schedule.cadence,
-    runDate,
-    schedule.customIntervalMinutes
-  );
+  const nextRun = computeNextRunDate(schedule.cadence, runDate, schedule.customIntervalMinutes);
 
   return {
     ...schedule,
@@ -62,7 +58,10 @@ export function advanceSchedule(
   };
 }
 
-export function initializeSchedule(schedule: ExportSchedule, now: Date = new Date()): ExportSchedule {
+export function initializeSchedule(
+  schedule: ExportSchedule,
+  now: Date = new Date()
+): ExportSchedule {
   if (schedule.nextRun) {
     return schedule;
   }

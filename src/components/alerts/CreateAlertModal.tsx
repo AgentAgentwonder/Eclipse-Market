@@ -1,7 +1,12 @@
 import { useState } from 'react';
 import { X, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAlertStore, AlertConditionType, LogicalOperator, NotificationChannel } from '../../store/alertStore';
+import {
+  useAlertStore,
+  AlertConditionType,
+  LogicalOperator,
+  NotificationChannel,
+} from '../../store/alertStore';
 import ConditionBuilder from './ConditionBuilder';
 
 interface CreateAlertModalProps {
@@ -17,7 +22,12 @@ const defaultCondition = {
   timeframeMinutes: null,
 };
 
-const CreateAlertModal = ({ isOpen, onClose, prefilledSymbol, prefilledMint }: CreateAlertModalProps) => {
+const CreateAlertModal = ({
+  isOpen,
+  onClose,
+  prefilledSymbol,
+  prefilledMint,
+}: CreateAlertModalProps) => {
   const { createAlert } = useAlertStore();
   const [name, setName] = useState('');
   const [symbol, setSymbol] = useState(prefilledSymbol || '');
@@ -26,13 +36,15 @@ const CreateAlertModal = ({ isOpen, onClose, prefilledSymbol, prefilledMint }: C
     conditions: [defaultCondition],
     operator: 'and' as LogicalOperator,
   });
-  const [notificationChannels, setNotificationChannels] = useState<NotificationChannel[]>(['in_app']);
+  const [notificationChannels, setNotificationChannels] = useState<NotificationChannel[]>([
+    'in_app',
+  ]);
   const [cooldownMinutes, setCooldownMinutes] = useState(30);
   const [isLoading, setIsLoading] = useState(false);
 
   const toggleChannel = (channel: NotificationChannel) => {
-    setNotificationChannels((prev) =>
-      prev.includes(channel) ? prev.filter((c) => c !== channel) : [...prev, channel]
+    setNotificationChannels(prev =>
+      prev.includes(channel) ? prev.filter(c => c !== channel) : [...prev, channel]
     );
   };
 
@@ -95,7 +107,7 @@ const CreateAlertModal = ({ isOpen, onClose, prefilledSymbol, prefilledMint }: C
                 <label className="text-sm text-slate-400 mb-1 block">Alert Name</label>
                 <input
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={e => setName(e.target.value)}
                   placeholder="Solana breakout"
                   className="w-full px-3 py-2 bg-slate-900/60 border border-purple-500/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                 />
@@ -106,7 +118,7 @@ const CreateAlertModal = ({ isOpen, onClose, prefilledSymbol, prefilledMint }: C
                   type="number"
                   min={1}
                   value={cooldownMinutes}
-                  onChange={(e) => setCooldownMinutes(Number(e.target.value))}
+                  onChange={e => setCooldownMinutes(Number(e.target.value))}
                   className="w-full px-3 py-2 bg-slate-900/60 border border-purple-500/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                 />
               </div>
@@ -117,7 +129,7 @@ const CreateAlertModal = ({ isOpen, onClose, prefilledSymbol, prefilledMint }: C
                 <label className="text-sm text-slate-400 mb-1 block">Symbol</label>
                 <input
                   value={symbol}
-                  onChange={(e) => setSymbol(e.target.value)}
+                  onChange={e => setSymbol(e.target.value)}
                   placeholder="SOL"
                   className="w-full px-3 py-2 bg-slate-900/60 border border-purple-500/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                 />
@@ -126,7 +138,7 @@ const CreateAlertModal = ({ isOpen, onClose, prefilledSymbol, prefilledMint }: C
                 <label className="text-sm text-slate-400 mb-1 block">Mint</label>
                 <input
                   value={mint}
-                  onChange={(e) => setMint(e.target.value)}
+                  onChange={e => setMint(e.target.value)}
                   placeholder="So1111..."
                   className="w-full px-3 py-2 bg-slate-900/60 border border-purple-500/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                 />
@@ -138,20 +150,22 @@ const CreateAlertModal = ({ isOpen, onClose, prefilledSymbol, prefilledMint }: C
             <div>
               <p className="text-sm text-slate-400 mb-2">Notification Channels</p>
               <div className="flex flex-wrap gap-2">
-                {(['in_app', 'system', 'email', 'webhook'] as NotificationChannel[]).map((channel) => (
-                  <button
-                    key={channel}
-                    className={`px-3 py-1.5 rounded-xl border transition text-sm capitalize ${
-                      notificationChannels.includes(channel)
-                        ? 'bg-purple-500 text-white border-purple-400'
-                        : 'bg-slate-800/60 text-slate-300 border-transparent hover:bg-slate-800'
-                    }`}
-                    onClick={() => toggleChannel(channel)}
-                    type="button"
-                  >
-                    {channel.replace('_', ' ')}
-                  </button>
-                ))}
+                {(['in_app', 'system', 'email', 'webhook'] as NotificationChannel[]).map(
+                  channel => (
+                    <button
+                      key={channel}
+                      className={`px-3 py-1.5 rounded-xl border transition text-sm capitalize ${
+                        notificationChannels.includes(channel)
+                          ? 'bg-purple-500 text-white border-purple-400'
+                          : 'bg-slate-800/60 text-slate-300 border-transparent hover:bg-slate-800'
+                      }`}
+                      onClick={() => toggleChannel(channel)}
+                      type="button"
+                    >
+                      {channel.replace('_', ' ')}
+                    </button>
+                  )
+                )}
               </div>
             </div>
 

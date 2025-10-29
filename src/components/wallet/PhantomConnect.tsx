@@ -1,18 +1,18 @@
-import { useCallback, useEffect, useMemo } from 'react'
-import { invoke } from '@tauri-apps/api/tauri'
-import { useWallet as useAdapterWallet, useConnection } from '@solana/wallet-adapter-react'
-import { WalletReadyState } from '@solana/wallet-adapter-base'
-import { LAMPORTS_PER_SOL } from '@solana/web3.js'
-import { Wallet, AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
-import { shallow } from 'zustand/shallow'
+import { useCallback, useEffect, useMemo } from 'react';
+import { invoke } from '@tauri-apps/api/tauri';
+import { useWallet as useAdapterWallet, useConnection } from '@solana/wallet-adapter-react';
+import { WalletReadyState } from '@solana/wallet-adapter-base';
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Wallet, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { shallow } from 'zustand/shallow';
 
-import { useWalletStore, PhantomSession } from '../../store/walletStore'
+import { useWalletStore, PhantomSession } from '../../store/walletStore';
 
 function getErrorMessage(error: unknown): string {
-  if (!error) return 'Unknown error'
-  if (error instanceof Error) return error.message
-  if (typeof error === 'string') return error
-  return JSON.stringify(error)
+  if (!error) return 'Unknown error';
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  return JSON.stringify(error);
 }
 
 export function PhantomConnect() {
@@ -33,7 +33,7 @@ export function PhantomConnect() {
     reset,
     network,
   } = useWalletStore(
-    (state) => ({
+    state => ({
       status: state.status,
       setStatus: state.setStatus,
       publicKey: state.publicKey,
@@ -50,10 +50,10 @@ export function PhantomConnect() {
       reset: state.reset,
       network: state.network,
     }),
-    shallow,
-  )
+    shallow
+  );
 
-  const { connection } = useConnection()
+  const { connection } = useConnection();
   const {
     publicKey: adapterPublicKey,
     connected,
@@ -62,30 +62,30 @@ export function PhantomConnect() {
     disconnect,
     wallet,
     readyState,
-  } = useAdapterWallet()
+  } = useAdapterWallet();
 
-  const base58Key = useMemo(() => adapterPublicKey?.toBase58() ?? null, [adapterPublicKey])
+  const base58Key = useMemo(() => adapterPublicKey?.toBase58() ?? null, [adapterPublicKey]);
 
   useEffect(() => {
     if (connecting) {
-      setStatus('connecting')
+      setStatus('connecting');
     } else if (connected) {
-      setStatus('connected')
+      setStatus('connected');
     } else if (status !== 'error') {
-      setStatus('disconnected')
+      setStatus('disconnected');
     }
-  }, [connecting, connected, setStatus, status])
+  }, [connecting, connected, setStatus, status]);
 
   useEffect(() => {
     if (!connected || !base58Key) {
-      return
+      return;
     }
 
-    setPublicKey(base58Key)
-    setLastConnected(new Date().toISOString())
-    setError(null)
+    setPublicKey(base58Key);
+    setLastConnected(new Date().toISOString());
+    setError(null);
 
-    let cancelled = false
+    let cancelled = false;
 
     const syncSession = async () => {
       try {
@@ -95,119 +95,148 @@ export function PhantomConnect() {
             network,
             label: wallet?.adapter.name ?? 'Phantom',
           },
-        })
+        });
         if (!cancelled) {
-          setSession(session)
+          setSession(session);
         }
       } catch (err) {
         if (!cancelled) {
-          console.error('Failed to persist Phantom session:', err)
-          setError(getErrorMessage(err))
+          console.error('Failed to persist Phantom session:', err);
+          setError(getErrorMessage(err));
         }
       }
-    }
+    };
 
     const loadBalance = async () => {
       try {
-        const bal = await invoke<number>('phantom_balance', { address: base58Key })
+        const bal = await invoke<number>('phantom_balance', { address: base58Key });
         if (!cancelled) {
-          setBalance(bal)
+          setBalance(bal);
         }
       } catch (err) {
-        console.warn('RPC balance lookup failed, attempting connection fallback', err)
+        console.warn('RPC balance lookup failed, attempting connection fallback', err);
         if (!cancelled && adapterPublicKey) {
           try {
-            const lamports = await connection.getBalance(adapterPublicKey, { commitment: 'confirmed' })
-            setBalance(lamports / LAMPORTS_PER_SOL)
+            const lamports = await connection.getBalance(adapterPublicKey, {
+              commitment: 'confirmed',
+            });
+            setBalance(lamports / LAMPORTS_PER_SOL);
           } catch (fallbackErr) {
-            console.error('Failed to fetch balance from connection:', fallbackErr)
-            setError('Unable to refresh SOL balance')
+            console.error('Failed to fetch balance from connection:', fallbackErr);
+            setError('Unable to refresh SOL balance');
           }
         }
       }
-    }
+    };
 
-    syncSession()
-    loadBalance()
+    syncSession();
+    loadBalance();
 
     const interval = setInterval(() => {
-      if (cancelled || !base58Key) return
-      loadBalance()
-    }, 15000)
+      if (cancelled || !base58Key) return;
+      loadBalance();
+    }, 15000);
 
     return () => {
-      cancelled = true
-      clearInterval(interval)
-    }
-  }, [connected, base58Key, setPublicKey, setLastConnected, setError, setBalance, setSession, network, wallet, adapterPublicKey, connection])
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [
+    connected,
+    base58Key,
+    setPublicKey,
+    setLastConnected,
+    setError,
+    setBalance,
+    setSession,
+    network,
+    wallet,
+    adapterPublicKey,
+    connection,
+  ]);
 
   useEffect(() => {
     if (attemptedAutoConnect || !autoReconnect) {
-      return
+      return;
     }
 
-    setAttemptedAutoConnect(true)
+    setAttemptedAutoConnect(true);
 
     const attemptRestore = async () => {
       try {
-        const session = await invoke<PhantomSession | null>('phantom_session')
+        const session = await invoke<PhantomSession | null>('phantom_session');
         if (session) {
-          setSession(session)
-          setPublicKey(session.publicKey)
-          setLastConnected(session.lastConnected ?? null)
+          setSession(session);
+          setPublicKey(session.publicKey);
+          setLastConnected(session.lastConnected ?? null);
 
-          if (!connected && wallet && (readyState === WalletReadyState.Installed || readyState === WalletReadyState.Loadable)) {
+          if (
+            !connected &&
+            wallet &&
+            (readyState === WalletReadyState.Installed || readyState === WalletReadyState.Loadable)
+          ) {
             try {
-              await connect()
+              await connect();
             } catch (err) {
-              console.log('Auto-connect skipped or rejected:', err)
+              console.log('Auto-connect skipped or rejected:', err);
             }
           }
         }
       } catch (err) {
-        console.error('Failed to restore Phantom session:', err)
+        console.error('Failed to restore Phantom session:', err);
       }
-    }
+    };
 
-    attemptRestore()
-  }, [attemptedAutoConnect, autoReconnect, setAttemptedAutoConnect, setSession, setPublicKey, setLastConnected, connected, wallet, readyState, connect])
+    attemptRestore();
+  }, [
+    attemptedAutoConnect,
+    autoReconnect,
+    setAttemptedAutoConnect,
+    setSession,
+    setPublicKey,
+    setLastConnected,
+    connected,
+    wallet,
+    readyState,
+    connect,
+  ]);
 
   const handleConnect = useCallback(async () => {
     if (!wallet) {
-      setError('Phantom wallet not available in this environment')
-      setStatus('error')
-      return
+      setError('Phantom wallet not available in this environment');
+      setStatus('error');
+      return;
     }
 
     if (readyState === WalletReadyState.Unsupported) {
-      setError('Phantom wallet is not installed. Install it from https://phantom.app/')
-      setStatus('error')
-      return
+      setError('Phantom wallet is not installed. Install it from https://phantom.app/');
+      setStatus('error');
+      return;
     }
 
     try {
-      setStatus('connecting')
-      setError(null)
-      await connect()
+      setStatus('connecting');
+      setError(null);
+      await connect();
     } catch (err) {
-      const message = getErrorMessage(err)
-      console.error('Failed to connect Phantom wallet:', err)
-      setError(message.includes('User rejected') ? 'Connection rejected' : message)
-      setStatus('error')
+      const message = getErrorMessage(err);
+      console.error('Failed to connect Phantom wallet:', err);
+      setError(message.includes('User rejected') ? 'Connection rejected' : message);
+      setStatus('error');
     }
-  }, [wallet, readyState, connect, setError, setStatus])
+  }, [wallet, readyState, connect, setError, setStatus]);
 
   const handleDisconnect = useCallback(async () => {
     try {
-      await disconnect()
-      await invoke('phantom_disconnect')
+      await disconnect();
+      await invoke('phantom_disconnect');
     } catch (err) {
-      console.error('Failed to disconnect Phantom wallet:', err)
-      setError('Unable to disconnect wallet')
+      console.error('Failed to disconnect Phantom wallet:', err);
+      setError('Unable to disconnect wallet');
     } finally {
-      reset()
+      reset();
     }
-  }, [disconnect, reset, setError])
+  }, [disconnect, reset, setError]);
 
   const renderStatusBadge = () => {
     switch (status) {
@@ -217,25 +246,25 @@ export function PhantomConnect() {
             <CheckCircle className="w-4 h-4" />
             <span>Connected</span>
           </div>
-        )
+        );
       case 'connecting':
         return (
           <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-400 text-sm">
             <Loader2 className="w-4 h-4 animate-spin" />
             <span>Connecting...</span>
           </div>
-        )
+        );
       case 'error':
         return (
           <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-sm">
             <AlertCircle className="w-4 h-4" />
             <span>Error</span>
           </div>
-        )
+        );
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   if (connected && publicKey) {
     return (
@@ -257,7 +286,7 @@ export function PhantomConnect() {
         </button>
         {renderStatusBadge()}
       </div>
-    )
+    );
   }
 
   return (
@@ -287,5 +316,5 @@ export function PhantomConnect() {
         </div>
       )}
     </div>
-  )
+  );
 }

@@ -127,13 +127,13 @@ describe('Coin Discovery Utils', () => {
     it('handles empty input', () => {
       const result = normalizeSparkline([], 5);
       expect(result).toHaveLength(5);
-      expect(result.every((v) => v === 0)).toBe(true);
+      expect(result.every(v => v === 0)).toBe(true);
     });
 
     it('maintains precision', () => {
       const data = [1.123456, 2.234567];
       const result = normalizeSparkline(data, 3);
-      result.forEach((v) => {
+      result.forEach(v => {
         const decimals = v.toString().split('.')[1]?.length || 0;
         expect(decimals).toBeLessThanOrEqual(6);
       });

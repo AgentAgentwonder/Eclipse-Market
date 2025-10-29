@@ -1,18 +1,18 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Key, 
-  CheckCircle, 
-  AlertCircle, 
-  Eye, 
-  EyeOff, 
-  RefreshCw, 
-  Server, 
+import {
+  Key,
+  CheckCircle,
+  AlertCircle,
+  Eye,
+  EyeOff,
+  RefreshCw,
+  Server,
   Shield,
   Activity,
   Calendar,
   AlertTriangle,
-  TrendingUp
+  TrendingUp,
 } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/tauri';
 
@@ -59,21 +59,21 @@ export function ApiSettings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  
+
   // Form states for each service
   const [heliusKey, setHeliusKey] = useState('');
   const [birdeyeKey, setBirdeyeKey] = useState('');
   const [jupiterKey, setJupiterKey] = useState('');
   const [solanaRpc, setSolanaRpc] = useState('');
-  
+
   const [showHelius, setShowHelius] = useState(false);
   const [showBirdeye, setShowBirdeye] = useState(false);
   const [showJupiter, setShowJupiter] = useState(false);
-  
+
   const [heliusExpiry, setHeliusExpiry] = useState('');
   const [birdeyeExpiry, setBirdeyeExpiry] = useState('');
   const [jupiterExpiry, setJupiterExpiry] = useState('');
-  
+
   const [saving, setSaving] = useState<string | null>(null);
   const [testing, setTesting] = useState<string | null>(null);
 
@@ -112,7 +112,7 @@ export function ApiSettings() {
         expiry_date: expiryDate ? new Date(expiryDate).toISOString() : null,
       });
       setSuccess(result);
-      
+
       // Clear the input fields
       if (service === 'helius') {
         setHeliusKey('');
@@ -129,10 +129,10 @@ export function ApiSettings() {
       if (service === 'solana_rpc') {
         setSolanaRpc('');
       }
-      
+
       // Reload status
       await loadApiStatus();
-      
+
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       console.error('Failed to save API key:', err);
@@ -143,7 +143,9 @@ export function ApiSettings() {
   };
 
   const handleRemoveKey = async (service: string) => {
-    if (!window.confirm(`Remove API key for ${service}? The service will fallback to default keys.`)) {
+    if (
+      !window.confirm(`Remove API key for ${service}? The service will fallback to default keys.`)
+    ) {
       return;
     }
 
@@ -170,7 +172,10 @@ export function ApiSettings() {
     setSuccess(null);
 
     try {
-      const result = await invoke<string>('set_use_default_key', { service, use_default: useDefault });
+      const result = await invoke<string>('set_use_default_key', {
+        service,
+        use_default: useDefault,
+      });
       setSuccess(result);
       await loadApiStatus();
       setTimeout(() => setSuccess(null), 3000);
@@ -188,16 +193,16 @@ export function ApiSettings() {
 
     try {
       const result = await invoke<ConnectionTestResult>('test_api_connection', { service });
-      
+
       if (result.success) {
         setSuccess(
           `✓ ${service.toUpperCase()} connected successfully! ` +
-          `(${result.latencyMs}ms${result.rateLimitInfo ? `, ${result.rateLimitInfo.remaining}/${result.rateLimitInfo.limit} calls remaining` : ''})`
+            `(${result.latencyMs}ms${result.rateLimitInfo ? `, ${result.rateLimitInfo.remaining}/${result.rateLimitInfo.limit} calls remaining` : ''})`
         );
       } else {
         setError(`${service.toUpperCase()} connection failed: ${result.error}`);
       }
-      
+
       await loadApiStatus();
       setTimeout(() => setSuccess(null), 5000);
     } catch (err) {
@@ -225,7 +230,9 @@ export function ApiSettings() {
       <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-purple-500/20 p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center shadow-lg`}>
+            <div
+              className={`w-10 h-10 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center shadow-lg`}
+            >
               {icon}
             </div>
             <div>
@@ -243,10 +250,14 @@ export function ApiSettings() {
                   </div>
                 )}
                 {status?.configured && !status?.usingDefault && (
-                  <span className="text-xs text-purple-400 bg-purple-500/20 px-2 py-0.5 rounded">Custom</span>
+                  <span className="text-xs text-purple-400 bg-purple-500/20 px-2 py-0.5 rounded">
+                    Custom
+                  </span>
                 )}
                 {status?.usingDefault && (
-                  <span className="text-xs text-yellow-400 bg-yellow-500/20 px-2 py-0.5 rounded">Default</span>
+                  <span className="text-xs text-yellow-400 bg-yellow-500/20 px-2 py-0.5 rounded">
+                    Default
+                  </span>
                 )}
               </div>
             </div>
@@ -282,7 +293,7 @@ export function ApiSettings() {
                 </div>
               </div>
             )}
-            
+
             {status.expiryDate && (
               <div className="flex items-center gap-2 p-3 bg-slate-900/40 border border-purple-500/10 rounded-lg text-xs text-white/70">
                 <Calendar className="w-4 h-4 text-purple-300" />
@@ -298,19 +309,25 @@ export function ApiSettings() {
                 </span>
               </div>
             )}
-            
+
             {typeof status.daysUntilExpiry === 'number' && status.daysUntilExpiry < 30 && (
-              <div className={`flex items-center gap-2 p-3 rounded-lg ${
-                status.daysUntilExpiry < 7 
-                  ? 'bg-red-500/10 border border-red-500/30' 
-                  : 'bg-yellow-500/10 border border-yellow-500/30'
-              }`}>
-                <AlertTriangle className={`w-4 h-4 ${
-                  status.daysUntilExpiry < 7 ? 'text-red-400' : 'text-yellow-400'
-                }`} />
-                <span className={`text-sm ${
-                  status.daysUntilExpiry < 7 ? 'text-red-400' : 'text-yellow-400'
-                }`}>
+              <div
+                className={`flex items-center gap-2 p-3 rounded-lg ${
+                  status.daysUntilExpiry < 7
+                    ? 'bg-red-500/10 border border-red-500/30'
+                    : 'bg-yellow-500/10 border border-yellow-500/30'
+                }`}
+              >
+                <AlertTriangle
+                  className={`w-4 h-4 ${
+                    status.daysUntilExpiry < 7 ? 'text-red-400' : 'text-yellow-400'
+                  }`}
+                />
+                <span
+                  className={`text-sm ${
+                    status.daysUntilExpiry < 7 ? 'text-red-400' : 'text-yellow-400'
+                  }`}
+                >
                   {status.daysUntilExpiry >= 0
                     ? `Key expires in ${status.daysUntilExpiry} days`
                     : `Key expired ${Math.abs(status.daysUntilExpiry)} days ago`}
@@ -351,7 +368,7 @@ export function ApiSettings() {
             <input
               type="checkbox"
               checked={status?.usingDefault || false}
-              onChange={(e) => handleToggleDefault(service, e.target.checked)}
+              onChange={e => handleToggleDefault(service, e.target.checked)}
               disabled={saving === service}
               className="w-5 h-5 rounded border-purple-500/30 bg-slate-800 text-purple-500 focus:ring-purple-500"
             />
@@ -374,7 +391,7 @@ export function ApiSettings() {
                 <input
                   type={showKey ? 'text' : 'password'}
                   value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
+                  onChange={e => setApiKey(e.target.value)}
                   placeholder={service === 'solana_rpc' ? 'https://...' : 'Enter API key'}
                   className="w-full px-4 py-3 bg-slate-900/50 border border-purple-500/20 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:border-purple-500/50 transition-colors pr-12"
                   disabled={saving === service}
@@ -400,7 +417,7 @@ export function ApiSettings() {
                 <input
                   type="date"
                   value={expiryDate}
-                  onChange={(e) => setExpiryDate(e.target.value)}
+                  onChange={e => setExpiryDate(e.target.value)}
                   className="w-full px-4 py-3 bg-slate-900/50 border border-purple-500/20 rounded-xl text-white focus:outline-none focus:border-purple-500/50 transition-colors"
                   disabled={saving === service}
                 />
@@ -417,7 +434,7 @@ export function ApiSettings() {
               >
                 {saving === service ? 'Saving...' : status?.configured ? 'Update Key' : 'Save Key'}
               </motion.button>
-              
+
               {status?.configured && (
                 <motion.button
                   onClick={() => handleRemoveKey(service)}
@@ -547,21 +564,11 @@ export function ApiSettings() {
           About API Keys
         </h3>
         <div className="space-y-2 text-sm text-white/60">
-          <p>
-            • All API keys are encrypted and stored securely in your system keychain
-          </p>
-          <p>
-            • Default keys are provided for testing but may have shared rate limits
-          </p>
-          <p>
-            • Custom keys give you dedicated rate limits and better performance
-          </p>
-          <p>
-            • Set expiry dates to receive reminders before keys expire
-          </p>
-          <p>
-            • Test connections regularly to ensure services are working correctly
-          </p>
+          <p>• All API keys are encrypted and stored securely in your system keychain</p>
+          <p>• Default keys are provided for testing but may have shared rate limits</p>
+          <p>• Custom keys give you dedicated rate limits and better performance</p>
+          <p>• Set expiry dates to receive reminders before keys expire</p>
+          <p>• Test connections regularly to ensure services are working correctly</p>
         </div>
       </div>
     </div>

@@ -51,9 +51,9 @@ export function ActiveOrders({ walletAddress }: ActiveOrdersProps) {
 
     const listenForUpdates = async () => {
       const { listen } = await import('@tauri-apps/api/event');
-      unsubscribe = await listen<Order>('order_update', (event) => {
-        setOrders((current) => {
-          const idx = current.findIndex((o) => o.id === event.payload.id);
+      unsubscribe = await listen<Order>('order_update', event => {
+        setOrders(current => {
+          const idx = current.findIndex(o => o.id === event.payload.id);
           if (idx === -1) {
             return [event.payload, ...current];
           }
@@ -105,7 +105,7 @@ export function ActiveOrders({ walletAddress }: ActiveOrdersProps) {
         <div className="p-6 text-sm text-gray-400">No active orders</div>
       ) : (
         <div className="divide-y divide-gray-700">
-          {orders.map((order) => (
+          {orders.map(order => (
             <div key={order.id} className="p-4 flex flex-col gap-3">
               <div className="flex justify-between items-center">
                 <div>
@@ -113,9 +113,11 @@ export function ActiveOrders({ walletAddress }: ActiveOrdersProps) {
                     <span className="text-sm font-medium text-gray-200">
                       {ORDER_TYPE_LABELS[order.order_type]}
                     </span>
-                    <span className={`text-xs uppercase font-semibold ${
-                      order.side === 'buy' ? 'text-green-400' : 'text-red-400'
-                    }`}>
+                    <span
+                      className={`text-xs uppercase font-semibold ${
+                        order.side === 'buy' ? 'text-green-400' : 'text-red-400'
+                      }`}
+                    >
                       {order.side}
                     </span>
                     <span className={`text-xs ${ORDER_STATUS_COLORS[order.status]}`}>

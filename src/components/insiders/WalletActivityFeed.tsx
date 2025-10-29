@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowUpCircle,
   ArrowDownCircle,
@@ -11,13 +11,13 @@ import {
   Wallet,
   ExternalLink,
   Settings,
-} from 'lucide-react'
-import { useWalletActivity, useMonitoredWallets } from '../../hooks/useWalletActivity'
-import { WalletActivity, ActivityAction } from '../../types/insiders'
-import { CopyTradeModal } from './CopyTradeModal'
-import { WalletMonitorSettings } from './WalletMonitorSettings'
-import { VirtualizedList } from './VirtualizedList'
-import { formatDistance } from 'date-fns'
+} from 'lucide-react';
+import { useWalletActivity, useMonitoredWallets } from '../../hooks/useWalletActivity';
+import { WalletActivity, ActivityAction } from '../../types/insiders';
+import { CopyTradeModal } from './CopyTradeModal';
+import { WalletMonitorSettings } from './WalletMonitorSettings';
+import { VirtualizedList } from './VirtualizedList';
+import { formatDistance } from 'date-fns';
 
 const ACTION_ICONS: Record<ActivityAction, typeof ArrowUpCircle> = {
   buy: ArrowUpCircle,
@@ -25,7 +25,7 @@ const ACTION_ICONS: Record<ActivityAction, typeof ArrowUpCircle> = {
   transfer: ArrowRightLeft,
   swap: ArrowRightLeft,
   unknown: Wallet,
-}
+};
 
 const ACTION_COLORS: Record<ActivityAction, string> = {
   buy: 'text-green-400',
@@ -33,7 +33,7 @@ const ACTION_COLORS: Record<ActivityAction, string> = {
   transfer: 'text-blue-400',
   swap: 'text-purple-400',
   unknown: 'text-gray-400',
-}
+};
 
 const ACTION_BG: Record<ActivityAction, string> = {
   buy: 'bg-green-500/20 border-green-500/30',
@@ -41,15 +41,15 @@ const ACTION_BG: Record<ActivityAction, string> = {
   transfer: 'bg-blue-500/20 border-blue-500/30',
   swap: 'bg-purple-500/20 border-purple-500/30',
   unknown: 'bg-gray-500/20 border-gray-500/30',
-}
+};
 
 export function WalletActivityFeed() {
-  const [filterWallet, setFilterWallet] = useState<string | null>(null)
-  const [filterAction, setFilterAction] = useState<ActivityAction | null>(null)
-  const [minAmount, setMinAmount] = useState<number | null>(null)
-  const [selectedActivity, setSelectedActivity] = useState<WalletActivity | null>(null)
-  const [showSettings, setShowSettings] = useState(false)
-  const [showFilters, setShowFilters] = useState(false)
+  const [filterWallet, setFilterWallet] = useState<string | null>(null);
+  const [filterAction, setFilterAction] = useState<ActivityAction | null>(null);
+  const [minAmount, setMinAmount] = useState<number | null>(null);
+  const [selectedActivity, setSelectedActivity] = useState<WalletActivity | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   const filter = useMemo(
     () => ({
@@ -58,20 +58,20 @@ export function WalletActivityFeed() {
       min_amount_usd: minAmount || undefined,
     }),
     [filterWallet, filterAction, minAmount]
-  )
+  );
 
-  const { activities, loading, error, hasMore, loadMore, refresh } = useWalletActivity(filter, 50)
-  const { wallets, loading: walletsLoading } = useMonitoredWallets()
+  const { activities, loading, error, hasMore, loadMore, refresh } = useWalletActivity(filter, 50);
+  const { wallets, loading: walletsLoading } = useMonitoredWallets();
 
   const groupedActivities = useMemo(() => {
-    const groups: Record<string, WalletActivity[]> = {}
-    activities.forEach((activity) => {
-      const key = `${activity.wallet_address}-${activity.output_mint || 'none'}`
+    const groups: Record<string, WalletActivity[]> = {};
+    activities.forEach(activity => {
+      const key = `${activity.wallet_address}-${activity.output_mint || 'none'}`;
       if (!groups[key]) {
-        groups[key] = []
+        groups[key] = [];
       }
-      groups[key].push(activity)
-    })
+      groups[key].push(activity);
+    });
     return Object.entries(groups).map(([key, items]) => ({
       key,
       activities: items,
@@ -81,23 +81,23 @@ export function WalletActivityFeed() {
       token: items[0].output_symbol || 'Unknown',
       totalAmount: items.reduce((sum, a) => sum + (a.amount_usd || 0), 0),
       count: items.length,
-    }))
-  }, [activities])
+    }));
+  }, [activities]);
 
   const handleCopyTrade = (activity: WalletActivity) => {
-    setSelectedActivity(activity)
-  }
+    setSelectedActivity(activity);
+  };
 
   const formatAmount = (amount: number | undefined) => {
-    if (!amount) return 'N/A'
-    if (amount >= 1000000) return `$${(amount / 1000000).toFixed(2)}M`
-    if (amount >= 1000) return `$${(amount / 1000).toFixed(2)}K`
-    return `$${amount.toFixed(2)}`
-  }
+    if (!amount) return 'N/A';
+    if (amount >= 1000000) return `$${(amount / 1000000).toFixed(2)}M`;
+    if (amount >= 1000) return `$${(amount / 1000).toFixed(2)}K`;
+    return `$${amount.toFixed(2)}`;
+  };
 
   const shortenAddress = (address: string) => {
-    return `${address.slice(0, 4)}...${address.slice(-4)}`
-  }
+    return `${address.slice(0, 4)}...${address.slice(-4)}`;
+  };
 
   return (
     <div className="space-y-6">
@@ -145,12 +145,12 @@ export function WalletActivityFeed() {
                 <label className="block text-sm text-gray-400 mb-2">Filter by Wallet</label>
                 <select
                   value={filterWallet || ''}
-                  onChange={(e) => setFilterWallet(e.target.value || null)}
+                  onChange={e => setFilterWallet(e.target.value || null)}
                   className="w-full bg-slate-700 px-3 py-2 rounded-lg border border-slate-600"
                   disabled={walletsLoading}
                 >
                   <option value="">All Wallets</option>
-                  {wallets.map((wallet) => (
+                  {wallets.map(wallet => (
                     <option key={wallet.id} value={wallet.wallet_address}>
                       {wallet.label || shortenAddress(wallet.wallet_address)}
                     </option>
@@ -161,7 +161,7 @@ export function WalletActivityFeed() {
                 <label className="block text-sm text-gray-400 mb-2">Filter by Action</label>
                 <select
                   value={filterAction || ''}
-                  onChange={(e) => setFilterAction((e.target.value as ActivityAction) || null)}
+                  onChange={e => setFilterAction((e.target.value as ActivityAction) || null)}
                   className="w-full bg-slate-700 px-3 py-2 rounded-lg border border-slate-600"
                 >
                   <option value="">All Actions</option>
@@ -176,7 +176,7 @@ export function WalletActivityFeed() {
                 <input
                   type="number"
                   value={minAmount || ''}
-                  onChange={(e) => setMinAmount(e.target.value ? parseFloat(e.target.value) : null)}
+                  onChange={e => setMinAmount(e.target.value ? parseFloat(e.target.value) : null)}
                   placeholder="No minimum"
                   className="w-full bg-slate-700 px-3 py-2 rounded-lg border border-slate-600"
                 />
@@ -261,8 +261,8 @@ export function WalletActivityFeed() {
                   </div>
 
                   <div className="mt-4 space-y-2">
-                    {group.activities.slice(0, 3).map((activity) => {
-                      const ActionIcon = ACTION_ICONS[activity.type as ActivityAction] || Wallet
+                    {group.activities.slice(0, 3).map(activity => {
+                      const ActionIcon = ACTION_ICONS[activity.type as ActivityAction] || Wallet;
                       return (
                         <div
                           key={activity.id}
@@ -316,7 +316,7 @@ export function WalletActivityFeed() {
                             </button>
                           </div>
                         </div>
-                      )
+                      );
                     })}
                     {group.activities.length > 3 && (
                       <div className="text-center text-sm text-gray-400 py-2">
@@ -341,13 +341,10 @@ export function WalletActivityFeed() {
       )}
 
       {selectedActivity && (
-        <CopyTradeModal
-          activity={selectedActivity}
-          onClose={() => setSelectedActivity(null)}
-        />
+        <CopyTradeModal activity={selectedActivity} onClose={() => setSelectedActivity(null)} />
       )}
 
       {showSettings && <WalletMonitorSettings onClose={() => setShowSettings(false)} />}
     </div>
-  )
+  );
 }

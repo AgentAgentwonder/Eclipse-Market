@@ -133,7 +133,7 @@ const WatchlistManager = ({ isOpen, onClose, onCreateAlert }: WatchlistManagerPr
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'application/json';
-    input.onchange = async (e) => {
+    input.onchange = async e => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
 
@@ -188,7 +188,7 @@ const WatchlistManager = ({ isOpen, onClose, onCreateAlert }: WatchlistManagerPr
                     type="text"
                     placeholder="Watchlist name"
                     value={newWatchlistName}
-                    onChange={(e) => setNewWatchlistName(e.target.value)}
+                    onChange={e => setNewWatchlistName(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-800/60 border border-purple-500/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                   />
                   <div className="flex gap-2">
@@ -213,7 +213,7 @@ const WatchlistManager = ({ isOpen, onClose, onCreateAlert }: WatchlistManagerPr
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
-              {watchlists.map((watchlist) => (
+              {watchlists.map(watchlist => (
                 <div
                   key={watchlist.id}
                   className={`p-4 rounded-2xl cursor-pointer transition ${
@@ -227,7 +227,7 @@ const WatchlistManager = ({ isOpen, onClose, onCreateAlert }: WatchlistManagerPr
                     <h4 className="font-medium">{watchlist.name}</h4>
                     <button
                       className="p-1 rounded-lg hover:bg-red-500/20 hover:text-red-400 transition"
-                      onClick={(e) => {
+                      onClick={e => {
                         e.stopPropagation();
                         handleDelete(watchlist.id);
                       }}
@@ -250,7 +250,7 @@ const WatchlistManager = ({ isOpen, onClose, onCreateAlert }: WatchlistManagerPr
                     <input
                       type="text"
                       value={editedName}
-                      onChange={(e) => setEditedName(e.target.value)}
+                      onChange={e => setEditedName(e.target.value)}
                       className="px-3 py-1.5 bg-slate-800/60 border border-purple-500/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                     />
                     <button
@@ -268,7 +268,9 @@ const WatchlistManager = ({ isOpen, onClose, onCreateAlert }: WatchlistManagerPr
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <h2 className="text-2xl font-bold">{selectedWatchlist?.name || 'Select a watchlist'}</h2>
+                    <h2 className="text-2xl font-bold">
+                      {selectedWatchlist?.name || 'Select a watchlist'}
+                    </h2>
                     {selectedWatchlist && (
                       <button
                         className="p-2 rounded-lg hover:bg-slate-800 transition"
@@ -283,7 +285,9 @@ const WatchlistManager = ({ isOpen, onClose, onCreateAlert }: WatchlistManagerPr
                   </div>
                 )}
                 {selectedWatchlist && (
-                  <p className="text-sm text-slate-400">{selectedWatchlist.items.length} tracked assets</p>
+                  <p className="text-sm text-slate-400">
+                    {selectedWatchlist.items.length} tracked assets
+                  </p>
                 )}
               </div>
               <div className="flex items-center gap-2">
@@ -323,14 +327,14 @@ const WatchlistManager = ({ isOpen, onClose, onCreateAlert }: WatchlistManagerPr
                       type="text"
                       placeholder="Symbol (e.g., SOL)"
                       value={newItemSymbol}
-                      onChange={(e) => setNewItemSymbol(e.target.value)}
+                      onChange={e => setNewItemSymbol(e.target.value)}
                       className="w-full px-3 py-2 bg-slate-900/60 border border-purple-500/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                     />
                     <input
                       type="text"
                       placeholder="Mint address"
                       value={newItemMint}
-                      onChange={(e) => setNewItemMint(e.target.value)}
+                      onChange={e => setNewItemMint(e.target.value)}
                       className="w-full px-3 py-2 bg-slate-900/60 border border-purple-500/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                     />
                     <div className="flex gap-2">
@@ -357,7 +361,7 @@ const WatchlistManager = ({ isOpen, onClose, onCreateAlert }: WatchlistManagerPr
 
               {selectedWatchlist ? (
                 <div className="space-y-3">
-                  {selectedWatchlist.items.map((item) => (
+                  {selectedWatchlist.items.map(item => (
                     <div
                       key={item.mint}
                       className="flex items-center justify-between bg-slate-800/60 border border-purple-500/10 rounded-2xl p-4 hover:border-purple-500/30 transition group"

@@ -10,20 +10,14 @@ interface LedgerConnectProps {
 }
 
 function LedgerConnect({ onClose, onConnected }: LedgerConnectProps) {
-  const {
-    device,
-    isConnecting,
-    isConnected,
-    error,
-    connect,
-    disconnect,
-    getAddress,
-    clearError,
-  } = useLedger();
+  const { device, isConnecting, isConnected, error, connect, disconnect, getAddress, clearError } =
+    useLedger();
 
   const { defaultDerivationPath, setActiveHardwareDevice, setSigningMethod } = useWalletStore();
 
-  const [step, setStep] = useState<'instructions' | 'connecting' | 'address' | 'complete'>('instructions');
+  const [step, setStep] = useState<'instructions' | 'connecting' | 'address' | 'complete'>(
+    'instructions'
+  );
   const [address, setAddress] = useState<string | null>(null);
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [showAddress, setShowAddress] = useState(false);
@@ -101,7 +95,9 @@ function LedgerConnect({ onClose, onConnected }: LedgerConnectProps) {
             <div className="text-center">
               <Usb className="w-16 h-16 mx-auto mb-4 text-purple-400" />
               <h3 className="text-2xl font-bold mb-2">Connect Ledger Device</h3>
-              <p className="text-white/60">Follow these steps to connect your Ledger hardware wallet</p>
+              <p className="text-white/60">
+                Follow these steps to connect your Ledger hardware wallet
+              </p>
             </div>
 
             <div className="space-y-3">
@@ -123,9 +119,7 @@ function LedgerConnect({ onClose, onConnected }: LedgerConnectProps) {
                 </div>
                 <div>
                   <h4 className="font-semibold mb-1">Unlock Your Device</h4>
-                  <p className="text-sm text-white/60">
-                    Enter your PIN code on the Ledger device
-                  </p>
+                  <p className="text-sm text-white/60">Enter your PIN code on the Ledger device</p>
                 </div>
               </div>
 
@@ -317,9 +311,7 @@ function LedgerConnect({ onClose, onConnected }: LedgerConnectProps) {
         className="w-full max-w-lg bg-slate-900 rounded-3xl border border-purple-500/20 shadow-2xl overflow-hidden"
       >
         <div className="p-6">
-          <AnimatePresence mode="wait">
-            {renderStepContent()}
-          </AnimatePresence>
+          <AnimatePresence mode="wait">{renderStepContent()}</AnimatePresence>
         </div>
       </motion.div>
     </div>

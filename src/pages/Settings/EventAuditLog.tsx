@@ -1,7 +1,17 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { invoke } from '@tauri-apps/api/tauri';
-import { Download, Filter, Search, ChevronLeft, ChevronRight, History, PlayCircle, RotateCcw, Database } from 'lucide-react';
+import {
+  Download,
+  Filter,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  History,
+  PlayCircle,
+  RotateCcw,
+  Database,
+} from 'lucide-react';
 
 interface EventRecord {
   id: string;
@@ -47,7 +57,7 @@ export function EventAuditLog() {
   const [stats, setStats] = useState<EventStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [aggregateIdFilter, setAggregateIdFilter] = useState('');
   const [eventTypeFilter, setEventTypeFilter] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -103,9 +113,9 @@ export function EventAuditLog() {
         toTime: filter.to_time || null,
         format,
       });
-      
-      const blob = new Blob([content], { 
-        type: format === 'json' ? 'application/json' : 'text/csv' 
+
+      const blob = new Blob([content], {
+        type: format === 'json' ? 'application/json' : 'text/csv',
       });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -136,10 +146,13 @@ export function EventAuditLog() {
 
   const handleCreateSnapshot = async (aggregateId: string) => {
     try {
-      const stateData = JSON.stringify({ note: 'Manual snapshot', timestamp: new Date().toISOString() });
-      const snapshotId = await invoke<string>('create_snapshot_command', { 
+      const stateData = JSON.stringify({
+        note: 'Manual snapshot',
+        timestamp: new Date().toISOString(),
+      });
+      const snapshotId = await invoke<string>('create_snapshot_command', {
         aggregateId,
-        stateData 
+        stateData,
       });
       alert(`Snapshot created successfully: ${snapshotId}`);
     } catch (err) {
@@ -235,7 +248,7 @@ export function EventAuditLog() {
           <Filter className="w-4 h-4 text-purple-400" />
           <span className="font-semibold">Filters</span>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium mb-2">Aggregate ID</label>
@@ -244,7 +257,7 @@ export function EventAuditLog() {
               <input
                 type="text"
                 value={aggregateIdFilter}
-                onChange={(e) => setAggregateIdFilter(e.target.value)}
+                onChange={e => setAggregateIdFilter(e.target.value)}
                 placeholder="e.g., order_123, wallet_abc"
                 className="w-full pl-10 pr-4 py-2 bg-slate-900/50 border border-purple-500/20 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:border-purple-500/50 transition-colors"
               />
@@ -255,12 +268,14 @@ export function EventAuditLog() {
             <label className="block text-sm font-medium mb-2">Event Type</label>
             <select
               value={eventTypeFilter}
-              onChange={(e) => setEventTypeFilter(e.target.value)}
+              onChange={e => setEventTypeFilter(e.target.value)}
               className="w-full px-4 py-2 bg-slate-900/50 border border-purple-500/20 rounded-xl text-white focus:outline-none focus:border-purple-500/50 transition-colors"
             >
               <option value="">All Event Types</option>
-              {EVENT_TYPES.map((type) => (
-                <option key={type} value={type}>{type}</option>
+              {EVENT_TYPES.map(type => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
               ))}
             </select>
           </div>
@@ -270,7 +285,7 @@ export function EventAuditLog() {
             <input
               type="datetime-local"
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              onChange={e => setStartDate(e.target.value)}
               className="w-full px-4 py-2 bg-slate-900/50 border border-purple-500/20 rounded-xl text-white focus:outline-none focus:border-purple-500/50 transition-colors"
             />
           </div>
@@ -280,7 +295,7 @@ export function EventAuditLog() {
             <input
               type="datetime-local"
               value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
+              onChange={e => setEndDate(e.target.value)}
               className="w-full px-4 py-2 bg-slate-900/50 border border-purple-500/20 rounded-xl text-white focus:outline-none focus:border-purple-500/50 transition-colors"
             />
           </div>
@@ -311,25 +326,35 @@ export function EventAuditLog() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-purple-500/20">
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-white/80">Sequence</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-white/80">Timestamp</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-white/80">Event Type</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-white/80">Aggregate ID</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-white/80">Description</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-white/80">Actions</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white/80">
+                    Sequence
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white/80">
+                    Timestamp
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white/80">
+                    Event Type
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white/80">
+                    Aggregate ID
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white/80">
+                    Description
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white/80">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {events.map((event) => (
+                {events.map(event => (
                   <>
-                    <tr 
-                      key={event.id} 
+                    <tr
+                      key={event.id}
                       className="border-b border-purple-500/10 hover:bg-purple-500/5 transition-colors cursor-pointer"
                       onClick={() => setExpandedRow(expandedRow === event.id ? null : event.id)}
                     >
-                      <td className="px-4 py-3 text-sm font-mono">
-                        #{event.sequence}
-                      </td>
+                      <td className="px-4 py-3 text-sm font-mono">#{event.sequence}</td>
                       <td className="px-4 py-3 text-sm">
                         {new Date(event.timestamp).toLocaleString()}
                       </td>
@@ -347,7 +372,7 @@ export function EventAuditLog() {
                       <td className="px-4 py-3">
                         <div className="flex gap-2">
                           <button
-                            onClick={(e) => {
+                            onClick={e => {
                               e.stopPropagation();
                               handleReplay(event.aggregate_id);
                             }}
@@ -357,7 +382,7 @@ export function EventAuditLog() {
                             <PlayCircle className="w-4 h-4 text-blue-400" />
                           </button>
                           <button
-                            onClick={(e) => {
+                            onClick={e => {
                               e.stopPropagation();
                               handleCreateSnapshot(event.aggregate_id);
                             }}
@@ -373,12 +398,16 @@ export function EventAuditLog() {
                       <tr className="border-b border-purple-500/10 bg-slate-900/50">
                         <td colSpan={6} className="px-4 py-3">
                           <div className="p-4 bg-slate-800/50 rounded-xl">
-                            <p className="text-xs font-semibold text-white/60 mb-2">Event Data (JSON):</p>
+                            <p className="text-xs font-semibold text-white/60 mb-2">
+                              Event Data (JSON):
+                            </p>
                             <pre className="text-xs text-white/80 overflow-x-auto">
                               {JSON.stringify(JSON.parse(event.event_data), null, 2)}
                             </pre>
                             <div className="mt-3 pt-3 border-t border-purple-500/10 text-xs text-white/60">
-                              <p><span className="font-semibold">Event ID:</span> {event.id}</p>
+                              <p>
+                                <span className="font-semibold">Event ID:</span> {event.id}
+                              </p>
                             </div>
                           </div>
                         </td>
@@ -393,7 +422,8 @@ export function EventAuditLog() {
           <div className="flex items-center justify-between">
             <p className="text-sm text-white/60">
               Showing {Math.min((currentPage - 1) * PAGE_SIZE + 1, stats?.total_events || 0)} to{' '}
-              {Math.min(currentPage * PAGE_SIZE, stats?.total_events || 0)} of {stats?.total_events || 0} events
+              {Math.min(currentPage * PAGE_SIZE, stats?.total_events || 0)} of{' '}
+              {stats?.total_events || 0} events
             </p>
             <div className="flex items-center gap-2">
               <button

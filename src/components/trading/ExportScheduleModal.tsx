@@ -1,6 +1,16 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Calendar, Clock, Mail, Webhook, Plus, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
+import {
+  X,
+  Calendar,
+  Clock,
+  Mail,
+  Webhook,
+  Plus,
+  Trash2,
+  ToggleLeft,
+  ToggleRight,
+} from 'lucide-react';
 import { useTradeReportingStore } from '../../store/tradeReportingStore';
 import {
   ExportSchedule,
@@ -87,7 +97,7 @@ export function ExportScheduleModal({ isOpen, onClose }: ExportScheduleModalProp
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             className="bg-slate-800/95 backdrop-blur-xl rounded-3xl border border-purple-500/20 max-w-3xl w-full max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           >
             <div className="sticky top-0 bg-slate-800/95 backdrop-blur-xl border-b border-purple-500/20 p-6 flex items-center justify-between z-10">
               <div>
@@ -95,9 +105,7 @@ export function ExportScheduleModal({ isOpen, onClose }: ExportScheduleModalProp
                   <Calendar className="w-6 h-6" />
                   Export Schedules
                 </h2>
-                <p className="text-white/60 text-sm mt-1">
-                  Automate your trade exports
-                </p>
+                <p className="text-white/60 text-sm mt-1">Automate your trade exports</p>
               </div>
               <button
                 onClick={onClose}
@@ -122,7 +130,7 @@ export function ExportScheduleModal({ isOpen, onClose }: ExportScheduleModalProp
                 </div>
               ) : (
                 <>
-                  {schedules.map((schedule) => (
+                  {schedules.map(schedule => (
                     <motion.div
                       key={schedule.id}
                       initial={{ opacity: 0, y: 10 }}
@@ -231,7 +239,7 @@ export function ExportScheduleModal({ isOpen, onClose }: ExportScheduleModalProp
                       <input
                         type="text"
                         value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        onChange={e => setFormData({ ...formData, name: e.target.value })}
                         className="w-full px-3 py-2 bg-slate-800/50 border border-purple-500/20 rounded-lg focus:border-purple-500/50 focus:outline-none"
                         placeholder="e.g., Daily Tax Report"
                         required
@@ -243,7 +251,7 @@ export function ExportScheduleModal({ isOpen, onClose }: ExportScheduleModalProp
                         <label className="text-sm text-white/60 mb-2 block">Frequency</label>
                         <select
                           value={formData.cadence}
-                          onChange={(e) =>
+                          onChange={e =>
                             setFormData({ ...formData, cadence: e.target.value as ScheduleCadence })
                           }
                           className="w-full px-3 py-2 bg-slate-800/50 border border-purple-500/20 rounded-lg focus:border-purple-500/50 focus:outline-none"
@@ -257,12 +265,14 @@ export function ExportScheduleModal({ isOpen, onClose }: ExportScheduleModalProp
 
                       {formData.cadence === 'custom' && (
                         <div>
-                          <label className="text-sm text-white/60 mb-2 block">Interval (minutes)</label>
+                          <label className="text-sm text-white/60 mb-2 block">
+                            Interval (minutes)
+                          </label>
                           <input
                             type="number"
                             min="1"
                             value={formData.customIntervalMinutes}
-                            onChange={(e) =>
+                            onChange={e =>
                               setFormData({
                                 ...formData,
                                 customIntervalMinutes: parseInt(e.target.value),
@@ -277,7 +287,7 @@ export function ExportScheduleModal({ isOpen, onClose }: ExportScheduleModalProp
                         <label className="text-sm text-white/60 mb-2 block">Export Preset</label>
                         <select
                           value={formData.preset}
-                          onChange={(e) =>
+                          onChange={e =>
                             setFormData({ ...formData, preset: e.target.value as ExportPreset })
                           }
                           className="w-full px-3 py-2 bg-slate-800/50 border border-purple-500/20 rounded-lg focus:border-purple-500/50 focus:outline-none"
@@ -293,7 +303,7 @@ export function ExportScheduleModal({ isOpen, onClose }: ExportScheduleModalProp
                         <label className="text-sm text-white/60 mb-2 block">Format</label>
                         <select
                           value={formData.format}
-                          onChange={(e) =>
+                          onChange={e =>
                             setFormData({ ...formData, format: e.target.value as ExportFormat })
                           }
                           className="w-full px-3 py-2 bg-slate-800/50 border border-purple-500/20 rounded-lg focus:border-purple-500/50 focus:outline-none"
@@ -308,7 +318,7 @@ export function ExportScheduleModal({ isOpen, onClose }: ExportScheduleModalProp
                       <label className="text-sm text-white/60 mb-2 block">Delivery Method</label>
                       <select
                         value={formData.deliveryMethod}
-                        onChange={(e) =>
+                        onChange={e =>
                           setFormData({
                             ...formData,
                             deliveryMethod: e.target.value as DeliveryMethod,
@@ -327,7 +337,7 @@ export function ExportScheduleModal({ isOpen, onClose }: ExportScheduleModalProp
                         <input
                           type="email"
                           value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          onChange={e => setFormData({ ...formData, email: e.target.value })}
                           className="w-full px-3 py-2 bg-slate-800/50 border border-purple-500/20 rounded-lg focus:border-purple-500/50 focus:outline-none"
                           placeholder="your@email.com"
                           required
@@ -341,7 +351,7 @@ export function ExportScheduleModal({ isOpen, onClose }: ExportScheduleModalProp
                         <input
                           type="url"
                           value={formData.webhookUrl}
-                          onChange={(e) => setFormData({ ...formData, webhookUrl: e.target.value })}
+                          onChange={e => setFormData({ ...formData, webhookUrl: e.target.value })}
                           className="w-full px-3 py-2 bg-slate-800/50 border border-purple-500/20 rounded-lg focus:border-purple-500/50 focus:outline-none"
                           placeholder="https://your-webhook-url.com"
                           required

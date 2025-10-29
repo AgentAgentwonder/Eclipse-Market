@@ -18,7 +18,12 @@ import {
 } from 'lucide-react';
 import { useTradingSettingsStore } from '../../store/tradingSettingsStore';
 import { EnhancedTradeMetrics } from '../../types/tradeReporting';
-import { filterTrades, sortTrades, paginateTrades, calculateExecutionQuality } from '../../utils/tradeFilters';
+import {
+  filterTrades,
+  sortTrades,
+  paginateTrades,
+  calculateExecutionQuality,
+} from '../../utils/tradeFilters';
 import { TradeDetailModal } from './TradeDetailModal';
 import { ExportConfigModal } from './ExportConfigModal';
 import { ExportScheduleModal } from './ExportScheduleModal';
@@ -43,7 +48,7 @@ export function EnhancedTradeHistory() {
 
   const tokenOptions = useMemo(() => {
     const tokens = new Set<string>();
-    tradeHistory.forEach((trade) => {
+    tradeHistory.forEach(trade => {
       if (trade.fromToken) tokens.add(trade.fromToken);
       if (trade.toToken) tokens.add(trade.toToken);
     });
@@ -55,7 +60,11 @@ export function EnhancedTradeHistory() {
     return sortTrades(filtered, tradePagination.sortBy, tradePagination.sortOrder);
   }, [tradeHistory, tradeFilters, tradePagination.sortBy, tradePagination.sortOrder]);
 
-  const { trades: paginatedTrades, totalPages, totalCount } = useMemo(() => {
+  const {
+    trades: paginatedTrades,
+    totalPages,
+    totalCount,
+  } = useMemo(() => {
     return paginateTrades(filteredAndSortedTrades, tradePagination.page, tradePagination.pageSize);
   }, [filteredAndSortedTrades, tradePagination.page, tradePagination.pageSize]);
 
@@ -87,7 +96,7 @@ export function EnhancedTradeHistory() {
   const toggleTokenFilter = (token: string) => {
     const current = tradeFilters.tokens || [];
     const exists = current.includes(token);
-    const updated = exists ? current.filter((t) => t !== token) : [...current, token];
+    const updated = exists ? current.filter(t => t !== token) : [...current, token];
     setTradeFilters({ tokens: updated });
   };
 
@@ -125,7 +134,9 @@ export function EnhancedTradeHistory() {
                 <Shield className="w-4 h-4 text-green-400" />
                 <span className="text-green-400 font-semibold text-sm">MEV Protected</span>
               </div>
-              <div className="text-xl font-bold text-green-400">{mevProtection.protectedTrades}</div>
+              <div className="text-xl font-bold text-green-400">
+                {mevProtection.protectedTrades}
+              </div>
             </div>
           )}
 
@@ -157,7 +168,9 @@ export function EnhancedTradeHistory() {
             <Filter className="w-4 h-4" />
             <span className="font-semibold">Filters</span>
             {activeFiltersCount > 0 && (
-              <span className="px-2 py-0.5 bg-purple-500 rounded-full text-xs">{activeFiltersCount}</span>
+              <span className="px-2 py-0.5 bg-purple-500 rounded-full text-xs">
+                {activeFiltersCount}
+              </span>
             )}
           </button>
         </div>
@@ -180,7 +193,7 @@ export function EnhancedTradeHistory() {
                 type="text"
                 placeholder="Signature or token..."
                 value={tradeFilters.searchQuery || ''}
-                onChange={(e) => setTradeFilters({ searchQuery: e.target.value })}
+                onChange={e => setTradeFilters({ searchQuery: e.target.value })}
                 className="w-full px-3 py-2 bg-slate-800/50 border border-purple-500/20 rounded-lg focus:border-purple-500/50 focus:outline-none text-sm"
               />
             </div>
@@ -189,7 +202,7 @@ export function EnhancedTradeHistory() {
               <label className="text-xs text-white/60 mb-2 block">Side</label>
               <select
                 value={tradeFilters.side || 'all'}
-                onChange={(e) => setTradeFilters({ side: e.target.value as any })}
+                onChange={e => setTradeFilters({ side: e.target.value as any })}
                 className="w-full px-3 py-2 bg-slate-800/50 border border-purple-500/20 rounded-lg focus:border-purple-500/50 focus:outline-none text-sm"
               >
                 <option value="all">All</option>
@@ -202,7 +215,7 @@ export function EnhancedTradeHistory() {
               <label className="text-xs text-white/60 mb-2 block">Status</label>
               <select
                 value={tradeFilters.status || 'all'}
-                onChange={(e) => setTradeFilters({ status: e.target.value as any })}
+                onChange={e => setTradeFilters({ status: e.target.value as any })}
                 className="w-full px-3 py-2 bg-slate-800/50 border border-purple-500/20 rounded-lg focus:border-purple-500/50 focus:outline-none text-sm"
               >
                 <option value="all">All</option>
@@ -225,7 +238,7 @@ export function EnhancedTradeHistory() {
                     ? format(tradeFilters.dateRange.start, 'yyyy-MM-dd')
                     : ''
                 }
-                onChange={(e) =>
+                onChange={e =>
                   setTradeFilters({
                     dateRange: {
                       ...tradeFilters.dateRange,
@@ -250,7 +263,7 @@ export function EnhancedTradeHistory() {
                     ? format(tradeFilters.dateRange.end, 'yyyy-MM-dd')
                     : ''
                 }
-                onChange={(e) =>
+                onChange={e =>
                   setTradeFilters({
                     dateRange: {
                       ...tradeFilters.dateRange,
@@ -267,7 +280,7 @@ export function EnhancedTradeHistory() {
               <label className="text-xs text-white/60 mb-2 block">Trade Type</label>
               <select
                 value={tradeFilters.isPaperTrade?.toString() || 'all'}
-                onChange={(e) =>
+                onChange={e =>
                   setTradeFilters({
                     isPaperTrade: e.target.value === 'all' ? 'all' : e.target.value === 'true',
                   })
@@ -284,7 +297,7 @@ export function EnhancedTradeHistory() {
               <div className="md:col-span-2 lg:col-span-3">
                 <label className="text-xs text-white/60 mb-2 block">Tokens</label>
                 <div className="flex flex-wrap gap-2">
-                  {tokenOptions.map((token) => {
+                  {tokenOptions.map(token => {
                     const selected = (tradeFilters.tokens || []).includes(token);
                     return (
                       <button
@@ -376,15 +389,11 @@ export function EnhancedTradeHistory() {
                     {trade.status === 'filled' && (
                       <CheckCircle2 className="w-4 h-4 text-green-400" />
                     )}
-                    {trade.status === 'pending' && (
-                      <Clock className="w-4 h-4 text-yellow-400" />
-                    )}
+                    {trade.status === 'pending' && <Clock className="w-4 h-4 text-yellow-400" />}
                     {trade.status === 'failed' && (
                       <AlertTriangle className="w-4 h-4 text-red-400" />
                     )}
-                    {trade.status === 'cancelled' && (
-                      <X className="w-4 h-4 text-gray-400" />
-                    )}
+                    {trade.status === 'cancelled' && <X className="w-4 h-4 text-gray-400" />}
 
                     {trade.mevProtected && (
                       <div className="px-2 py-1 bg-green-500/20 border border-green-500/30 rounded-lg flex items-center gap-1">
@@ -406,7 +415,7 @@ export function EnhancedTradeHistory() {
                         rel="noopener noreferrer"
                         className="p-2 hover:bg-white/5 rounded-lg transition-colors"
                         title="View on Solscan"
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={e => e.stopPropagation()}
                       >
                         <ExternalLink className="w-4 h-4 text-purple-400" />
                       </a>
@@ -429,7 +438,9 @@ export function EnhancedTradeHistory() {
 
                   <div className="p-3 bg-slate-800/50 rounded-lg">
                     <div className="text-xs text-white/60 mb-1">Price Impact</div>
-                    <div className={`font-semibold text-sm ${getPriceImpactColor(trade.priceImpact)}`}>
+                    <div
+                      className={`font-semibold text-sm ${getPriceImpactColor(trade.priceImpact)}`}
+                    >
                       {trade.priceImpact.toFixed(2)}%
                     </div>
                   </div>
@@ -450,12 +461,18 @@ export function EnhancedTradeHistory() {
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-white/60">P&L</span>
                       <div className="text-right">
-                        <div className={`font-bold ${trade.pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                          {trade.pnl >= 0 ? '+' : ''}{trade.pnl.toFixed(6)} SOL
+                        <div
+                          className={`font-bold ${trade.pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}
+                        >
+                          {trade.pnl >= 0 ? '+' : ''}
+                          {trade.pnl.toFixed(6)} SOL
                         </div>
                         {trade.pnlPercent !== undefined && (
-                          <div className={`text-xs ${trade.pnlPercent >= 0 ? 'text-green-400/80' : 'text-red-400/80'}`}>
-                            {trade.pnlPercent >= 0 ? '+' : ''}{trade.pnlPercent.toFixed(2)}%
+                          <div
+                            className={`text-xs ${trade.pnlPercent >= 0 ? 'text-green-400/80' : 'text-red-400/80'}`}
+                          >
+                            {trade.pnlPercent >= 0 ? '+' : ''}
+                            {trade.pnlPercent.toFixed(2)}%
                           </div>
                         )}
                       </div>
@@ -522,7 +539,7 @@ export function EnhancedTradeHistory() {
               <div>
                 <select
                   value={tradePagination.pageSize}
-                  onChange={(e) =>
+                  onChange={e =>
                     setTradePagination({ pageSize: parseInt(e.target.value), page: 1 })
                   }
                   className="px-3 py-1.5 bg-slate-700/50 border border-purple-500/20 rounded-lg text-sm focus:border-purple-500/50 focus:outline-none"
@@ -550,10 +567,7 @@ export function EnhancedTradeHistory() {
         trades={filteredAndSortedTrades}
       />
 
-      <ExportScheduleModal
-        isOpen={showScheduleModal}
-        onClose={() => setShowScheduleModal(false)}
-      />
+      <ExportScheduleModal isOpen={showScheduleModal} onClose={() => setShowScheduleModal(false)} />
     </div>
   );
 }

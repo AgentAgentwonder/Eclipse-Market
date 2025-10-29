@@ -1,19 +1,19 @@
-import React, { useEffect } from 'react'
-import { Bell, FileText } from 'lucide-react'
-import { useTransition, animated } from '@react-spring/web'
+import React, { useEffect } from 'react';
+import { Bell, FileText } from 'lucide-react';
+import { useTransition, animated } from '@react-spring/web';
 
 export interface ProposalNotificationItem {
-  id: string
-  walletName: string
-  proposalDescription?: string
-  createdAt: string
-  status: 'pending' | 'approved' | 'executed' | 'rejected' | 'cancelled'
+  id: string;
+  walletName: string;
+  proposalDescription?: string;
+  createdAt: string;
+  status: 'pending' | 'approved' | 'executed' | 'rejected' | 'cancelled';
 }
 
 interface ProposalNotificationProps {
-  notifications: ProposalNotificationItem[]
-  onDismiss: (id: string) => void
-  onOpenProposal?: (id: string) => void
+  notifications: ProposalNotificationItem[];
+  onDismiss: (id: string) => void;
+  onOpenProposal?: (id: string) => void;
 }
 
 const ProposalNotification: React.FC<ProposalNotificationProps> = ({
@@ -22,21 +22,21 @@ const ProposalNotification: React.FC<ProposalNotificationProps> = ({
   onOpenProposal,
 }) => {
   const transitions = useTransition(notifications, {
-    keys: (item) => item.id,
+    keys: item => item.id,
     from: { opacity: 0, transform: 'translateY(20px)' },
     enter: { opacity: 1, transform: 'translateY(0)' },
     leave: { opacity: 0, transform: 'translateY(20px)' },
     config: { tension: 210, friction: 20 },
-  })
+  });
 
   useEffect(() => {
-    const timers = notifications.map((notification) =>
-      setTimeout(() => onDismiss(notification.id), 8000),
-    )
+    const timers = notifications.map(notification =>
+      setTimeout(() => onDismiss(notification.id), 8000)
+    );
     return () => {
-      timers.forEach(clearTimeout)
-    }
-  }, [notifications, onDismiss])
+      timers.forEach(clearTimeout);
+    };
+  }, [notifications, onDismiss]);
 
   return (
     <div className="fixed bottom-4 right-4 w-full max-w-sm space-y-3 z-50">
@@ -78,7 +78,7 @@ const ProposalNotification: React.FC<ProposalNotificationProps> = ({
         </animated.div>
       ))}
     </div>
-  )
-}
+  );
+};
 
-export default ProposalNotification
+export default ProposalNotification;

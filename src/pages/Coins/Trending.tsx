@@ -26,13 +26,13 @@ export function Trending() {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Fetch trending coins (limit to 20 as per ticket)
       const result = await invoke<TrendingCoin[]>('get_trending_coins', {
         limit: 20,
         apiKey: null, // Will use API key from config or fallback to mock data
       });
-      
+
       setCoins(result);
     } catch (err) {
       console.error('Failed to fetch trending coins:', err);
@@ -86,9 +86,7 @@ export function Trending() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold mb-2">Trending Coins</h1>
-          <p className="text-gray-400">
-            Top 20 trending tokens on Solana
-          </p>
+          <p className="text-gray-400">Top 20 trending tokens on Solana</p>
         </div>
         <button
           onClick={fetchTrendingCoins}
@@ -109,16 +107,15 @@ export function Trending() {
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400">#</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400">Name</th>
                 <th className="px-6 py-4 text-right text-sm font-semibold text-gray-400">Price</th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-400">24h Change</th>
+                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-400">
+                  24h Change
+                </th>
                 <th className="px-6 py-4 text-right text-sm font-semibold text-gray-400">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-purple-500/10">
               {coins.map((coin, index) => (
-                <tr
-                  key={coin.address}
-                  className="hover:bg-purple-500/5 transition-colors"
-                >
+                <tr key={coin.address} className="hover:bg-purple-500/5 transition-colors">
                   <td className="px-6 py-4 text-sm text-gray-400">{index + 1}</td>
                   <td className="px-6 py-4">
                     <div>
@@ -132,9 +129,7 @@ export function Trending() {
                   <td className="px-6 py-4 text-right">
                     <span
                       className={`inline-flex items-center gap-1 font-semibold ${
-                        coin.price_change_24h >= 0
-                          ? 'text-green-400'
-                          : 'text-red-400'
+                        coin.price_change_24h >= 0 ? 'text-green-400' : 'text-red-400'
                       }`}
                     >
                       {coin.price_change_24h >= 0 ? (

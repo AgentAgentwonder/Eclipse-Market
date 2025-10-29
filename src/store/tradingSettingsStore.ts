@@ -71,21 +71,25 @@ interface TradingSettingsState {
   tradeFilters: TradeFilters;
   tradePagination: TradePagination;
   timezone: string;
-  
+
   // Actions
   setSlippageTolerance: (tolerance: number) => void;
   setSlippageAutoAdjust: (enabled: boolean) => void;
   setSlippageMaxTolerance: (maxTolerance: number) => void;
   setSlippageRejectAbove: (enabled: boolean) => void;
-  
+
   toggleMEVProtection: (enabled: boolean) => void;
   setJitoEnabled: (enabled: boolean) => void;
   setPrivateRPCEnabled: (enabled: boolean) => void;
-  
+
   setPriorityFeePreset: (preset: PriorityFeePreset) => void;
   setCustomPriorityFee: (fee: number) => void;
-  updateCongestionData: (level: 'low' | 'medium' | 'high', avgFee: number, medianFee: number) => void;
-  
+  updateCongestionData: (
+    level: 'low' | 'medium' | 'high',
+    avgFee: number,
+    medianFee: number
+  ) => void;
+
   addTradeToHistory: (trade: TradeMetrics) => void;
   updateTradeInHistory: (tradeId: string, updates: Partial<TradeMetrics>) => void;
   removeTradeFromHistory: (tradeId: string) => void;
@@ -94,16 +98,28 @@ interface TradingSettingsState {
   resetTradeFilters: () => void;
   setTradePagination: (pagination: Partial<TradePagination>) => void;
   setTimezone: (timezone: string) => void;
-  
+
   getRecommendedSlippage: (volatility: number) => number;
   getPriorityFeeForPreset: (preset: PriorityFeePreset) => PriorityFeeOption;
   shouldBlockTrade: (priceImpact: number, slippage: number) => boolean;
 }
 
 const DEFAULT_PRIORITY_FEES = {
-  slow: { preset: 'slow' as PriorityFeePreset, microLamports: 1000, estimatedConfirmationTime: '30-60s' },
-  normal: { preset: 'normal' as PriorityFeePreset, microLamports: 5000, estimatedConfirmationTime: '10-20s' },
-  fast: { preset: 'fast' as PriorityFeePreset, microLamports: 10000, estimatedConfirmationTime: '5-10s' },
+  slow: {
+    preset: 'slow' as PriorityFeePreset,
+    microLamports: 1000,
+    estimatedConfirmationTime: '30-60s',
+  },
+  normal: {
+    preset: 'normal' as PriorityFeePreset,
+    microLamports: 5000,
+    estimatedConfirmationTime: '10-20s',
+  },
+  fast: {
+    preset: 'fast' as PriorityFeePreset,
+    microLamports: 10000,
+    estimatedConfirmationTime: '5-10s',
+  },
 };
 
 export const useTradingSettingsStore = create<TradingSettingsState>()(
@@ -137,47 +153,47 @@ export const useTradingSettingsStore = create<TradingSettingsState>()(
       timezone: DEFAULT_TIMEZONE,
 
       setSlippageTolerance: (tolerance: number) =>
-        set((state) => ({
+        set(state => ({
           slippage: { ...state.slippage, tolerance },
         })),
 
       setSlippageAutoAdjust: (enabled: boolean) =>
-        set((state) => ({
+        set(state => ({
           slippage: { ...state.slippage, autoAdjust: enabled },
         })),
 
       setSlippageMaxTolerance: (maxTolerance: number) =>
-        set((state) => ({
+        set(state => ({
           slippage: { ...state.slippage, maxTolerance },
         })),
 
       setSlippageRejectAbove: (enabled: boolean) =>
-        set((state) => ({
+        set(state => ({
           slippage: { ...state.slippage, rejectAboveThreshold: enabled },
         })),
 
       toggleMEVProtection: (enabled: boolean) =>
-        set((state) => ({
+        set(state => ({
           mevProtection: { ...state.mevProtection, enabled },
         })),
 
       setJitoEnabled: (enabled: boolean) =>
-        set((state) => ({
+        set(state => ({
           mevProtection: { ...state.mevProtection, useJito: enabled },
         })),
 
       setPrivateRPCEnabled: (enabled: boolean) =>
-        set((state) => ({
+        set(state => ({
           mevProtection: { ...state.mevProtection, usePrivateRPC: enabled },
         })),
 
       setPriorityFeePreset: (preset: PriorityFeePreset) =>
-        set((state) => ({
+        set(state => ({
           gasOptimization: { ...state.gasOptimization, priorityFeePreset: preset },
         })),
 
       setCustomPriorityFee: (fee: number) =>
-        set((state) => ({
+        set(state => ({
           gasOptimization: {
             ...state.gasOptimization,
             customPriorityFee: fee,
@@ -186,7 +202,7 @@ export const useTradingSettingsStore = create<TradingSettingsState>()(
         })),
 
       updateCongestionData: (level, avgFee, medianFee) =>
-        set((state) => ({
+        set(state => ({
           gasOptimization: {
             ...state.gasOptimization,
             historicalData: {
@@ -198,7 +214,7 @@ export const useTradingSettingsStore = create<TradingSettingsState>()(
         })),
 
       addTradeToHistory: (trade: TradeMetrics) =>
-        set((state) => {
+        set(state => {
           const generateId = () =>
             `${Math.random().toString(36).slice(2, 10)}-${Date.now().toString(36)}`;
 
@@ -209,7 +225,7 @@ export const useTradingSettingsStore = create<TradingSettingsState>()(
           };
 
           const updatedHistory = [tradeWithId, ...state.tradeHistory].slice(0, 100); // Keep last 100 trades
-          
+
           // Update MEV metrics if trade was protected
           let updatedMevProtection = state.mevProtection;
           if (trade.mevProtected) {
@@ -227,21 +243,21 @@ export const useTradingSettingsStore = create<TradingSettingsState>()(
         }),
 
       updateTradeInHistory: (tradeId, updates) =>
-        set((state) => ({
-          tradeHistory: state.tradeHistory.map((trade) =>
+        set(state => ({
+          tradeHistory: state.tradeHistory.map(trade =>
             trade.id === tradeId ? { ...trade, ...updates } : trade
           ),
         })),
 
-      removeTradeFromHistory: (tradeId) =>
-        set((state) => ({
-          tradeHistory: state.tradeHistory.filter((trade) => trade.id !== tradeId),
+      removeTradeFromHistory: tradeId =>
+        set(state => ({
+          tradeHistory: state.tradeHistory.filter(trade => trade.id !== tradeId),
         })),
 
       clearTradeHistory: () => set({ tradeHistory: [] }),
 
-      setTradeFilters: (filters) =>
-        set((state) => ({
+      setTradeFilters: filters =>
+        set(state => ({
           tradeFilters: { ...state.tradeFilters, ...filters },
         })),
 
@@ -250,13 +266,12 @@ export const useTradingSettingsStore = create<TradingSettingsState>()(
           tradeFilters: { ...DEFAULT_TRADE_FILTERS },
         }),
 
-      setTradePagination: (pagination) =>
-        set((state) => ({
+      setTradePagination: pagination =>
+        set(state => ({
           tradePagination: { ...state.tradePagination, ...pagination },
         })),
 
-      setTimezone: (timezone) =>
-        set({ timezone }),
+      setTimezone: timezone => set({ timezone }),
 
       getRecommendedSlippage: (volatility: number) => {
         const state = get();
@@ -267,7 +282,7 @@ export const useTradingSettingsStore = create<TradingSettingsState>()(
         // Adjust slippage based on volatility
         // Higher volatility = higher slippage tolerance
         let adjustedSlippage = state.slippage.tolerance;
-        
+
         if (volatility > 5) {
           adjustedSlippage = state.slippage.tolerance * 2;
         } else if (volatility > 3) {
@@ -282,7 +297,7 @@ export const useTradingSettingsStore = create<TradingSettingsState>()(
 
       getPriorityFeeForPreset: (preset: PriorityFeePreset) => {
         const state = get();
-        
+
         if (preset === 'custom' && state.gasOptimization.customPriorityFee) {
           return {
             preset: 'custom',
@@ -292,9 +307,11 @@ export const useTradingSettingsStore = create<TradingSettingsState>()(
         }
 
         // Adjust fees based on congestion
-        const baseFees = DEFAULT_PRIORITY_FEES[preset as keyof typeof DEFAULT_PRIORITY_FEES] || DEFAULT_PRIORITY_FEES.normal;
+        const baseFees =
+          DEFAULT_PRIORITY_FEES[preset as keyof typeof DEFAULT_PRIORITY_FEES] ||
+          DEFAULT_PRIORITY_FEES.normal;
         const congestion = state.gasOptimization.historicalData.congestionLevel;
-        
+
         let multiplier = 1;
         if (congestion === 'high') {
           multiplier = 2;
@@ -310,7 +327,7 @@ export const useTradingSettingsStore = create<TradingSettingsState>()(
 
       shouldBlockTrade: (priceImpact: number, slippage: number) => {
         const state = get();
-        
+
         if (!state.slippage.rejectAboveThreshold) {
           return false;
         }

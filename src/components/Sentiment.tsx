@@ -28,10 +28,9 @@ export function Sentiment() {
       <div className="space-y-2">
         <div className="flex justify-between">
           <span>Score:</span>
-          <span className={`${
-            sentiment.score > 0 ? 'text-green-400' : 'text-red-400'
-          }`}>
-            {sentiment.score > 0 ? '+' : ''}{sentiment.score.toFixed(2)}
+          <span className={`${sentiment.score > 0 ? 'text-green-400' : 'text-red-400'}`}>
+            {sentiment.score > 0 ? '+' : ''}
+            {sentiment.score.toFixed(2)}
           </span>
         </div>
         <div className="flex justify-between">

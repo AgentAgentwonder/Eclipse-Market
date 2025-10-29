@@ -10,7 +10,11 @@ interface WatchlistWidgetProps {
   onOpenAlerts: () => void;
 }
 
-const WatchlistWidget = ({ onOpenManager, onCreateWatchlist, onOpenAlerts }: WatchlistWidgetProps) => {
+const WatchlistWidget = ({
+  onOpenManager,
+  onCreateWatchlist,
+  onOpenAlerts,
+}: WatchlistWidgetProps) => {
   const { watchlists, fetchWatchlists } = useWatchlistStore();
   const { alerts } = useAlertStore();
 
@@ -88,7 +92,7 @@ const WatchlistWidget = ({ onOpenManager, onCreateWatchlist, onOpenAlerts }: Wat
           </div>
 
           <div className="space-y-2">
-            {topWatchlist.items.slice(0, 5).map((item) => (
+            {topWatchlist.items.slice(0, 5).map(item => (
               <div
                 key={item.mint}
                 className="flex items-center justify-between bg-slate-800/60 border border-purple-500/10 rounded-2xl px-4 py-2.5"

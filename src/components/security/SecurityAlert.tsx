@@ -28,7 +28,7 @@ export function SecurityAlert({ alerts, onDismiss, onInvestigate, onViewLog }: S
   return (
     <div className="space-y-3">
       <AnimatePresence>
-        {alerts.map((alert) => {
+        {alerts.map(alert => {
           const key = `${alert.walletAddress}-${alert.timestamp}-${alert.activityType}`;
           return (
             <motion.div
@@ -48,7 +48,9 @@ export function SecurityAlert({ alerts, onDismiss, onInvestigate, onViewLog }: S
                       <p className="font-semibold text-sm uppercase tracking-wide text-white/80">
                         Suspicious activity detected
                       </p>
-                      <p className="text-xs text-white/60">{new Date(alert.timestamp).toLocaleString()}</p>
+                      <p className="text-xs text-white/60">
+                        {new Date(alert.timestamp).toLocaleString()}
+                      </p>
                     </div>
                     <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-white/10 text-white/80 capitalize">
                       {alert.activityType.replace(/_/g, ' ')}
@@ -57,9 +59,7 @@ export function SecurityAlert({ alerts, onDismiss, onInvestigate, onViewLog }: S
 
                   <div className="bg-black/20 rounded-lg p-3 border border-white/5">
                     <p className="text-xs text-white/60 uppercase tracking-wide">Wallet</p>
-                    <p className="font-mono text-sm text-white truncate">
-                      {alert.walletAddress}
-                    </p>
+                    <p className="font-mono text-sm text-white truncate">{alert.walletAddress}</p>
                   </div>
 
                   <p className="text-sm text-white/80 leading-relaxed">{alert.description}</p>

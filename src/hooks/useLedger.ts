@@ -16,8 +16,14 @@ interface UseLedgerReturn {
   error: string | null;
   connect: () => Promise<LedgerDevice | null>;
   disconnect: () => Promise<void>;
-  getAddress: (derivationPath?: string, display?: boolean) => Promise<{ address: string; publicKey: string } | null>;
-  signTransaction: (transaction: Transaction | VersionedTransaction, derivationPath?: string) => Promise<Buffer | null>;
+  getAddress: (
+    derivationPath?: string,
+    display?: boolean
+  ) => Promise<{ address: string; publicKey: string } | null>;
+  signTransaction: (
+    transaction: Transaction | VersionedTransaction,
+    derivationPath?: string
+  ) => Promise<Buffer | null>;
   signMessage: (message: Uint8Array, derivationPath?: string) => Promise<Buffer | null>;
   refreshDevices: () => Promise<void>;
   clearError: () => void;
@@ -38,7 +44,7 @@ export function useLedger(): UseLedgerReturn {
     try {
       const devicesList = await listLedgerDevices();
       setDevices(devicesList);
-      
+
       const activeDevice = await getActiveLedgerDevice();
       if (activeDevice) {
         setDevice(activeDevice);
@@ -59,7 +65,10 @@ export function useLedger(): UseLedgerReturn {
     try {
       const isSupported = await serviceRef.current.isSupported();
       if (!isSupported) {
-        throw new LedgerError('WebHID is not supported in this browser. Please use Chrome, Edge, or Opera.', 'WEBHID_NOT_SUPPORTED');
+        throw new LedgerError(
+          'WebHID is not supported in this browser. Please use Chrome, Edge, or Opera.',
+          'WEBHID_NOT_SUPPORTED'
+        );
       }
 
       const connectedDevice = await serviceRef.current.requestDevice();
@@ -67,9 +76,8 @@ export function useLedger(): UseLedgerReturn {
       await refreshDevices();
       return connectedDevice;
     } catch (err: any) {
-      const errorMessage = err instanceof LedgerError 
-        ? err.message 
-        : 'Failed to connect to Ledger device';
+      const errorMessage =
+        err instanceof LedgerError ? err.message : 'Failed to connect to Ledger device';
       setError(errorMessage);
       console.error('Ledger connection error:', err);
       return null;
@@ -89,60 +97,65 @@ export function useLedger(): UseLedgerReturn {
     }
   }, [refreshDevices]);
 
-  const getAddress = useCallback(async (
-    derivationPath: string = "44'/501'/0'/0'",
-    display: boolean = false
-  ): Promise<{ address: string; publicKey: string } | null> => {
-    setError(null);
-    try {
-      const result = await serviceRef.current.getAddress(derivationPath, display);
-      await refreshDevices();
-      return result;
-    } catch (err: any) {
-      const errorMessage = err instanceof LedgerError 
-        ? err.message 
-        : 'Failed to get address from Ledger';
-      setError(errorMessage);
-      console.error('Get address error:', err);
-      return null;
-    }
-  }, [refreshDevices]);
+  const getAddress = useCallback(
+    async (
+      derivationPath: string = "44'/501'/0'/0'",
+      display: boolean = false
+    ): Promise<{ address: string; publicKey: string } | null> => {
+      setError(null);
+      try {
+        const result = await serviceRef.current.getAddress(derivationPath, display);
+        await refreshDevices();
+        return result;
+      } catch (err: any) {
+        const errorMessage =
+          err instanceof LedgerError ? err.message : 'Failed to get address from Ledger';
+        setError(errorMessage);
+        console.error('Get address error:', err);
+        return null;
+      }
+    },
+    [refreshDevices]
+  );
 
-  const signTransaction = useCallback(async (
-    transaction: Transaction | VersionedTransaction,
-    derivationPath: string = "44'/501'/0'/0'"
-  ): Promise<Buffer | null> => {
-    setError(null);
-    try {
-      const signature = await serviceRef.current.signTransaction(transaction, derivationPath);
-      return signature;
-    } catch (err: any) {
-      const errorMessage = err instanceof LedgerError 
-        ? err.message 
-        : 'Failed to sign transaction';
-      setError(errorMessage);
-      console.error('Sign transaction error:', err);
-      return null;
-    }
-  }, []);
+  const signTransaction = useCallback(
+    async (
+      transaction: Transaction | VersionedTransaction,
+      derivationPath: string = "44'/501'/0'/0'"
+    ): Promise<Buffer | null> => {
+      setError(null);
+      try {
+        const signature = await serviceRef.current.signTransaction(transaction, derivationPath);
+        return signature;
+      } catch (err: any) {
+        const errorMessage =
+          err instanceof LedgerError ? err.message : 'Failed to sign transaction';
+        setError(errorMessage);
+        console.error('Sign transaction error:', err);
+        return null;
+      }
+    },
+    []
+  );
 
-  const signMessage = useCallback(async (
-    message: Uint8Array,
-    derivationPath: string = "44'/501'/0'/0'"
-  ): Promise<Buffer | null> => {
-    setError(null);
-    try {
-      const signature = await serviceRef.current.signMessage(message, derivationPath);
-      return signature;
-    } catch (err: any) {
-      const errorMessage = err instanceof LedgerError 
-        ? err.message 
-        : 'Failed to sign message';
-      setError(errorMessage);
-      console.error('Sign message error:', err);
-      return null;
-    }
-  }, []);
+  const signMessage = useCallback(
+    async (
+      message: Uint8Array,
+      derivationPath: string = "44'/501'/0'/0'"
+    ): Promise<Buffer | null> => {
+      setError(null);
+      try {
+        const signature = await serviceRef.current.signMessage(message, derivationPath);
+        return signature;
+      } catch (err: any) {
+        const errorMessage = err instanceof LedgerError ? err.message : 'Failed to sign message';
+        setError(errorMessage);
+        console.error('Sign message error:', err);
+        return null;
+      }
+    },
+    []
+  );
 
   const isConnected = serviceRef.current.isConnected();
 

@@ -129,7 +129,9 @@ export function LockScreen({ onUnlock }: LockScreenProps) {
               </motion.div>
               <h2 className="text-3xl font-bold text-white mb-2">Eclipse Market Pro</h2>
               <p className="text-white/60">
-                {showPasswordFallback ? 'Enter your password' : `Authenticate with ${getPlatformName()}`}
+                {showPasswordFallback
+                  ? 'Enter your password'
+                  : `Authenticate with ${getPlatformName()}`}
               </p>
             </div>
 
@@ -173,7 +175,7 @@ export function LockScreen({ onUnlock }: LockScreenProps) {
                   <input
                     type="password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={e => setPassword(e.target.value)}
                     placeholder="Enter your password"
                     className="w-full px-4 py-3 bg-slate-900/50 border border-purple-500/20 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:border-purple-500/50 transition-colors"
                     autoFocus

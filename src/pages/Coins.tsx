@@ -27,22 +27,22 @@ export default function Coins() {
   const [searchQuery, setSearchQuery] = useState('');
   const [apiKey] = useState<string | null>(null);
   const [watchlist, setWatchlist] = useState<string[]>([]);
-  const activeWallet = useWalletStore((state) => state.activeWallet);
+  const activeWallet = useWalletStore(state => state.activeWallet);
 
   useEffect(() => {
     invoke<string[]>('get_watchlist')
-      .then((result) => setWatchlist(result))
-      .catch((error) => console.error('Failed to load watchlist:', error));
+      .then(result => setWatchlist(result))
+      .catch(error => console.error('Failed to load watchlist:', error));
   }, []);
 
   const handleToggleWatchlist = async (address: string) => {
     try {
       if (watchlist.includes(address)) {
         await invoke('remove_from_watchlist', { address });
-        setWatchlist((prev) => prev.filter((item) => item !== address));
+        setWatchlist(prev => prev.filter(item => item !== address));
       } else {
         await invoke('add_to_watchlist', { address });
-        setWatchlist((prev) => [...prev, address]);
+        setWatchlist(prev => [...prev, address]);
       }
     } catch (error) {
       console.error('Failed to update watchlist:', error);
@@ -63,9 +63,7 @@ export default function Coins() {
           <h1 className="text-3xl font-bold mb-2">
             {tabMeta[activeTab as keyof typeof tabMeta].title}
           </h1>
-          <p className="text-gray-400">
-            {tabMeta[activeTab as keyof typeof tabMeta].subtitle}
-          </p>
+          <p className="text-gray-400">{tabMeta[activeTab as keyof typeof tabMeta].subtitle}</p>
         </div>
         {activeTab === 'trending' && (
           <div className="relative">
@@ -74,7 +72,7 @@ export default function Coins() {
               type="text"
               placeholder="Search coins..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={e => setSearchQuery(e.target.value)}
               className="pl-10 pr-4 py-2 w-80 rounded-xl bg-slate-800/50 border border-purple-500/30 outline-none focus:border-purple-500 transition-all"
             />
           </div>
@@ -87,7 +85,7 @@ export default function Coins() {
           { id: 'trending', label: 'Trending', icon: TrendingUp },
           { id: 'new', label: 'New Coins', icon: Zap },
           { id: 'top', label: 'Top Market Cap', icon: BarChart3 },
-        ].map((tab) => (
+        ].map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}

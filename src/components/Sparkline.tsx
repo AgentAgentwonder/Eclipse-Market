@@ -1,14 +1,19 @@
-import { LineChart, Line, ResponsiveContainer } from 'recharts'
+import { LineChart, Line, ResponsiveContainer } from 'recharts';
 
 interface SparklineProps {
-  data: number[]
-  color?: string
-  width?: number
-  height?: number
+  data: number[];
+  color?: string;
+  width?: number;
+  height?: number;
 }
 
-export default function Sparkline({ data, color = '#a855f7', width = 100, height = 40 }: SparklineProps) {
-  const chartData = data.map((value, index) => ({ index, value }))
+export default function Sparkline({
+  data,
+  color = '#a855f7',
+  width = 100,
+  height = 40,
+}: SparklineProps) {
+  const chartData = data.map((value, index) => ({ index, value }));
 
   return (
     <ResponsiveContainer width={width} height={height}>
@@ -23,5 +28,5 @@ export default function Sparkline({ data, color = '#a855f7', width = 100, height
         />
       </LineChart>
     </ResponsiveContainer>
-  )
+  );
 }

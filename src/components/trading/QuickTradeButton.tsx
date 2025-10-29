@@ -130,7 +130,7 @@ export function QuickTradeButton({
                       Select Amount ({fromToken.symbol})
                     </label>
                     <div className="grid grid-cols-2 gap-2 mb-3">
-                      {PRESET_AMOUNTS.map((preset) => (
+                      {PRESET_AMOUNTS.map(preset => (
                         <button
                           key={preset}
                           onClick={() => {
@@ -152,7 +152,7 @@ export function QuickTradeButton({
                       <input
                         type="number"
                         value={selectedAmount || ''}
-                        onChange={(e) => {
+                        onChange={e => {
                           const val = parseFloat(e.target.value);
                           setSelectedAmount(val || null);
                           setUseMax(false);
@@ -166,9 +166,7 @@ export function QuickTradeButton({
                           setSelectedAmount(null);
                         }}
                         className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                          useMax
-                            ? 'bg-purple-600'
-                            : 'bg-gray-700 hover:bg-gray-600'
+                          useMax ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'
                         }`}
                       >
                         Max
@@ -233,9 +231,7 @@ export function QuickTradeButton({
                 <div className="text-center py-6">
                   <CheckCircle className="w-16 h-16 mx-auto text-green-500 mb-4" />
                   <h3 className="text-lg font-bold mb-2">Trade Submitted!</h3>
-                  <p className="text-gray-400 text-sm">
-                    Your order has been placed successfully
-                  </p>
+                  <p className="text-gray-400 text-sm">Your order has been placed successfully</p>
                 </div>
               )}
 
