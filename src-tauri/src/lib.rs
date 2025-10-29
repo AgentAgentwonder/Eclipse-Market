@@ -18,6 +18,7 @@ mod notifications;
 mod portfolio;
 mod security;
 mod sentiment;
+mod stocks;
 mod stream_commands;
 mod token_flow;
 mod trading;
@@ -43,6 +44,7 @@ pub use market::*;
 pub use notifications::*;
 pub use portfolio::*;
 pub use sentiment::*;
+pub use stocks::*;
 pub use token_flow::*;
 pub use trading::*;
 pub use wallet::hardware_wallet::*;
@@ -219,6 +221,8 @@ pub fn run() {
 
             trading::register_trading_state(app);
             trading::register_paper_trading_state(app);
+            trading::register_auto_trading_state(app);
+            trading::register_optimizer_state(app);
 
             // Initialize wallet monitor
             let monitor_handle = app.handle();
@@ -448,10 +452,24 @@ pub fn run() {
              let shared_holder_analyzer: SharedHolderAnalyzer = Arc::new(RwLock::new(holder_analyzer));
              app.manage(shared_holder_analyzer.clone());
 
+             // Initialize stock cache state
+             let stock_cache: stocks::SharedStockCache = Arc::new(RwLock::new(stocks::StockCache::default()));
+             app.manage(stock_cache.clone());
+             // Initialize risk analyzer
+             let risk_analyzer = tauri::async_runtime::block_on(async {
+                 ai::RiskAnalyzer::new(&app.handle()).await
+             }).map_err(|e| {
+                 eprintln!("Failed to initialize risk analyzer: {e}");
+                 Box::new(e) as Box<dyn Error>
+             })?;
+
+             let shared_risk_analyzer: ai::SharedRiskAnalyzer = Arc::new(RwLock::new(risk_analyzer));
+             app.manage(shared_risk_analyzer.clone());
+
              // Start background compression job (runs daily at 3 AM)
              let compression_job = shared_compression_manager.clone();
              tauri::async_runtime::spawn(async move {
-                 use chrono::Timelike;
+
                  use tokio::time::{sleep, Duration};
 
                  loop {
@@ -597,6 +615,9 @@ pub fn run() {
             get_sentiment_alert_config,
             dismiss_sentiment_alert,
             fetch_social_mentions,
+            get_token_risk_score,
+            get_risk_history,
+            get_latest_risk_score,
             // Market Data
             get_coin_price,
             get_price_history,
@@ -709,6 +730,27 @@ pub fn run() {
             get_order,
             acknowledge_order,
             update_order_prices,
+            
+            // Auto Trading Engine
+            auto_trading_create_strategy,
+            auto_trading_update_strategy,
+            auto_trading_delete_strategy,
+            auto_trading_start_strategy,
+            auto_trading_stop_strategy,
+            auto_trading_pause_strategy,
+            auto_trading_activate_kill_switch,
+            auto_trading_deactivate_kill_switch,
+            auto_trading_get_strategies,
+            auto_trading_get_strategy,
+            auto_trading_get_executions,
+            auto_trading_apply_parameters,
+            
+            // Backtesting & Optimization
+            backtest_run,
+            optimizer_start,
+            optimizer_cancel,
+            optimizer_get_runs,
+            optimizer_get_run,
             
             // Paper Trading Simulation
             paper_trading_init,
@@ -868,6 +910,17 @@ pub fn run() {
             drawing_sync,
             drawing_list_templates,
             drawing_save_templates,
+
+            // Stock commands
+            stocks::get_trending_stocks,
+            stocks::get_top_movers,
+            stocks::get_new_ipos,
+            stocks::get_earnings_calendar,
+            stocks::get_stock_news,
+            stocks::get_institutional_holdings,
+            stocks::get_insider_activity,
+            stocks::create_stock_alert,
+            stocks::get_stock_alerts,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -12,6 +12,12 @@ const KEY_JUPITER_API: &str = "api_key_jupiter";
 const KEY_SOLANA_RPC: &str = "api_rpc_endpoint";
 const KEY_API_METADATA: &str = "api_key_metadata";
 
+// Stock API keys
+const KEY_ALPHA_VANTAGE_API: &str = "api_key_alpha_vantage";
+const KEY_POLYGON_API: &str = "api_key_polygon";
+const KEY_IEX_API: &str = "api_key_iex";
+const KEY_FINNHUB_API: &str = "api_key_finnhub";
+
 // Default RPC endpoint
 const DEFAULT_RPC_ENDPOINT: &str = "https://api.mainnet-beta.solana.com";
 
