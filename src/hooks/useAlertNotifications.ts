@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
 import { useAlertStore } from '../store/alertStore';
+import { EnhancedAlertNotification, TransactionDetails } from '../types/alertNotifications';
 
 interface AlertTriggeredEvent {
   alertId: string;
@@ -9,10 +10,23 @@ interface AlertTriggeredEvent {
   currentPrice: number;
   conditionsMet: string;
   triggeredAt: string;
+  priceChange24h?: number;
+  priceChange7d?: number;
+  transaction?: TransactionDetails;
+  contextMessage?: string;
+  similarOpportunities?: Array<{
+    symbol: string;
+    mint: string;
+    currentPrice: number;
+    priceChange24h: number;
+    matchReason: string;
+    volume24h?: number;
+  }>;
 }
 
 export function useAlertNotifications() {
   const setLastTriggerEvent = useAlertStore(state => state.setLastTriggerEvent);
+  const addEnhancedNotification = useAlertStore(state => state.addEnhancedNotification);
 
   useEffect(() => {
     let unlisten: UnlistenFn | undefined;
@@ -23,11 +37,34 @@ export function useAlertNotifications() {
 
         showNotification({
           title: `Alert Triggered: ${alertName}`,
-          message: `${symbol} at $${currentPrice.toFixed(4)} - ${conditionsMet}`,
+          message: `${symbol} at ${currentPrice.toFixed(4)} - ${conditionsMet}`,
           type: 'success',
         });
 
-        setLastTriggerEvent(event.payload);
+        setLastTriggerEvent({
+          alertId: event.payload.alertId,
+          alertName: event.payload.alertName,
+          symbol: event.payload.symbol,
+          currentPrice: event.payload.currentPrice,
+          conditionsMet: event.payload.conditionsMet,
+          triggeredAt: event.payload.triggeredAt,
+        });
+
+        const enhancedNotification: EnhancedAlertNotification = {
+          alertId: event.payload.alertId,
+          alertName: event.payload.alertName,
+          symbol: event.payload.symbol,
+          currentPrice: event.payload.currentPrice,
+          priceChange24h: event.payload.priceChange24h,
+          priceChange7d: event.payload.priceChange7d,
+          conditionsMet: event.payload.conditionsMet,
+          triggeredAt: event.payload.triggeredAt,
+          transaction: event.payload.transaction,
+          contextMessage: event.payload.contextMessage,
+          similarOpportunities: event.payload.similarOpportunities,
+        };
+
+        addEnhancedNotification(enhancedNotification);
       });
     };
 
@@ -36,7 +73,7 @@ export function useAlertNotifications() {
     return () => {
       unlisten?.();
     };
-  }, [setLastTriggerEvent]);
+  }, [setLastTriggerEvent, addEnhancedNotification]);
 }
 
 function showNotification(options: {

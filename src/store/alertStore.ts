@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/tauri';
+import { EnhancedAlertNotification } from '../types/alertNotifications';
 
 export type AlertConditionType = 'above' | 'below' | 'percent_change' | 'volume_spike';
 export type LogicalOperator = 'and' | 'or';
@@ -60,6 +61,7 @@ interface AlertStateStore {
     conditionsMet: string;
     triggeredAt: string;
   } | null;
+  enhancedNotifications: EnhancedAlertNotification[];
 
   fetchAlerts: () => Promise<void>;
   createAlert: (
@@ -77,6 +79,8 @@ interface AlertStateStore {
     volume24h?: number | null
   ) => Promise<AlertTestResult>;
   setLastTriggerEvent: (event: AlertStateStore['lastTriggerEvent']) => void;
+  addEnhancedNotification: (notification: EnhancedAlertNotification) => void;
+  dismissNotification: (alertId: string) => void;
 }
 
 export const useAlertStore = create<AlertStateStore>((set, get) => ({
@@ -84,6 +88,7 @@ export const useAlertStore = create<AlertStateStore>((set, get) => ({
   isLoading: false,
   error: null,
   lastTriggerEvent: null,
+  enhancedNotifications: [],
 
   fetchAlerts: async () => {
     set({ isLoading: true, error: null });
@@ -169,4 +174,21 @@ export const useAlertStore = create<AlertStateStore>((set, get) => ({
   },
 
   setLastTriggerEvent: event => set({ lastTriggerEvent: event }),
+
+  addEnhancedNotification: notification => {
+    set(state => {
+      const filtered = state.enhancedNotifications.filter(
+        existing => existing.alertId !== notification.alertId
+      );
+      return {
+        enhancedNotifications: [notification, ...filtered].slice(0, 3),
+      };
+    });
+  },
+
+  dismissNotification: alertId => {
+    set(state => ({
+      enhancedNotifications: state.enhancedNotifications.filter(n => n.alertId !== alertId),
+    }));
+  },
 }));
