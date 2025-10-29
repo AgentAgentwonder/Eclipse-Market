@@ -50,6 +50,7 @@ pub use trading::*;
 pub use wallet::hardware_wallet::*;
 pub use wallet::ledger::*;
 pub use wallet::multi_wallet::*;
+pub use wallet::operations::*;
 pub use wallet::phantom::*;
 pub use webhooks::*;
 
@@ -67,6 +68,7 @@ use wallet::hardware_wallet::HardwareWalletState;
 use wallet::ledger::LedgerState;
 use wallet::phantom::{hydrate_wallet_state, WalletState};
 use wallet::multi_wallet::MultiWalletManager;
+use wallet::operations::WalletOperationsManager;
 use wallet::multisig::{MultisigDatabase, SharedMultisigDatabase};
 use wallet::performance::{PerformanceDatabase, SharedPerformanceDatabase};
 use security::keystore::Keystore;
@@ -164,6 +166,11 @@ pub fn run() {
                Box::new(e) as Box<dyn Error>
             })?;
 
+            let wallet_operations_manager = WalletOperationsManager::initialize(&keystore).map_err(|e| {
+               eprintln!("Failed to initialize wallet operations manager: {e}");
+               Box::new(e) as Box<dyn Error>
+            })?;
+
             let activity_logger = tauri::async_runtime::block_on(async {
                 ActivityLogger::new(&app.handle()).await
             }).map_err(|e| {
@@ -191,6 +198,7 @@ pub fn run() {
 
             app.manage(keystore);
             app.manage(multi_wallet_manager);
+            app.manage(wallet_operations_manager);
             app.manage(session_manager);
             app.manage(two_factor_manager);
             app.manage(ws_manager);
@@ -547,6 +555,23 @@ pub fn run() {
             multi_wallet_delete_group,
             multi_wallet_list_groups,
             multi_wallet_get_aggregated,
+            
+            // Wallet Operations
+            wallet_get_token_balances,
+            wallet_estimate_fee,
+            wallet_send_transaction,
+            wallet_generate_qr,
+            wallet_generate_solana_pay_qr,
+            address_book_add_contact,
+            address_book_update_contact,
+            address_book_delete_contact,
+            address_book_list_contacts,
+            address_book_search_contacts,
+            address_book_export,
+            address_book_import,
+            swap_history_add_entry,
+            swap_history_get_recent,
+            wallet_get_bridge_providers,
             
             // Wallet Performance
             record_trade,
