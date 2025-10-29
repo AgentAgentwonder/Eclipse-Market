@@ -22,6 +22,7 @@ import {
   YAxis,
   CartesianGrid,
 } from 'recharts';
+import { AIPortfolioAdvisor } from '../components/portfolio/AIPortfolioAdvisor';
 import { Position, PortfolioMetrics } from '../types/portfolio';
 
 type SortField = 'symbol' | 'value' | 'pnl' | 'pnlPercent' | 'allocation';
@@ -175,6 +176,8 @@ function Portfolio() {
           Refresh
         </button>
       </div>
+
+      <AIPortfolioAdvisor positions={positions} metrics={metrics} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <motion.div
