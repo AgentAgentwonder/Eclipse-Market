@@ -22,6 +22,16 @@ const defaultCondition = {
   timeframeMinutes: null,
 };
 
+const channelOptions: NotificationChannel[] = [
+  'in_app',
+  'system',
+  'email',
+  'webhook',
+  'telegram',
+  'slack',
+  'discord',
+];
+
 const CreateAlertModal = ({
   isOpen,
   onClose,
@@ -150,22 +160,20 @@ const CreateAlertModal = ({
             <div>
               <p className="text-sm text-slate-400 mb-2">Notification Channels</p>
               <div className="flex flex-wrap gap-2">
-                {(['in_app', 'system', 'email', 'webhook'] as NotificationChannel[]).map(
-                  channel => (
-                    <button
-                      key={channel}
-                      className={`px-3 py-1.5 rounded-xl border transition text-sm capitalize ${
-                        notificationChannels.includes(channel)
-                          ? 'bg-purple-500 text-white border-purple-400'
-                          : 'bg-slate-800/60 text-slate-300 border-transparent hover:bg-slate-800'
-                      }`}
-                      onClick={() => toggleChannel(channel)}
-                      type="button"
-                    >
-                      {channel.replace('_', ' ')}
-                    </button>
-                  )
-                )}
+                {channelOptions.map(channel => (
+                  <button
+                    key={channel}
+                    className={`px-3 py-1.5 rounded-xl border transition text-sm capitalize ${
+                      notificationChannels.includes(channel)
+                        ? 'bg-purple-500 text-white border-purple-400'
+                        : 'bg-slate-800/60 text-slate-300 border-transparent hover:bg-slate-800'
+                    }`}
+                    onClick={() => toggleChannel(channel)}
+                    type="button"
+                  >
+                    {channel.replace('_', ' ')}
+                  </button>
+                ))}
               </div>
             </div>
 

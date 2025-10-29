@@ -115,6 +115,9 @@ pub enum NotificationChannel {
     System,
     Email,
     Webhook,
+    Telegram,
+    Slack,
+    Discord,
 }
 
 impl NotificationChannel {
@@ -124,6 +127,9 @@ impl NotificationChannel {
             NotificationChannel::System => "system",
             NotificationChannel::Email => "email",
             NotificationChannel::Webhook => "webhook",
+            NotificationChannel::Telegram => "telegram",
+            NotificationChannel::Slack => "slack",
+            NotificationChannel::Discord => "discord",
         }
     }
 
@@ -133,6 +139,9 @@ impl NotificationChannel {
             "system" => Some(NotificationChannel::System),
             "email" => Some(NotificationChannel::Email),
             "webhook" => Some(NotificationChannel::Webhook),
+            "telegram" => Some(NotificationChannel::Telegram),
+            "slack" => Some(NotificationChannel::Slack),
+            "discord" => Some(NotificationChannel::Discord),
             _ => None,
         }
     }
