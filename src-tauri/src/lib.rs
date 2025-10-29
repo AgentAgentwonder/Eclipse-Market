@@ -10,6 +10,7 @@ mod core;
 mod insiders;
 mod data;
 mod market;
+mod notifications;
 mod portfolio;
 mod security;
 mod sentiment;
@@ -29,6 +30,7 @@ pub use core::*;
 pub use insiders::*;
 pub use data::*;
 pub use market::*;
+pub use notifications::*;
 pub use portfolio::*;
 pub use sentiment::*;
 pub use trading::*;
@@ -612,6 +614,31 @@ pub fn run() {
             data::compression_commands::get_compression_config,
             data::compression_commands::decompress_data,
             data::compression_commands::get_database_size,
+
+            // Email Notifications
+            email_save_config,
+            email_get_config,
+            email_delete_config,
+            email_test_connection,
+            email_send,
+            email_get_stats,
+            email_get_history,
+
+            // Twitter Integration
+            twitter_save_config,
+            twitter_get_config,
+            twitter_delete_config,
+            twitter_test_connection,
+            twitter_add_keyword,
+            twitter_list_keywords,
+            twitter_remove_keyword,
+            twitter_add_influencer,
+            twitter_list_influencers,
+            twitter_remove_influencer,
+            twitter_fetch_sentiment,
+            twitter_get_sentiment_history,
+            twitter_get_stats,
+            twitter_get_tweet_history,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

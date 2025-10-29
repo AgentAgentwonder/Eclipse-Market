@@ -55,6 +55,9 @@ futures-util = "0.3.28"
 url = "2.5.0"
 rmp-serde = "1.1.2"
 
+# Email
+lettre = { version = "0.11", features = ["tokio1-native-tls", "smtp-transport", "builder"] }
+
 # Utilities
 chrono = { version = "0.4.35", features = ["serde"] }
 tracing = "0.1.40"
