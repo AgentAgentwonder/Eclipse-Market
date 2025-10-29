@@ -16,6 +16,7 @@ import {
   Server,
   Bell,
   MessageSquare,
+  Webhook,
 } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { BIOMETRIC_STATUS_EVENT } from '../constants/events';
@@ -31,6 +32,7 @@ import { ApiSettings } from './Settings/ApiSettings';
 import AlertSettings from './Settings/AlertSettings';
 import { StorageSettings } from './Settings/StorageSettings';
 import ChatIntegrations from './Settings/ChatIntegrations';
+import WebhookSettings from './Settings/WebhookSettings';
 
 interface BiometricStatus {
   available: boolean;
@@ -449,6 +451,23 @@ function Settings() {
           </div>
 
           <ApiSettings />
+        </div>
+
+        {/* Webhooks */}
+        <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+              <Webhook className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">Webhooks</h2>
+              <p className="text-white/60 text-sm">
+                Build custom webhooks with templating, retries, and delivery monitoring
+              </p>
+            </div>
+          </div>
+
+          <WebhookSettings />
         </div>
 
         {/* Price Alerts & Watchlists */}

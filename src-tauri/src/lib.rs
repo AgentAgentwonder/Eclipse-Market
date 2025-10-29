@@ -18,6 +18,7 @@ mod stream_commands;
 mod trading;
 mod wallet;
 mod websocket;
+mod webhooks;
 
 pub use ai::*;
 pub use alerts::*;
@@ -38,12 +39,15 @@ pub use wallet::hardware_wallet::*;
 pub use wallet::ledger::*;
 pub use wallet::multi_wallet::*;
 pub use wallet::phantom::*;
+pub use webhooks::*;
 
 pub use wallet::multisig::*;
 
 use alerts::{AlertManager, SharedAlertManager};
+use api::{ApiHealthMonitor, SharedApiHealthMonitor};
 use notifications::router::{NotificationRouter, SharedNotificationRouter};
 use portfolio::{SharedWatchlistManager, WatchlistManager};
+use webhooks::{WebhookManager, SharedWebhookManager};
 use wallet::hardware_wallet::HardwareWalletState;
 use wallet::ledger::LedgerState;
 use wallet::phantom::{hydrate_wallet_state, WalletState};
@@ -158,6 +162,16 @@ pub fn run() {
                 eprintln!("Failed to initialize API config manager: {e}");
             }
 
+            // Initialize API health monitor
+            let api_health_monitor = tauri::async_runtime::block_on(async {
+                ApiHealthMonitor::new(&app.handle()).await
+            }).map_err(|e| {
+                eprintln!("Failed to initialize API health monitor: {e}");
+                Box::new(e) as Box<dyn Error>
+            })?;
+
+            let api_health_state: SharedApiHealthMonitor = Arc::new(RwLock::new(api_health_monitor));
+
             app.manage(keystore);
             app.manage(multi_wallet_manager);
             app.manage(session_manager);
@@ -165,6 +179,7 @@ pub fn run() {
             app.manage(ws_manager);
             app.manage(activity_logger);
             app.manage(api_config_manager);
+            app.manage(api_health_state.clone());
 
             tauri::async_runtime::spawn(async move {
                 use tokio::time::{sleep, Duration};
@@ -293,6 +308,17 @@ pub fn run() {
 
              let notification_state: SharedNotificationRouter = Arc::new(RwLock::new(notification_router));
              app.manage(notification_state.clone());
+
+             // Initialize webhook manager
+             let webhook_manager = tauri::async_runtime::block_on(async {
+                 WebhookManager::new(&app.handle()).await
+             }).map_err(|e| {
+                 eprintln!("Failed to initialize webhook manager: {e}");
+                 Box::new(e) as Box<dyn Error>
+             })?;
+
+             let webhook_state: SharedWebhookManager = Arc::new(RwLock::new(webhook_manager));
+             app.manage(webhook_state.clone());
 
              // Initialize cache manager
              let cache_manager = core::cache_manager::CacheManager::new(100, 1000);
@@ -536,6 +562,19 @@ pub fn run() {
             chat_integration_get_delivery_logs,
             chat_integration_clear_delivery_logs,
             chat_integration_get_rate_limits,
+            // Webhooks
+            list_webhooks,
+            get_webhook,
+            create_webhook,
+            update_webhook,
+            delete_webhook,
+            trigger_webhook,
+            test_webhook,
+            list_webhook_delivery_logs,
+            // API Health
+            get_api_health_dashboard,
+            get_service_health_metrics,
+            cleanup_health_records,
             // WebSocket Streams
             subscribe_price_stream,
             unsubscribe_price_stream,
