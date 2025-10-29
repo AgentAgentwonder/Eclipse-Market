@@ -10,6 +10,7 @@ mod core;
 mod insiders;
 mod data;
 mod market;
+mod notifications;
 mod portfolio;
 mod security;
 mod sentiment;
@@ -29,6 +30,7 @@ pub use core::*;
 pub use insiders::*;
 pub use data::*;
 pub use market::*;
+pub use notifications::*;
 pub use portfolio::*;
 pub use sentiment::*;
 pub use trading::*;
@@ -40,6 +42,7 @@ pub use wallet::phantom::*;
 pub use wallet::multisig::*;
 
 use alerts::{AlertManager, SharedAlertManager};
+use notifications::router::{NotificationRouter, SharedNotificationRouter};
 use portfolio::{SharedWatchlistManager, WatchlistManager};
 use wallet::hardware_wallet::HardwareWalletState;
 use wallet::ledger::LedgerState;
@@ -280,6 +283,17 @@ pub fn run() {
                  }
              });
 
+             // Initialize notification router
+             let notification_router = tauri::async_runtime::block_on(async {
+                 NotificationRouter::new(&app.handle()).await
+             }).map_err(|e| {
+                 eprintln!("Failed to initialize notification router: {e}");
+                 Box::new(e) as Box<dyn Error>
+             })?;
+
+             let notification_state: SharedNotificationRouter = Arc::new(RwLock::new(notification_router));
+             app.manage(notification_state.clone());
+
              // Initialize cache manager
              let cache_manager = core::cache_manager::CacheManager::new(100, 1000);
              let shared_cache_manager = Arc::new(RwLock::new(cache_manager));
@@ -504,6 +518,24 @@ pub fn run() {
             alert_test,
             alert_check_triggers,
             alert_reset_cooldowns,
+            // Chat Integrations
+            chat_integration_get_settings,
+            chat_integration_save_settings,
+            chat_integration_add_telegram,
+            chat_integration_update_telegram,
+            chat_integration_delete_telegram,
+            chat_integration_add_slack,
+            chat_integration_update_slack,
+            chat_integration_delete_slack,
+            chat_integration_add_discord,
+            chat_integration_update_discord,
+            chat_integration_delete_discord,
+            chat_integration_test_telegram,
+            chat_integration_test_slack,
+            chat_integration_test_discord,
+            chat_integration_get_delivery_logs,
+            chat_integration_clear_delivery_logs,
+            chat_integration_get_rate_limits,
             // WebSocket Streams
             subscribe_price_stream,
             unsubscribe_price_stream,

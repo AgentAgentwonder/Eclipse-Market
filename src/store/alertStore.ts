@@ -4,7 +4,14 @@ import { invoke } from '@tauri-apps/api/tauri';
 export type AlertConditionType = 'above' | 'below' | 'percent_change' | 'volume_spike';
 export type LogicalOperator = 'and' | 'or';
 export type AlertState = 'active' | 'triggered' | 'cooldown' | 'disabled';
-export type NotificationChannel = 'in_app' | 'system' | 'email' | 'webhook';
+export type NotificationChannel =
+  | 'in_app'
+  | 'system'
+  | 'email'
+  | 'webhook'
+  | 'telegram'
+  | 'slack'
+  | 'discord';
 
 export interface AlertCondition {
   conditionType: AlertConditionType;

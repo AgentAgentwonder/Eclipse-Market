@@ -15,6 +15,7 @@ import {
   FileText,
   Server,
   Bell,
+  MessageSquare,
 } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { BIOMETRIC_STATUS_EVENT } from '../constants/events';
@@ -29,6 +30,7 @@ import { CacheSettings } from '../components/CacheSettings';
 import { ApiSettings } from './Settings/ApiSettings';
 import AlertSettings from './Settings/AlertSettings';
 import { StorageSettings } from './Settings/StorageSettings';
+import ChatIntegrations from './Settings/ChatIntegrations';
 
 interface BiometricStatus {
   available: boolean;
@@ -464,6 +466,23 @@ function Settings() {
           </div>
 
           <AlertSettings />
+        </div>
+
+        {/* Chat Integrations */}
+        <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-purple-500/30">
+              <MessageSquare className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">Chat Integrations</h2>
+              <p className="text-white/60 text-sm">
+                Configure Telegram, Slack, and Discord notifications
+              </p>
+            </div>
+          </div>
+
+          <ChatIntegrations />
         </div>
 
         {/* Hardware Wallets */}
