@@ -100,6 +100,7 @@ panic = 'abort'
 [dev-dependencies]
 httpmock = "0.7.0"
 criterion = { version = "0.5.1", features = ["async_tokio"] }
+tempfile = "3.10"
 
 [[bench]]
 name = "price_engine_bench"
