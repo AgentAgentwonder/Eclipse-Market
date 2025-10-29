@@ -16,6 +16,7 @@ mod portfolio;
 mod security;
 mod sentiment;
 mod stream_commands;
+mod token_flow;
 mod trading;
 mod wallet;
 mod websocket;
@@ -36,6 +37,7 @@ pub use market::*;
 pub use notifications::*;
 pub use portfolio::*;
 pub use sentiment::*;
+pub use token_flow::*;
 pub use trading::*;
 pub use wallet::hardware_wallet::*;
 pub use wallet::ledger::*;
@@ -281,6 +283,9 @@ pub fn run() {
 
              let watchlist_state: SharedWatchlistManager = Arc::new(RwLock::new(watchlist_manager));
              app.manage(watchlist_state.clone());
+
+             let token_flow_state = token_flow::commands::create_token_flow_state();
+             app.manage(token_flow_state.clone());
 
              // Initialize alert manager
              let alert_manager = tauri::async_runtime::block_on(async {
@@ -724,6 +729,13 @@ pub fn run() {
             twitter_get_sentiment_history,
             twitter_get_stats,
             twitter_get_tweet_history,
+
+            // Token Flow Intelligence
+            token_flow::commands::analyze_token_flows,
+            token_flow::commands::export_flow_analysis,
+            token_flow::commands::list_cluster_subscriptions,
+            token_flow::commands::upsert_cluster_subscription,
+            token_flow::commands::remove_cluster_subscription,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
