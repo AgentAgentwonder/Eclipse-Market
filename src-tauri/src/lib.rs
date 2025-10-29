@@ -661,6 +661,16 @@ pub fn run() {
             wallet_monitor_get_activities,
             wallet_monitor_get_statistics,
             
+            // Smart Money & Whale Alerts
+            classify_smart_money_wallet,
+            get_smart_money_wallets,
+            get_smart_money_consensus,
+            get_sentiment_comparison,
+            get_alert_configs,
+            update_alert_config,
+            get_recent_whale_alerts,
+            scan_wallets_for_smart_money,
+            
             // Activity Logging
             security::activity_log::get_activity_logs,
             security::activity_log::export_activity_logs,
