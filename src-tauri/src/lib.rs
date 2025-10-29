@@ -83,7 +83,11 @@ async fn warm_cache_on_startup(
     ];
 
     let manager = cache_manager.read().await;
-    
+
+    // Preload frequently accessed entries from disk cache first
+    let warmed_from_disk = manager.populate_from_disk(64).await;
+    tracing::info!(preloaded_entries = warmed_from_disk, "cache warmup from disk");
+
     // Warm cache with top tokens
     let keys: Vec<String> = top_tokens
         .iter()

@@ -10,6 +10,9 @@ interface CacheStatistics {
   totalEvictions: number;
   totalEntries: number;
   totalSizeBytes: number;
+  diskHits: number;
+  diskMisses: number;
+  warmLoads: number;
   perTypeStats: Record<string, TypeStatistics>;
   lastWarmed: number | null;
 }
@@ -362,6 +365,10 @@ export function CacheSettings() {
     return 'bg-red-500/20 border-red-500/30';
   };
 
+  const diskHitRate = stats 
+    ? stats.diskHits / Math.max(stats.diskHits + stats.diskMisses, 1) 
+    : 0;
+
   if (loading) {
     return (
       <div className="text-center py-8">
@@ -425,7 +432,7 @@ export function CacheSettings() {
       {/* Overall Statistics */}
       {stats && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-purple-500/20 p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Hit Rate</h3>
@@ -481,6 +488,22 @@ export function CacheSettings() {
               </div>
               <div className="text-sm text-white/60">Last warmed:</div>
               <div className="text-xs text-white/40 mt-1">{formatTimestamp(stats.lastWarmed)}</div>
+            </div>
+
+            <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-purple-500/20 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Disk Cache</h3>
+                <Database className="w-5 h-5 text-cyan-400" />
+              </div>
+              <div className={`text-4xl font-bold mb-2 ${getHitRateColor(diskHitRate)}`}>
+                {(diskHitRate * 100).toFixed(1)}%
+              </div>
+              <div className="text-sm text-white/60">
+                {stats.diskHits.toLocaleString()} hits / {stats.diskMisses.toLocaleString()} misses
+              </div>
+              <div className="text-xs text-white/40 mt-1">
+                {stats.warmLoads.toLocaleString()} entries warmed from disk
+              </div>
             </div>
           </div>
 

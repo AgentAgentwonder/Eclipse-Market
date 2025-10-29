@@ -386,7 +386,7 @@ async fn test_cache_api_call_reduction() {
     let manager = CacheManager::with_time_provider_and_path(
         100,
         1000,
-        config_path,
+        config_path.clone(),
         time_provider.clone(),
     );
 
@@ -414,4 +414,23 @@ async fn test_cache_api_call_reduction() {
     // Verify >50% call reduction (actually 90% in this case)
     let reduction_percent = (1.0 - (api_call_count as f64 / 10.0)) * 100.0;
     assert!(reduction_percent > 50.0, "Cache should reduce API calls by more than 50%");
+
+    drop(manager);
+
+    // Re-create manager to ensure disk persistence works
+    let manager_rehydrated = CacheManager::with_time_provider_and_path(
+        100,
+        1000,
+        config_path.clone(),
+        time_provider.clone(),
+    );
+
+    // Entry should be resurrected from disk without API call
+    let result = manager_rehydrated
+        .get(&key, CacheType::TokenPrice)
+        .await;
+    assert!(result.is_some(), "Expected disk-backed cache to return persisted value");
+
+    let stats_after = manager_rehydrated.get_statistics().await;
+    assert_eq!(stats_after.disk_hits, 1, "Disk cache should register a hit");
 }
