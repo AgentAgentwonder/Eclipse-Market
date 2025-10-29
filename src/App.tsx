@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   LineChart,
   Network,
+  Wallet as WalletIcon,
   LayoutGrid,
   ArrowRightLeft,
 } from 'lucide-react';
@@ -44,6 +45,7 @@ import Multisig from './pages/Multisig';
 import ApiHealth from './pages/ApiHealth';
 import ProCharts from './pages/ProCharts';
 import TokenFlow from './pages/TokenFlow';
+import Wallet from './pages/Wallet';
 import { MarketSurveillance } from './pages/MarketSurveillance';
 import { PaperTradingDashboard } from './pages/PaperTrading/Dashboard';
 import SettingsPage from './pages/Settings';
@@ -190,6 +192,7 @@ function App() {
       { id: 'dashboard', label: 'Dashboard', icon: Home, component: Dashboard },
       { id: 'coins', label: 'Coins', icon: TrendingUp, component: Coins },
       { id: 'portfolio', label: 'Portfolio', icon: Briefcase, component: Portfolio },
+      { id: 'wallet', label: 'Wallet', icon: WalletIcon, component: Wallet },
       { id: 'multi-chain', label: 'Multi-Chain', icon: ArrowRightLeft, component: MultiChain },
       { id: 'multisig', label: 'Multisig', icon: Shield, component: Multisig },
       { id: 'stocks', label: 'Stocks', icon: BarChart3, component: Stocks },
