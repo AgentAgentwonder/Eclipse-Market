@@ -1,3 +1,8 @@
+pub mod email;
+pub mod twitter;
+
+pub use email::*;
+pub use twitter::*;
 pub mod telegram;
 pub mod slack;
 pub mod discord;
