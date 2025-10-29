@@ -1,6 +1,7 @@
 mod ai;
 mod alerts;
 mod api;
+mod api_analytics;
 mod api_config;
 mod auth;
 mod bots;
@@ -23,6 +24,7 @@ mod webhooks;
 pub use ai::*;
 pub use alerts::*;
 pub use api::*;
+pub use api_analytics::*;
 pub use api_config::*;
 pub use auth::*;
 pub use bots::*;
@@ -180,6 +182,12 @@ pub fn run() {
             app.manage(activity_logger);
             app.manage(api_config_manager);
             app.manage(api_health_state.clone());
+
+            let usage_tracker = api_analytics::initialize_usage_tracker(&app.handle()).map_err(|e| {
+                eprintln!("Failed to initialize API usage tracker: {e}");
+                Box::new(std::io::Error::new(std::io::ErrorKind::Other, e)) as Box<dyn Error>
+            })?;
+            app.manage(usage_tracker);
 
             tauri::async_runtime::spawn(async move {
                 use tokio::time::{sleep, Duration};
@@ -487,6 +495,14 @@ pub fn run() {
             set_use_default_key,
             test_api_connection,
             get_api_status,
+            rotate_api_key,
+            check_rotation_reminders,
+            export_api_keys,
+            import_api_keys,
+            // API Analytics
+            record_api_usage,
+            get_api_analytics,
+            get_fair_use_status,
             // AI & Sentiment
             assess_risk,
             analyze_text_sentiment,
