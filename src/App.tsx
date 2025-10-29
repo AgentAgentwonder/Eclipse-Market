@@ -10,10 +10,12 @@ import {
   Bell,
   Settings,
   Briefcase,
+  Activity,
   FileText,
   Shield,
   Activity,
   LineChart,
+  Network,
 } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { PhantomConnect } from './components/wallet/PhantomConnect';
@@ -37,6 +39,8 @@ import Portfolio from './pages/Portfolio';
 import Multisig from './pages/Multisig';
 import ApiHealth from './pages/ApiHealth';
 import ProCharts from './pages/ProCharts';
+import TokenFlow from './pages/TokenFlow';
+import ApiHealth from './pages/ApiHealth';
 import { PaperTradingDashboard } from './pages/PaperTrading/Dashboard';
 import SettingsPage from './pages/Settings';
 import { BIOMETRIC_STATUS_EVENT } from './constants/events';
@@ -155,6 +159,7 @@ function App() {
       { id: 'multisig', label: 'Multisig', icon: Shield, component: Multisig },
       { id: 'stocks', label: 'Stocks', icon: BarChart3, component: Stocks },
       { id: 'insiders', label: 'Insiders', icon: Users, component: Insiders },
+      { id: 'token-flow', label: 'Token Flow', icon: Network, component: TokenFlow },
       {
         id: 'trading',
         label: isPaperMode ? 'Live Trading' : 'Trading',
@@ -167,7 +172,7 @@ function App() {
     ];
 
     if (isPaperMode) {
-      basePages.splice(5, 0, {
+      basePages.splice(6, 0, {
         id: 'paper-trading',
         label: 'Paper Trading',
         icon: FileText,
