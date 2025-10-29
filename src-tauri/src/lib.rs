@@ -72,6 +72,7 @@ use wallet::hardware_wallet::HardwareWalletState;
 use wallet::multi_wallet::MultiWalletManager;
 use wallet::phantom::{hydrate_wallet_state, WalletState};
 use core::cache_manager::{CacheType, SharedCacheManager};
+use market::{HolderAnalyzer, SharedHolderAnalyzer};
 
 async fn warm_cache_on_startup(
     _app_handle: tauri::AppHandle,
@@ -397,6 +398,17 @@ pub fn run() {
 
              let shared_compression_manager: SharedCompressionManager = Arc::new(RwLock::new(compression_manager));
              app.manage(shared_compression_manager.clone());
+
+             // Initialize holder analyzer
+             let holder_analyzer = tauri::async_runtime::block_on(async {
+                 HolderAnalyzer::new(&app.handle()).await
+             }).map_err(|e| {
+                 eprintln!("Failed to initialize holder analyzer: {e}");
+                 Box::new(e) as Box<dyn Error>
+             })?;
+
+             let shared_holder_analyzer: SharedHolderAnalyzer = Arc::new(RwLock::new(holder_analyzer));
+             app.manage(shared_holder_analyzer.clone());
 
              // Start background compression job (runs daily at 3 AM)
              let compression_job = shared_compression_manager.clone();
@@ -767,6 +779,15 @@ pub fn run() {
             twitter_get_sentiment_history,
             twitter_get_stats,
             twitter_get_tweet_history,
+
+            // Holder Analysis & Metadata
+            market::holders::get_holder_distribution,
+            market::holders::get_holder_trends,
+            market::holders::get_large_transfers,
+            market::holders::get_token_metadata,
+            market::holders::get_verification_status,
+            market::holders::export_holder_data,
+            market::holders::export_metadata_snapshot,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
