@@ -38,8 +38,8 @@ import {
   Bell,
   Settings,
   Briefcase,
-  Loader2,
   FileText,
+  Shield,
 } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { PhantomConnect } from './components/wallet/PhantomConnect';
@@ -51,12 +51,16 @@ import { LockScreen } from './components/auth/LockScreen';
 import { ConnectionStatus } from './components/common/ConnectionStatus';
 import { PaperModeIndicator } from './components/trading/PaperModeIndicator';
 import { PaperTradingTutorial } from './components/trading/PaperTradingTutorial';
+import ProposalNotification from './components/wallet/ProposalNotification';
+import AlertNotificationContainer from './components/alerts/AlertNotificationContainer';
+import AlertChartModal from './components/alerts/AlertChartModal';
 import Dashboard from './pages/Dashboard';
 import Coins from './pages/Coins';
 import Stocks from './pages/Stocks';
 import Insiders from './pages/Insiders';
 import Trading from './pages/Trading';
 import Portfolio from './pages/Portfolio';
+import Multisig from './pages/Multisig';
 import { PaperTradingDashboard } from './pages/PaperTrading/Dashboard';
 import SettingsPage from './pages/Settings';
 import { BIOMETRIC_STATUS_EVENT } from './constants/events';
@@ -80,24 +84,14 @@ function App() {
   const [groupsModalOpen, setGroupsModalOpen] = useState(false);
   const [walletSettingsModalOpen, setWalletSettingsModalOpen] = useState(false);
   const [selectedWalletId, setSelectedWalletId] = useState<string | null>(null);
+  const [chartSymbol, setChartSymbol] = useState<string | null>(null);
+  const [chartTimestamp, setChartTimestamp] = useState<string | null>(null);
 
-  const [currentPage, setCurrentPage] = useState('dashboard')
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [lockVisible, setLockVisible] = useState(false)
-  const [initializingLock, setInitializingLock] = useState(true)
-  const [addWalletModalOpen, setAddWalletModalOpen] = useState(false)
-  const [groupsModalOpen, setGroupsModalOpen] = useState(false)
-  const [walletSettingsModalOpen, setWalletSettingsModalOpen] = useState(false)
-  const [selectedWalletId, setSelectedWalletId] = useState<string | null>(null)
-
-  const wallets = useWalletStore((state) => state.wallets)
-  const refreshMultiWallet = useWalletStore((state) => state.refreshMultiWallet)
-  const { isPaperMode, togglePaperMode } = usePaperTradingStore()
-  const proposalNotifications = useWalletStore((state) => state.proposalNotifications)
-  const dismissProposalNotification = useWalletStore((state) => state.dismissProposalNotification)
   const wallets = useWalletStore(state => state.wallets);
   const refreshMultiWallet = useWalletStore(state => state.refreshMultiWallet);
-  const { isPaperMode, togglePaperMode } = usePaperTradingStore();
+  const { isPaperMode } = usePaperTradingStore();
+  const proposalNotifications = useWalletStore(state => state.proposalNotifications);
+  const dismissProposalNotification = useWalletStore(state => state.dismissProposalNotification);
 
   useAlertNotifications();
 
@@ -162,6 +156,21 @@ function App() {
     }
   }, [isPaperMode, currentPage]);
 
+  const handleOpenChart = (symbol: string, timestamp: string) => {
+    setChartSymbol(symbol);
+    setChartTimestamp(timestamp);
+  };
+
+  const handleCloseChart = () => {
+    setChartSymbol(null);
+    setChartTimestamp(null);
+  };
+
+  const handleQuickTrade = (symbol: string) => {
+    setCurrentPage('trading');
+    handleCloseChart();
+  };
+
   const pages = useMemo(() => {
     const basePages = [
       { id: 'dashboard', label: 'Dashboard', icon: Home, component: Dashboard },
@@ -196,15 +205,12 @@ function App() {
 
   const handleSwitchToLive = () => {
     setCurrentPage('settings');
-    // Let the user switch in Settings
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
-      {/* Paper Mode Indicator Banner */}
       <PaperModeIndicator onSwitchToLive={handleSwitchToLive} />
 
-      {/* Top Bar */}
       <header
         className={`sticky z-40 backdrop-blur-xl bg-slate-900/80 border-b border-purple-500/20 ${isPaperMode ? 'top-[52px]' : 'top-0'}`}
       >
@@ -241,7 +247,6 @@ function App() {
         </div>
       </header>
 
-      {/* Sidebar */}
       <AnimatePresence>
         {sidebarOpen && (
           <>
@@ -290,7 +295,6 @@ function App() {
         )}
       </AnimatePresence>
 
-      {/* Main Content */}
       <main className="max-w-[1800px] mx-auto px-6 py-8">
         <AnimatePresence mode="wait">
           <motion.div
@@ -305,13 +309,10 @@ function App() {
         </AnimatePresence>
       </main>
 
-      {/* Lock Screen */}
       {!initializingLock && lockVisible && <LockScreen onUnlock={() => setLockVisible(false)} />}
 
-      {/* Paper Trading Tutorial */}
       <PaperTradingTutorial />
 
-      {/* Multi-Wallet Modals */}
       <AddWalletModal isOpen={addWalletModalOpen} onClose={() => setAddWalletModalOpen(false)} />
       <GroupManagementModal isOpen={groupsModalOpen} onClose={() => setGroupsModalOpen(false)} />
       <WalletSettingsModal
@@ -326,11 +327,23 @@ function App() {
       <ProposalNotification
         notifications={proposalNotifications}
         onDismiss={dismissProposalNotification}
-        onOpenProposal={(id) => {
-          setCurrentPage('multisig')
-          dismissProposalNotification(id)
+        onOpenProposal={id => {
+          setCurrentPage('multisig');
+          dismissProposalNotification(id);
         }}
       />
+
+      <AlertNotificationContainer onOpenChart={handleOpenChart} />
+
+      {chartSymbol && (
+        <AlertChartModal
+          isOpen={true}
+          symbol={chartSymbol}
+          timestamp={chartTimestamp || undefined}
+          onClose={handleCloseChart}
+          onQuickTrade={handleQuickTrade}
+        />
+      )}
     </div>
   );
 }
