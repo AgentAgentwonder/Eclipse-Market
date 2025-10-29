@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -20,6 +20,10 @@ const DEFAULT_HELIUS_KEY: &str = "YOUR_HELIUS_KEY_HERE";
 const DEFAULT_BIRDEYE_KEY: &str = "YOUR_BIRDEYE_KEY_HERE";
 const DEFAULT_JUPITER_KEY: &str = "YOUR_JUPITER_KEY_HERE";
 
+const ROTATION_INTERVAL_DAYS: i64 = 90;
+const ROTATION_REMINDER_THRESHOLD_DAYS: i64 = 15;
+const ROTATION_HISTORY_LIMIT: usize = 50;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ApiKeyConfig {
@@ -39,6 +43,20 @@ pub struct ApiKeyMetadata {
     pub connection_status: ConnectionStatus,
     pub last_tested: Option<DateTime<Utc>>,
     pub rate_limit_info: Option<RateLimitInfo>,
+    #[serde(default)]
+    pub rotation_history: Vec<RotationRecord>,
+    #[serde(default)]
+    pub rotation_due_at: Option<DateTime<Utc>>,
+    #[serde(default)]
+    pub reminder_sent_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RotationRecord {
+    pub timestamp: DateTime<Utc>,
+    pub reason: String,
+    pub success: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -76,6 +94,11 @@ pub struct ServiceStatus {
     pub last_tested: Option<DateTime<Utc>>,
     pub expiry_date: Option<DateTime<Utc>>,
     pub days_until_expiry: Option<i64>,
+    pub last_rotation: Option<DateTime<Utc>>,
+    pub rotation_due_at: Option<DateTime<Utc>>,
+    pub days_until_rotation_due: Option<i64>,
+    pub rotation_overdue: bool,
+    pub rotation_history: Vec<RotationRecord>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -102,10 +125,11 @@ pub struct ApiConfigManager {
 }
 
 fn default_metadata(service: &str, use_default: bool) -> ApiKeyMetadata {
+    let now = Utc::now();
     ApiKeyMetadata {
         service: service.to_string(),
         expiry_date: None,
-        last_rotation: Utc::now(),
+        last_rotation: now,
         use_default,
         connection_status: ConnectionStatus {
             connected: false,
@@ -114,6 +138,9 @@ fn default_metadata(service: &str, use_default: bool) -> ApiKeyMetadata {
         },
         last_tested: None,
         rate_limit_info: None,
+        rotation_history: Vec::new(),
+        rotation_due_at: Some(now + Duration::days(ROTATION_INTERVAL_DAYS)),
+        reminder_sent_at: None,
     }
 }
 
@@ -192,19 +219,31 @@ pub async fn save_api_key(
         .map_err(|e| format!("Failed to store API key: {}", e))?;
 
     // Update metadata
-    let metadata = ApiKeyMetadata {
-        service: service.clone(),
-        expiry_date,
-        last_rotation: Utc::now(),
-        use_default: false,
-        connection_status: ConnectionStatus {
-            connected: false,
-            last_error: None,
-            status_code: None,
-        },
-        last_tested: None,
-        rate_limit_info: None,
+    let mut metadata = config_manager.get_or_create_metadata(&service, false);
+    let now = Utc::now();
+    metadata.expiry_date = expiry_date;
+    metadata.last_rotation = now;
+    metadata.use_default = false;
+    metadata.connection_status = ConnectionStatus {
+        connected: false,
+        last_error: None,
+        status_code: None,
     };
+    metadata.last_tested = None;
+    metadata.rotation_due_at = Some(now + Duration::days(ROTATION_INTERVAL_DAYS));
+    metadata.reminder_sent_at = None;
+    
+    // Add rotation record
+    metadata.rotation_history.push(RotationRecord {
+        timestamp: now,
+        reason: "Manual key update".to_string(),
+        success: true,
+    });
+    
+    // Keep only last N rotation records
+    if metadata.rotation_history.len() > ROTATION_HISTORY_LIMIT {
+        metadata.rotation_history.drain(0..(metadata.rotation_history.len() - ROTATION_HISTORY_LIMIT));
+    }
 
     config_manager
         .update_metadata(&service, metadata, &keystore)
@@ -414,6 +453,18 @@ fn get_service_status(
         (exp - now).num_days()
     });
 
+    let last_rotation = metadata.as_ref().map(|m| m.last_rotation);
+    let rotation_due_at = metadata.as_ref().and_then(|m| m.rotation_due_at);
+    let days_until_rotation_due = rotation_due_at.map(|due| {
+        let now = Utc::now();
+        (due - now).num_days()
+    });
+    let rotation_overdue = rotation_due_at.map(|due| Utc::now() > due).unwrap_or(false);
+    let rotation_history = metadata
+        .as_ref()
+        .map(|m| m.rotation_history.clone())
+        .unwrap_or_default();
+
     Ok(ServiceStatus {
         configured,
         using_default,
@@ -422,6 +473,11 @@ fn get_service_status(
         last_tested,
         expiry_date,
         days_until_expiry,
+        last_rotation,
+        rotation_due_at,
+        days_until_rotation_due,
+        rotation_overdue,
+        rotation_history,
     })
 }
 
@@ -551,6 +607,131 @@ fn extract_rate_limit_info(response: &reqwest::Response) -> Option<RateLimitInfo
         remaining,
         reset_at: reset,
     })
+}
+
+#[tauri::command]
+pub async fn rotate_api_key(
+    service: String,
+    keystore: State<'_, Keystore>,
+    config_manager: State<'_, ApiConfigManager>,
+) -> Result<String, String> {
+    let metadata = config_manager.get_metadata(&service);
+    
+    if metadata.is_none() || metadata.as_ref().map(|m| m.use_default).unwrap_or(true) {
+        return Err("Cannot rotate default keys. Please add a custom key first.".to_string());
+    }
+    
+    let mut meta = metadata.unwrap();
+    let now = Utc::now();
+    
+    meta.last_rotation = now;
+    meta.rotation_due_at = Some(now + Duration::days(ROTATION_INTERVAL_DAYS));
+    meta.reminder_sent_at = None;
+    
+    meta.rotation_history.push(RotationRecord {
+        timestamp: now,
+        reason: "Manual rotation".to_string(),
+        success: true,
+    });
+    
+    if meta.rotation_history.len() > ROTATION_HISTORY_LIMIT {
+        meta.rotation_history.drain(0..(meta.rotation_history.len() - ROTATION_HISTORY_LIMIT));
+    }
+    
+    config_manager
+        .update_metadata(&service, meta, &keystore)
+        .map_err(|e| format!("Failed to update metadata: {}", e))?;
+    
+    Ok(format!("Key rotation scheduled for {}. Next rotation due in 90 days.", service))
+}
+
+#[tauri::command]
+pub async fn check_rotation_reminders(
+    keystore: State<'_, Keystore>,
+    config_manager: State<'_, ApiConfigManager>,
+) -> Result<Vec<String>, String> {
+    let services = vec!["helius", "birdeye", "jupiter", "solana_rpc"];
+    let mut reminders = Vec::new();
+    let now = Utc::now();
+    
+    for service in services {
+        if let Some(mut metadata) = config_manager.get_metadata(service) {
+            if let Some(rotation_due) = metadata.rotation_due_at {
+                let days_until_rotation = (rotation_due - now).num_days();
+                
+                // Send reminder if within threshold and not already sent
+                if days_until_rotation <= ROTATION_REMINDER_THRESHOLD_DAYS && metadata.reminder_sent_at.is_none() {
+                    reminders.push(format!(
+                        "{}: Key rotation due in {} days",
+                        service, days_until_rotation
+                    ));
+                    
+                    metadata.reminder_sent_at = Some(now);
+                    let _ = config_manager.update_metadata(service, metadata, &keystore);
+                }
+            }
+        }
+    }
+    
+    Ok(reminders)
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ApiKeysExport {
+    pub version: u8,
+    pub salt: String,
+    pub nonce: String,
+    pub ciphertext: String,
+    pub created_at: DateTime<Utc>,
+}
+
+#[tauri::command]
+pub async fn export_api_keys(
+    password: String,
+    keystore: State<'_, Keystore>,
+) -> Result<ApiKeysExport, String> {
+    // Export the entire keystore backup which includes API keys
+    let backup = keystore
+        .export_backup(&password)
+        .map_err(|e| format!("Failed to export keys: {}", e))?;
+    
+    Ok(ApiKeysExport {
+        version: backup.version,
+        salt: backup.salt,
+        nonce: backup.nonce,
+        ciphertext: backup.ciphertext,
+        created_at: backup.created_at,
+    })
+}
+
+#[tauri::command]
+pub async fn import_api_keys(
+    password: String,
+    export_data: ApiKeysExport,
+    keystore: State<'_, Keystore>,
+    config_manager: State<'_, ApiConfigManager>,
+) -> Result<String, String> {
+    use crate::security::keystore::KeystoreBackup;
+    
+    let backup = KeystoreBackup {
+        version: export_data.version,
+        salt: export_data.salt,
+        nonce: export_data.nonce,
+        ciphertext: export_data.ciphertext,
+        created_at: export_data.created_at,
+    };
+    
+    keystore
+        .import_backup(&password, backup)
+        .map_err(|e| format!("Failed to import keys: {}", e))?;
+    
+    // Reload metadata after import
+    config_manager
+        .initialize(&keystore)
+        .map_err(|e| format!("Failed to reload metadata: {}", e))?;
+    
+    Ok("API keys imported successfully".to_string())
 }
 
 pub fn register_api_config_manager(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {

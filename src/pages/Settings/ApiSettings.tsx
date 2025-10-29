@@ -13,6 +13,13 @@ import {
   Calendar,
   AlertTriangle,
   TrendingUp,
+  Clock3,
+  RotateCcw,
+  FileDown,
+  FileUp,
+  BarChart3,
+  Bell,
+  Gauge,
 } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/tauri';
 
@@ -32,6 +39,66 @@ interface ServiceStatus {
   lastTested?: string;
   expiryDate?: string;
   daysUntilExpiry?: number;
+  lastRotation?: string;
+  rotationDueAt?: string;
+  daysUntilRotationDue?: number;
+  rotationOverdue: boolean;
+  rotationHistory: RotationRecord[];
+}
+
+interface RotationRecord {
+  timestamp: string;
+  reason: string;
+  success: boolean;
+}
+
+interface ApiUsageAnalytics {
+  services: Record<string, UsageStats>;
+  endpointBreakdown: Record<string, EndpointUsage[]>;
+  dailyCalls: Record<string, number>;
+  alerts: UsageAlert[];
+}
+
+interface UsageStats {
+  service: string;
+  totalCalls: number;
+  successfulCalls: number;
+  failedCalls: number;
+  averageLatencyMs: number;
+  estimatedCost: number;
+  periodStart: string;
+  periodEnd: string;
+}
+
+interface EndpointUsage {
+  endpoint: string;
+  callCount: number;
+  averageLatencyMs: number;
+  successRate: number;
+}
+
+interface UsageAlert {
+  service: string;
+  alertType: string;
+  message: string;
+  timestamp: string;
+}
+
+interface FairUseLimit {
+  service: string;
+  dailyLimit: number;
+  monthlyLimit: number;
+  currentDailyUsage: number;
+  currentMonthlyUsage: number;
+  resetAt: string;
+}
+
+interface ApiKeysExport {
+  version: number;
+  salt: string;
+  nonce: string;
+  ciphertext: string;
+  createdAt: string;
 }
 
 interface ApiStatus {
@@ -77,8 +144,21 @@ export function ApiSettings() {
   const [saving, setSaving] = useState<string | null>(null);
   const [testing, setTesting] = useState<string | null>(null);
 
+  // New state for key lifecycle features
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [analytics, setAnalytics] = useState<ApiUsageAnalytics | null>(null);
+  const [fairUseLimits, setFairUseLimits] = useState<FairUseLimit[]>([]);
+  const [exportPassword, setExportPassword] = useState('');
+  const [importPassword, setImportPassword] = useState('');
+  const [importData, setImportData] = useState('');
+  const [rotating, setRotating] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [importing, setImporting] = useState(false);
+
   useEffect(() => {
     loadApiStatus();
+    loadAnalytics();
+    loadFairUseLimits();
   }, []);
 
   const loadApiStatus = async () => {
@@ -132,6 +212,8 @@ export function ApiSettings() {
 
       // Reload status
       await loadApiStatus();
+      await loadAnalytics();
+      await loadFairUseLimits();
 
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
@@ -157,6 +239,8 @@ export function ApiSettings() {
       const result = await invoke<string>('remove_api_key', { service });
       setSuccess(result);
       await loadApiStatus();
+      await loadAnalytics();
+      await loadFairUseLimits();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       console.error('Failed to remove API key:', err);
@@ -210,6 +294,104 @@ export function ApiSettings() {
       setError(String(err));
     } finally {
       setTesting(null);
+    }
+  };
+
+  const loadAnalytics = async () => {
+    try {
+      const data = await invoke<ApiUsageAnalytics>('get_api_analytics', { days: 30 });
+      setAnalytics(data);
+    } catch (err) {
+      console.error('Failed to load analytics:', err);
+    }
+  };
+
+  const loadFairUseLimits = async () => {
+    try {
+      const limits = await invoke<FairUseLimit[]>('get_fair_use_status');
+      setFairUseLimits(limits);
+    } catch (err) {
+      console.error('Failed to load fair use limits:', err);
+    }
+  };
+
+  const handleRotateKey = async (service: string) => {
+    setRotating(service);
+    setError(null);
+    try {
+      const result = await invoke<string>('rotate_api_key', { service });
+      setSuccess(result);
+      await loadApiStatus();
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      console.error('Failed to rotate key:', err);
+      setError(String(err));
+    } finally {
+      setRotating(null);
+    }
+  };
+
+  const handleExport = async () => {
+    if (!exportPassword.trim()) {
+      setError('Please enter a password for encryption');
+      return;
+    }
+    setExporting(true);
+    setError(null);
+    try {
+      const exportData = await invoke<ApiKeysExport>('export_api_keys', {
+        password: exportPassword,
+      });
+      
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+        type: 'application/json',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `api-keys-backup-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      setSuccess('API keys exported successfully!');
+      setShowExportDialog(false);
+      setExportPassword('');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      console.error('Failed to export keys:', err);
+      setError(String(err));
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleImport = async () => {
+    if (!importPassword.trim() || !importData.trim()) {
+      setError('Please provide password and import data');
+      return;
+    }
+    setImporting(true);
+    setError(null);
+    try {
+      const parsedData = JSON.parse(importData);
+      await invoke('import_api_keys', {
+        password: importPassword,
+        exportData: parsedData,
+      });
+      
+      setSuccess('API keys imported successfully!');
+      setShowImportDialog(false);
+      setImportPassword('');
+      setImportData('');
+      await loadApiStatus();
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      console.error('Failed to import keys:', err);
+      setError(String(err));
+    } finally {
+      setImporting(false);
     }
   };
 
