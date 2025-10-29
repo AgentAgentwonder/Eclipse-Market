@@ -61,7 +61,7 @@ use api::{ApiHealthMonitor, SharedApiHealthMonitor};
 use drawings::{DrawingManager, SharedDrawingManager};
 use indicators::{IndicatorManager, SharedIndicatorManager};
 use notifications::router::{NotificationRouter, SharedNotificationRouter};
-use portfolio::{SharedWatchlistManager, WatchlistManager};
+use portfolio::{AIPortfolioAdvisor, SharedAIPortfolioAdvisor, SharedWatchlistManager, WatchlistManager};
 use webhooks::{WebhookManager, SharedWebhookManager};
 use wallet::hardware_wallet::HardwareWalletState;
 use wallet::ledger::LedgerState;
@@ -466,6 +466,17 @@ pub fn run() {
              let shared_risk_analyzer: ai::SharedRiskAnalyzer = Arc::new(RwLock::new(risk_analyzer));
              app.manage(shared_risk_analyzer.clone());
 
+             // Initialize AI portfolio advisor
+             let ai_advisor = tauri::async_runtime::block_on(async {
+                 AIPortfolioAdvisor::new(&app.handle()).await
+             }).map_err(|e| {
+                 eprintln!("Failed to initialize AI portfolio advisor: {e}");
+                 Box::new(e) as Box<dyn Error>
+             })?;
+
+             let shared_ai_advisor: SharedAIPortfolioAdvisor = Arc::new(RwLock::new(ai_advisor));
+             app.manage(shared_ai_advisor.clone());
+
              // Start background compression job (runs daily at 3 AM)
              let compression_job = shared_compression_manager.clone();
              tauri::async_runtime::spawn(async move {
@@ -663,6 +674,16 @@ pub fn run() {
             watchlist_reorder_items,
             watchlist_export,
             watchlist_import,
+            // AI Portfolio Advisor
+            save_risk_profile,
+            get_risk_profile,
+            generate_portfolio_recommendation,
+            get_portfolio_recommendations,
+            apply_portfolio_recommendation,
+            track_recommendation_performance,
+            generate_weekly_portfolio_update,
+            get_weekly_portfolio_updates,
+            get_performance_history,
             // Alerts & Notifications
             alert_create,
             alert_list,

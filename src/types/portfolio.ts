@@ -137,3 +137,73 @@ export interface RiskProfilePreset {
   maxPositionSize: number;
   minRiskRewardRatio: number;
 }
+
+export interface UserRiskProfile {
+  profile: RiskProfile;
+  investmentHorizon: 'short' | 'medium' | 'long';
+  goals: string[];
+  constraints: string[];
+  riskTolerance: number;
+  customSettings?: {
+    maxDrawdown: number;
+    targetReturn: number;
+    maxPositionSize: number;
+  };
+}
+
+export interface AllocationRecommendation {
+  symbol: string;
+  mint: string;
+  targetPercent: number;
+  currentPercent: number;
+  action: 'buy' | 'sell' | 'hold';
+  amount: number;
+  estimatedValue: number;
+  reasoning: string;
+}
+
+export interface PortfolioRecommendation {
+  id: string;
+  timestamp: string;
+  riskProfile: RiskProfile;
+  allocations: AllocationRecommendation[];
+  expectedReturn: number;
+  expectedRisk: number;
+  sharpeRatio: number;
+  diversificationScore: number;
+  factors: RecommendationFactor[];
+  status: 'pending' | 'applied' | 'rejected';
+  appliedAt?: string;
+}
+
+export interface RecommendationFactor {
+  name: string;
+  impact: number;
+  description: string;
+}
+
+export interface PerformanceComparison {
+  recommendationId: string;
+  baselineReturn: number;
+  actualReturn: number;
+  baselineRisk: number;
+  actualRisk: number;
+  outperformance: number;
+  periodDays: number;
+  timestamp: string;
+}
+
+export interface WeeklyUpdate {
+  id: string;
+  timestamp: string;
+  portfolioValue: number;
+  weeklyReturn: number;
+  recommendations: PortfolioRecommendation[];
+  marketCommentary: string;
+  riskMetrics: {
+    sharpeRatio: number;
+    volatility: number;
+    maxDrawdown: number;
+    beta: number;
+  };
+}
