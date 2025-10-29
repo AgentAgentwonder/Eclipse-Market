@@ -13,6 +13,8 @@ import {
   Activity,
   FileText,
   Shield,
+  Activity,
+  LineChart,
   Network,
 } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/tauri';
@@ -35,6 +37,8 @@ import Insiders from './pages/Insiders';
 import Trading from './pages/Trading';
 import Portfolio from './pages/Portfolio';
 import Multisig from './pages/Multisig';
+import ApiHealth from './pages/ApiHealth';
+import ProCharts from './pages/ProCharts';
 import TokenFlow from './pages/TokenFlow';
 import ApiHealth from './pages/ApiHealth';
 import { PaperTradingDashboard } from './pages/PaperTrading/Dashboard';
@@ -162,6 +166,7 @@ function App() {
         icon: Bell,
         component: Trading,
       },
+      { id: 'pro-charts', label: 'Pro Charts', icon: LineChart, component: ProCharts },
       { id: 'api-health', label: 'API Health', icon: Activity, component: ApiHealth },
       { id: 'settings', label: 'Settings', icon: Settings, component: SettingsPage },
     ];
