@@ -436,6 +436,17 @@ pub fn run() {
              let shared_holder_analyzer: SharedHolderAnalyzer = Arc::new(RwLock::new(holder_analyzer));
              app.manage(shared_holder_analyzer.clone());
 
+             // Initialize risk analyzer
+             let risk_analyzer = tauri::async_runtime::block_on(async {
+                 ai::RiskAnalyzer::new(&app.handle()).await
+             }).map_err(|e| {
+                 eprintln!("Failed to initialize risk analyzer: {e}");
+                 Box::new(e) as Box<dyn Error>
+             })?;
+
+             let shared_risk_analyzer: ai::SharedRiskAnalyzer = Arc::new(RwLock::new(risk_analyzer));
+             app.manage(shared_risk_analyzer.clone());
+
              // Start background compression job (runs daily at 3 AM)
              let compression_job = shared_compression_manager.clone();
              tauri::async_runtime::spawn(async move {
@@ -577,6 +588,9 @@ pub fn run() {
             // AI & Sentiment
             assess_risk,
             analyze_text_sentiment,
+            get_token_risk_score,
+            get_risk_history,
+            get_latest_risk_score,
             // Market Data
             get_coin_price,
             get_price_history,
