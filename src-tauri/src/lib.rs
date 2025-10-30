@@ -28,6 +28,7 @@ mod stream_commands;
 mod token_flow;
 mod trading;
 mod tray;
+mod ui;
 mod updater;
 mod voice;
 pub mod voice;
@@ -63,6 +64,7 @@ pub use stocks::*;
 pub use token_flow::*;
 pub use trading::*;
 pub use tray::*;
+pub use ui::theme_engine::*;
 pub use updater::*;
 pub use voice::*;
 pub use wallet::hardware_wallet::*;
@@ -99,7 +101,7 @@ use auth::session_manager::SessionManager;
 use auth::two_factor::TwoFactorManager;
 use std::error::Error;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use tokio::sync::RwLock;
 use stream_commands::*;
 use tokio::sync::RwLock;
@@ -582,6 +584,14 @@ pub fn run() {
              let voice_state = VoiceState::new();
              let shared_voice_state: SharedVoiceState = Arc::new(RwLock::new(voice_state));
              app.manage(shared_voice_state.clone());
+
+             // Initialize theme engine
+             let theme_engine = ui::theme_engine::ThemeEngine::initialize(&app.handle()).map_err(|e| {
+                 eprintln!("Failed to initialize theme engine: {e}");
+                 Box::new(std::io::Error::new(std::io::ErrorKind::Other, e)) as Box<dyn Error>
+             })?;
+             let shared_theme_engine: ui::theme_engine::SharedThemeEngine = Arc::new(std::sync::Mutex::new(theme_engine));
+             app.manage(shared_theme_engine.clone());
 
              // Attach tray window listeners
              if let Some(window) = app.get_window("main") {
@@ -1248,6 +1258,16 @@ pub fn run() {
             validate_voice_mfa,
             check_voice_permission,
             get_voice_capabilities,
+
+            // Theme Engine
+            theme_get_presets,
+            theme_get_settings,
+            theme_update_settings,
+            theme_save_custom,
+            theme_delete_custom,
+            theme_export,
+            theme_import,
+            theme_get_os_preference,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -61,12 +61,14 @@ export interface Theme {
   updatedAt: number;
   author?: string;
   description?: string;
+  bestFor?: string;
 }
 
 export interface ThemePreset {
   id: string;
   name: string;
   description: string;
+  bestFor?: string;
   colors: ThemeColors;
   effects?: ThemeEffects;
   preview?: string;
