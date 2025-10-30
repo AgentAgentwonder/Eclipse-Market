@@ -41,6 +41,7 @@ import ChatIntegrations from './Settings/ChatIntegrations';
 import WebhookSettings from './Settings/WebhookSettings';
 import { ShortcutSettings } from './Settings/ShortcutSettings';
 import { ThemeEditor } from '../components/theme/ThemeEditor';
+import { Appearance } from './Settings/Appearance';
 import { AccessibilityPanel } from '../components/accessibility/AccessibilityPanel';
 import { UpdateSettings } from './Settings/UpdateSettings';
 import { MaintenanceSettings } from '../components/common/MaintenanceSettings';
@@ -1292,19 +1293,9 @@ function Settings() {
         <CacheSettings />
       </div>
 
-      {/* Theme Editor */}
-      <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center shadow-lg shadow-pink-500/30">
-            <Palette className="w-6 h-6" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold">Theme Editor</h2>
-            <p className="text-white/60 text-sm">Customize colors, create themes, and share with the community</p>
-          </div>
-        </div>
-
-        <ThemeEditor />
+      {/* Appearance & Themes */}
+      <div className="bg-slate-800/30 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6">
+        <Appearance />
       </div>
 
       {/* Accessibility */}
