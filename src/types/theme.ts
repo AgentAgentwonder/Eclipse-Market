@@ -37,12 +37,25 @@ export interface ThemeColors {
   gradientStart: string;
   gradientMiddle: string;
   gradientEnd: string;
+  
+  // Lunar Eclipse additions
+  deepSpace?: string;
+  eclipseOrange?: string;
+  moonlightSilver?: string;
+  shadowAccent?: string;
+}
+
+export interface ThemeEffects {
+  glowStrength: 'none' | 'subtle' | 'normal' | 'strong';
+  ambience: 'minimal' | 'balanced' | 'immersive';
+  glassmorphism: boolean;
 }
 
 export interface Theme {
   id: string;
   name: string;
   colors: ThemeColors;
+  effects?: ThemeEffects;
   isCustom: boolean;
   createdAt: number;
   updatedAt: number;
@@ -55,6 +68,7 @@ export interface ThemePreset {
   name: string;
   description: string;
   colors: ThemeColors;
+  effects?: ThemeEffects;
   preview?: string;
 }
 

@@ -14,7 +14,13 @@ import {
 } from 'lucide-react';
 import { useThemeStore } from '../../store/themeStore';
 import { themePresets } from '../../constants/themePresets';
-import { ThemeColors } from '../../types/theme';
+import { ThemeColors, ThemeEffects } from '../../types/theme';
+
+const defaultEffects: ThemeEffects = {
+  glowStrength: 'subtle',
+  ambience: 'balanced',
+  glassmorphism: true,
+};
 
 export function ThemeEditor() {
   const {
@@ -32,15 +38,21 @@ export function ThemeEditor() {
   const [isCreating, setIsCreating] = useState(false);
   const [customName, setCustomName] = useState('');
   const [editingColors, setEditingColors] = useState<ThemeColors>(currentTheme.colors);
+  const [editingEffects, setEditingEffects] = useState<ThemeEffects>(currentTheme.effects ?? defaultEffects);
   const [exportSuccess, setExportSuccess] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
 
   useEffect(() => {
     setEditingColors(currentTheme.colors);
+    setEditingEffects(currentTheme.effects ?? defaultEffects);
   }, [currentTheme]);
 
   const handleColorChange = (key: keyof ThemeColors, value: string) => {
     setEditingColors(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleEffectsChange = <K extends keyof ThemeEffects>(key: K, value: ThemeEffects[K]) => {
+    setEditingEffects(prev => ({ ...prev, [key]: value }));
   };
 
   const handleSaveCustomTheme = () => {
@@ -53,9 +65,10 @@ export function ThemeEditor() {
       updateCustomTheme(currentTheme.id, {
         name: customName,
         colors: editingColors,
+        effects: editingEffects,
       });
     } else {
-      createCustomTheme(customName, editingColors);
+      createCustomTheme(customName, editingColors, editingEffects);
     }
 
     setIsCreating(false);
@@ -109,12 +122,14 @@ export function ThemeEditor() {
     setIsCreating(true);
     setCustomName(currentTheme.name);
     setEditingColors(currentTheme.colors);
+    setEditingEffects(currentTheme.effects ?? defaultEffects);
   };
 
   const cancelCreating = () => {
     setIsCreating(false);
     setCustomName('');
     setEditingColors(currentTheme.colors);
+    setEditingEffects(currentTheme.effects ?? defaultEffects);
   };
 
   return (
@@ -337,31 +352,85 @@ export function ThemeEditor() {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-              {(Object.keys(editingColors) as Array<keyof ThemeColors>).map(key => (
-                <div key={key}>
-                  <label htmlFor={`color-${key}`} className="block text-sm font-medium mb-2 capitalize">
-                    {key.replace(/([A-Z])/g, ' $1').trim()}
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      id={`color-${key}`}
-                      type="color"
-                      value={editingColors[key]}
-                      onChange={e => handleColorChange(key, e.target.value)}
-                      className="w-16 h-10 rounded-lg border border-purple-500/20 cursor-pointer"
-                      aria-label={`Choose ${key} color`}
-                    />
-                    <input
-                      type="text"
-                      value={editingColors[key]}
-                      onChange={e => handleColorChange(key, e.target.value)}
-                      className="flex-1 px-3 py-2 bg-slate-800/50 border border-purple-500/20 rounded-lg text-white text-sm focus:outline-none focus:border-purple-500/50"
-                      aria-label={`${key} color value`}
-                    />
+            <div className="mb-6">
+              <h4 className="text-lg font-semibold mb-4">Colors</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {(Object.keys(editingColors) as Array<keyof ThemeColors>).map(key => (
+                  <div key={key}>
+                    <label htmlFor={`color-${key}`} className="block text-sm font-medium mb-2 capitalize">
+                      {key.replace(/([A-Z])/g, ' $1').trim()}
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        id={`color-${key}`}
+                        type="color"
+                        value={editingColors[key]}
+                        onChange={e => handleColorChange(key, e.target.value)}
+                        className="w-16 h-10 rounded-lg border border-[rgba(255,140,66,0.35)] cursor-pointer bg-transparent"
+                        aria-label={`Choose ${key} color`}
+                      />
+                      <input
+                        type="text"
+                        value={editingColors[key]}
+                        onChange={e => handleColorChange(key, e.target.value)}
+                        className="flex-1 px-3 py-2 rounded-lg border border-[rgba(192,204,218,0.25)] bg-[rgba(18,24,38,0.65)] text-moonlight-silver text-sm focus:outline-none focus:ring-2 focus:ring-[rgba(255,140,66,0.35)]"
+                        aria-label={`${key} color value`}
+                      />
+                    </div>
                   </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <h4 className="text-lg font-semibold mb-4">Effects</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label htmlFor="glow-strength" className="block text-sm font-medium mb-2">
+                    Glow Strength
+                  </label>
+                  <select
+                    id="glow-strength"
+                    value={editingEffects.glowStrength}
+                    onChange={e => handleEffectsChange('glowStrength', e.target.value as ThemeEffects['glowStrength'])}
+                    className="w-full px-3 py-2 rounded-lg border border-[rgba(192,204,218,0.25)] bg-[rgba(18,24,38,0.65)] text-moonlight-silver focus:outline-none focus:ring-2 focus:ring-[rgba(255,140,66,0.35)]"
+                  >
+                    <option value="none">None</option>
+                    <option value="subtle">Subtle</option>
+                    <option value="normal">Normal</option>
+                    <option value="strong">Strong</option>
+                  </select>
                 </div>
-              ))}
+                <div>
+                  <label htmlFor="ambience" className="block text-sm font-medium mb-2">
+                    Ambience
+                  </label>
+                  <select
+                    id="ambience"
+                    value={editingEffects.ambience}
+                    onChange={e => handleEffectsChange('ambience', e.target.value as ThemeEffects['ambience'])}
+                    className="w-full px-3 py-2 rounded-lg border border-[rgba(192,204,218,0.25)] bg-[rgba(18,24,38,0.65)] text-moonlight-silver focus:outline-none focus:ring-2 focus:ring-[rgba(255,140,66,0.35)]"
+                  >
+                    <option value="minimal">Minimal</option>
+                    <option value="balanced">Balanced</option>
+                    <option value="immersive">Immersive</option>
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="glassmorphism" className="block text-sm font-medium mb-2">
+                    Glassmorphism
+                  </label>
+                  <select
+                    id="glassmorphism"
+                    value={editingEffects.glassmorphism ? 'enabled' : 'disabled'}
+                    onChange={e => handleEffectsChange('glassmorphism', e.target.value === 'enabled')}
+                    className="w-full px-3 py-2 rounded-lg border border-[rgba(192,204,218,0.25)] bg-[rgba(18,24,38,0.65)] text-moonlight-silver focus:outline-none focus:ring-2 focus:ring-[rgba(255,140,66,0.35)]"
+                  >
+                    <option value="enabled">Enabled</option>
+                    <option value="disabled">Disabled</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
             <div className="flex gap-3 justify-end">

@@ -1,6 +1,12 @@
-import { ThemePreset } from '../types/theme';
+import { ThemePreset, ThemeEffects } from '../types/theme';
 
 const baseTimestamp = Date.now();
+
+const defaultEffects: ThemeEffects = {
+  glowStrength: 'subtle',
+  ambience: 'balanced',
+  glassmorphism: true,
+};
 
 export const themePresets: ThemePreset[] = [
   {
@@ -31,6 +37,11 @@ export const themePresets: ThemePreset[] = [
       gradientStart: '#FFFFFF',
       gradientMiddle: '#C3DAFE',
       gradientEnd: '#FED7E2',
+    },
+    effects: {
+      glowStrength: 'subtle',
+      ambience: 'minimal',
+      glassmorphism: false,
     },
   },
   {
@@ -153,6 +164,45 @@ export const themePresets: ThemePreset[] = [
       gradientEnd: '#EA580C',
     },
   },
+  {
+    id: 'lunar-eclipse',
+    name: 'Lunar Eclipse',
+    description: 'Gradient-driven design with deep space backgrounds, eclipse orange accents, and glassmorphism effects.',
+    colors: {
+      background: '#0A0E1A',
+      backgroundSecondary: '#121826',
+      backgroundTertiary: '#1A2235',
+      text: '#E8EBF0',
+      textSecondary: '#C5CAD5',
+      textMuted: '#8B92A3',
+      primary: '#FF6B35',
+      primaryHover: '#FF5722',
+      primaryActive: '#E64A19',
+      accent: '#FF8C42',
+      accentHover: '#FF7A29',
+      success: '#4ECDC4',
+      warning: '#FFB347',
+      error: '#FF6B6B',
+      info: '#4A90E2',
+      border: '#2A3447',
+      borderHover: '#3D4A61',
+      chartBullish: '#4ECDC4',
+      chartBearish: '#FF6B6B',
+      chartNeutral: '#FF8C42',
+      gradientStart: '#0A0E1A',
+      gradientMiddle: '#1A1F35',
+      gradientEnd: '#2A1F3D',
+      deepSpace: '#050810',
+      eclipseOrange: '#FF6B35',
+      moonlightSilver: '#C0CCDA',
+      shadowAccent: '#1F2937',
+    },
+    effects: {
+      glowStrength: 'normal',
+      ambience: 'immersive',
+      glassmorphism: true,
+    },
+  },
 ];
 
 export const defaultThemePreset = themePresets[1];
@@ -165,6 +215,7 @@ export const createThemeFromPreset = (presetId: string) => {
     id: `theme-${presetId}`,
     name: basePreset.name,
     colors: basePreset.colors,
+    effects: basePreset.effects ?? defaultEffects,
     isCustom: false,
     createdAt: baseTimestamp,
     updatedAt: baseTimestamp,
