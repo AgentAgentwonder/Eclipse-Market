@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download, Clock, AlertCircle, CheckCircle } from 'lucide-react';
 import { useUpdateStore } from '../store/updateStore';
+import { ProgressBar } from './common/ProgressBar';
 
 export function UpdateNotificationModal() {
   const {
@@ -93,17 +94,13 @@ export function UpdateNotificationModal() {
             {/* Download Progress */}
             {downloadProgress && (
               <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Downloading update...</span>
-                  <span className="text-sm text-white/60">{downloadProgress.percentage.toFixed(0)}%</span>
-                </div>
-                <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${downloadProgress.percentage}%` }}
-                    className="h-full bg-gradient-to-r from-blue-500 to-cyan-500"
-                  />
-                </div>
+                <ProgressBar
+                  value={downloadProgress.percentage}
+                  label="Downloading update..."
+                  showPercentage
+                  variant="primary"
+                  size="md"
+                />
               </div>
             )}
 

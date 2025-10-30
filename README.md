@@ -153,6 +153,23 @@ The following Tauri commands are available:
 
 For implementation details see [LEDGER_INTEGRATION.md](./LEDGER_INTEGRATION.md).
 
+## Animation System
+
+Eclipse Market Pro features a comprehensive animation system with lunar/eclipse-inspired motion primitives built on Framer Motion. The system includes:
+
+- **Reusable Animation Primitives**: Orbital transitions, constellation effects, corona glows
+- **Shared Components**: Eclipse loaders, moon phase indicators, progress bars, constellation backgrounds
+- **Parallax Effects**: Scroll-based depth and ambient motion
+- **Accessibility First**: Full support for reduced motion preferences
+- **Performance Optimized**: Memoized components and GPU-accelerated transforms
+
+See the [Animation Guide](./ANIMATION_GUIDE.md) for detailed documentation on:
+- Animation tokens (durations, easings)
+- Component usage examples
+- Accessibility implementation
+- Performance guidelines
+- Testing strategies
+
 ## Project Structure
 
 ```

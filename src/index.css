@@ -2,6 +2,11 @@
   color-scheme: dark;
   --font-scale: 1;
   --motion-duration: 180ms;
+  --motion-duration-fast: 150ms;
+  --motion-duration-slow: 500ms;
+  --motion-easing: cubic-bezier(0.4, 0, 0.2, 1);
+  --motion-easing-orbital: cubic-bezier(0.645, 0.045, 0.355, 1);
+  --motion-easing-eclipse: cubic-bezier(0.25, 0.46, 0.45, 0.94);
   --color-background: #0A0E1A;
   --color-background-secondary: #121826;
   --color-background-tertiary: #1A2235;
