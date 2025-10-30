@@ -19,6 +19,17 @@ export interface Panel {
   title: string;
   isMinimized: boolean;
   isLocked: boolean;
+  isFloating?: boolean;
+  floatingWindowId?: string;
+  monitorId?: string;
+  splitConfig?: SplitConfig;
+}
+
+export interface SplitConfig {
+  direction: 'horizontal' | 'vertical';
+  sizes: number[];
+  children: (string | SplitConfig)[];
+  minSizes?: number[];
 }
 
 export type PanelType =
@@ -36,16 +47,50 @@ export type PanelType =
   | 'paper-trading'
   | 'settings';
 
+export interface Monitor {
+  id: string;
+  name: string;
+  width: number;
+  height: number;
+  x: number;
+  y: number;
+  scaleFactor: number;
+  isPrimary: boolean;
+}
+
 export interface MonitorConfig {
   width: number;
   height: number;
   devicePixelRatio: number;
-  count: number; // number of monitors
+  count: number;
+  monitors?: Monitor[];
+}
+
+export interface FloatingWindowState {
+  id: string;
+  panelId: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  monitorId?: string;
+  alwaysOnTop?: boolean;
+  transparent?: boolean;
+  snappedEdge?: 'left' | 'right' | 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+}
+
+export interface MonitorLayoutAssignment {
+  monitorId: string;
+  panelIds: string[];
+  split?: SplitConfig;
 }
 
 export interface WorkspaceLayout {
   panels: Panel[];
   layouts: PanelLayout[];
+  splits?: SplitConfig;
+  floatingWindows?: FloatingWindowState[];
+  monitorAssignments?: MonitorLayoutAssignment[];
   monitorConfig?: MonitorConfig;
 }
 
