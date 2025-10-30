@@ -43,6 +43,8 @@ import { ThemeEditor } from '../components/theme/ThemeEditor';
 import { AccessibilityPanel } from '../components/accessibility/AccessibilityPanel';
 import { UpdateSettings } from './Settings/UpdateSettings';
 import { DiagnosticsSettings } from './Settings/DiagnosticsSettings';
+import { TraySettings } from './Settings/TraySettings';
+import { StartupSettings } from './Settings/StartupSettings';
 
 interface BiometricStatus {
   available: boolean;
@@ -1198,9 +1200,39 @@ function Settings() {
         )}
       </AnimatePresence>
 
+      {/* System Tray */}
+      <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+            <Bell className="w-6 h-6" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold">System Tray</h2>
+            <p className="text-white/60 text-sm">Configure minimize-to-tray, quick stats, and notifications</p>
+          </div>
+        </div>
+        <TraySettings />
+      </div>
+
+      {/* Startup & Auto-Launch */}
+      <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+            <Zap className="w-6 h-6" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold">Startup</h2>
+            <p className="text-white/60 text-sm">Launch on boot, startup delay, and start minimized options</p>
+          </div>
+        </div>
+        <StartupSettings />
+      </div>
+
       {/* Auto Update */}
       <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6">
         <UpdateSettings />
+      </div>
+
       {/* Backup & Settings Management */}
       <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6">
         <div className="flex items-center gap-3 mb-6">

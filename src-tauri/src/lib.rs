@@ -5,6 +5,7 @@ mod api;
 mod api_analytics;
 mod api_config;
 mod auth;
+mod auto_start;
 mod backup;
 mod bots;
 mod cache_commands;
@@ -25,6 +26,7 @@ mod stocks;
 mod stream_commands;
 mod token_flow;
 mod trading;
+mod tray;
 mod updater;
 mod wallet;
 mod websocket;
@@ -38,6 +40,7 @@ pub use api::*;
 pub use api_analytics::*;
 pub use api_config::*;
 pub use auth::*;
+pub use auto_start::*;
 pub use backup::*;
 pub use bots::*;
 pub use chains::*;
@@ -55,6 +58,7 @@ pub use sentiment::*;
 pub use stocks::*;
 pub use token_flow::*;
 pub use trading::*;
+pub use tray::*;
 pub use updater::*;
 pub use wallet::hardware_wallet::*;
 pub use wallet::ledger::*;
@@ -95,6 +99,8 @@ use tokio::sync::RwLock;
 use wallet::hardware_wallet::HardwareWalletState;
 use wallet::multi_wallet::MultiWalletManager;
 use wallet::phantom::{hydrate_wallet_state, WalletState};
+use auto_start::{AutoStartManager, SharedAutoStartManager};
+use tray::{attach_window_listeners, handle_tray_event, SharedTrayManager, TrayManager};
 use core::cache_manager::{CacheType, SharedCacheManager};
 use market::{HolderAnalyzer, SharedHolderAnalyzer};
 use chains::{ChainManager, SharedChainManager};
@@ -148,6 +154,10 @@ async fn warm_cache_on_startup(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .system_tray(TrayManager::create_tray())
+        .on_system_tray_event(|app, event| {
+            handle_tray_event(app, event);
+        })
         .manage(WalletState::new())
         .manage(HardwareWalletState::new())
         .manage(LedgerState::new())
@@ -523,6 +533,60 @@ pub fn run() {
 
              let shared_updater_state: SharedUpdaterState = Arc::new(updater_state);
              app.manage(shared_updater_state.clone());
+
+             // Initialize system tray manager
+             let tray_manager = TrayManager::new();
+             tray_manager.initialize(&app.handle());
+             let shared_tray_manager: SharedTrayManager = Arc::new(tray_manager);
+             app.manage(shared_tray_manager.clone());
+
+             // Initialize auto-start manager
+             let app_name = "Eclipse Market Pro";
+             let app_path = std::env::current_exe()
+                 .ok()
+                 .and_then(|p| p.to_str().map(|s| s.to_string()))
+                 .unwrap_or_else(|| "eclipse-market-pro".to_string());
+             
+             let auto_start_manager = AutoStartManager::new(app_name, &app_path)
+                 .map_err(|e| {
+                     eprintln!("Failed to initialize auto-start manager: {e}");
+                     Box::new(std::io::Error::new(std::io::ErrorKind::Other, e)) as Box<dyn Error>
+                 })?;
+             auto_start_manager.initialize(&app.handle());
+             let shared_auto_start_manager: SharedAutoStartManager = Arc::new(auto_start_manager);
+             app.manage(shared_auto_start_manager.clone());
+
+             // Attach tray window listeners
+             if let Some(window) = app.get_window("main") {
+                 attach_window_listeners(&window, shared_tray_manager.clone());
+             }
+
+             // Handle auto-start behavior
+             let auto_settings = shared_auto_start_manager.get_settings();
+             let launched_from_auto_start = std::env::args().any(|arg| arg == "--auto-start");
+             if launched_from_auto_start {
+                 if auto_settings.start_minimized {
+                     if let Some(window) = app.get_window("main") {
+                         let _ = window.hide();
+                     }
+                     shared_tray_manager.notify_minimized(&app.handle());
+                 } else if auto_settings.delay_seconds > 0 {
+                     if let Some(window) = app.get_window("main") {
+                         let _ = window.hide();
+                     }
+                     let app_handle = app.handle();
+                     let delay = auto_settings.delay_seconds;
+                     tauri::async_runtime::spawn(async move {
+                         use tokio::time::{sleep, Duration};
+                         sleep(Duration::from_secs(delay as u64)).await;
+                         if let Some(window) = app_handle.get_window("main") {
+                             let _ = window.show();
+                             let _ = window.unminimize();
+                             let _ = window.set_focus();
+                         }
+                     });
+                 }
+             }
 
              // Start background compression job (runs daily at 3 AM)
              let compression_job = shared_compression_manager.clone();
@@ -1061,6 +1125,21 @@ pub fn run() {
             backup::service::update_backup_schedule,
             backup::service::get_backup_status,
             backup::service::trigger_manual_backup,
+
+            // System Tray
+            get_tray_settings,
+            update_tray_settings,
+            update_tray_stats,
+            update_tray_badge,
+            minimize_to_tray,
+            restore_from_tray,
+
+            // Auto-start
+            get_auto_start_settings,
+            update_auto_start_settings,
+            check_auto_start_enabled,
+            enable_auto_start,
+            disable_auto_start,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
