@@ -233,7 +233,7 @@ export function TrendingCoins({
 
 type SortOption = 'trend_score' | 'price_change' | 'volume_change' | 'market_cap';
 
-interface TrendingCoinsProps {
+interface TrendingCoinsExplorerProps {
   searchQuery: string;
   onSelectCoin?: (coin: TrendingCoinData) => void;
 }
@@ -271,7 +271,7 @@ function generateSparklineData(priceChange: number) {
   return data;
 }
 
-export default function TrendingCoins({ searchQuery, onSelectCoin }: TrendingCoinsProps) {
+export function TrendingCoinsExplorer({ searchQuery, onSelectCoin }: TrendingCoinsExplorerProps) {
   const [coins, setCoins] = useState<TrendingCoinData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -779,3 +779,5 @@ export default function TrendingCoins({ searchQuery, onSelectCoin }: TrendingCoi
     </div>
   );
 }
+
+export default TrendingCoinsExplorer;

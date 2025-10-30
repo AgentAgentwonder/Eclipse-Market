@@ -12,9 +12,10 @@ import {
   Usb,
   TrendingUp,
   Zap,
+  Keyboard,
   FileText,
   Server,
-  Bell,
+
   MessageSquare,
   Webhook,
   Palette,
@@ -35,6 +36,7 @@ import AlertSettings from './Settings/AlertSettings';
 import { StorageSettings } from './Settings/StorageSettings';
 import ChatIntegrations from './Settings/ChatIntegrations';
 import WebhookSettings from './Settings/WebhookSettings';
+import { ShortcutSettings } from './Settings/ShortcutSettings';
 import { ThemeEditor } from '../components/theme/ThemeEditor';
 import { AccessibilityPanel } from '../components/accessibility/AccessibilityPanel';
 
@@ -506,6 +508,23 @@ function Settings() {
           </div>
 
           <ChatIntegrations />
+        </div>
+
+        {/* Keyboard Shortcuts */}
+        <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30">
+              <Keyboard className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">Keyboard Shortcuts</h2>
+              <p className="text-white/60 text-sm">
+                Customize shortcuts, resolve conflicts, and import/export preferences
+              </p>
+            </div>
+          </div>
+
+          <ShortcutSettings />
         </div>
 
         {/* Hardware Wallets */}

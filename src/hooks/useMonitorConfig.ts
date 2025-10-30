@@ -41,7 +41,7 @@ export const useMonitorConfig = () => {
             config = {
               width: referenceMonitor.size?.width ?? window.screen.width,
               height: referenceMonitor.size?.height ?? window.screen.height,
-              devicePixelRatio: referenceMonitor.scaleFactor ?? window.devicePixelRatio || 1,
+              devicePixelRatio: referenceMonitor.scaleFactor ?? (window.devicePixelRatio || 1),
               count: monitors.length,
             };
           }
