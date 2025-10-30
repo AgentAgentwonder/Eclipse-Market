@@ -2,30 +2,43 @@
   color-scheme: dark;
   --font-scale: 1;
   --motion-duration: 180ms;
-  --color-background: #0F172A;
-  --color-background-secondary: #131F3A;
-  --color-background-tertiary: #1E293B;
-  --color-text: #E2E8F0;
-  --color-text-secondary: #CBD5F5;
-  --color-text-muted: #94A3B8;
-  --color-primary: #6366F1;
-  --color-primary-hover: #4F46E5;
-  --color-primary-active: #4338CA;
-  --color-accent: #F471B5;
-  --color-accent-hover: #EC4899;
-  --color-success: #22C55E;
-  --color-warning: #F97316;
-  --color-error: #EF4444;
-  --color-info: #38BDF8;
-  --color-border: #1E293B;
-  --color-border-hover: #334155;
-  --color-chart-bullish: #22C55E;
-  --color-chart-bearish: #F87171;
-  --color-chart-neutral: #6366F1;
-  --color-gradient-start: #0F172A;
-  --color-gradient-middle: #3B0764;
-  --color-gradient-end: #1E3A8A;
-  --shadow-elevation: 0 20px 45px rgba(15, 23, 42, 0.35);
+  --color-background: #0A0E1A;
+  --color-background-secondary: #121826;
+  --color-background-tertiary: #1A2235;
+  --color-text: #E8EBF0;
+  --color-text-secondary: #C5CAD5;
+  --color-text-muted: #8B92A3;
+  --color-primary: #FF6B35;
+  --color-primary-hover: #FF5722;
+  --color-primary-active: #E64A19;
+  --color-accent: #FF8C42;
+  --color-accent-hover: #FF7A29;
+  --color-success: #4ECDC4;
+  --color-warning: #FFB347;
+  --color-error: #FF6B6B;
+  --color-info: #4A90E2;
+  --color-border: #2A3447;
+  --color-border-hover: #3D4A61;
+  --color-chart-bullish: #4ECDC4;
+  --color-chart-bearish: #FF6B6B;
+  --color-chart-neutral: #FF8C42;
+  --color-gradient-start: #0A0E1A;
+  --color-gradient-middle: #1A1F35;
+  --color-gradient-end: #2A1F3D;
+  --shadow-elevation: 0 28px 65px rgba(5, 8, 16, 0.45);
+  
+  /* Lunar Eclipse colors */
+  --color-deep-space: #050810;
+  --color-eclipse-orange: #FF6B35;
+  --color-moonlight-silver: #C0CCDA;
+  --color-shadow-accent: #1F2937;
+  
+  /* Effect variables */
+  --glass-opacity: 0.35;
+  --glass-border-opacity: 0.22;
+  --effect-glow-strength: 0.2;
+  --effect-ambience: 0.25;
+  --effect-glass-enabled: 1;
 }
 
 *,
@@ -241,4 +254,64 @@ button:disabled,
 .keyboard-hints button:focus::after,
 .keyboard-hints a:focus::after {
   opacity: 1;
+}
+
+/* Lunar Eclipse Glassmorphism Utilities */
+:root {
+  --glass-opacity: 0.35;
+  --glass-border-opacity: 0.22;
+  --effect-glow-strength: 0.2;
+  --effect-ambience: 0.25;
+  --effect-glass-enabled: 1;
+}
+
+.glass-panel {
+  background: rgba(18, 24, 38, var(--glass-opacity));
+  backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, var(--glass-border-opacity));
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+.glass-enabled .glass-panel {
+  background: rgba(18, 24, 38, var(--glass-opacity));
+}
+
+.glass-card {
+  background: rgba(26, 34, 53, var(--glass-opacity));
+  backdrop-filter: blur(12px) saturate(160%);
+  border: 1px solid rgba(192, 204, 218, var(--glass-border-opacity));
+}
+
+.glass-header {
+  background: rgba(10, 14, 26, 0.7);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 107, 53, 0.15);
+}
+
+.lunar-glow {
+  box-shadow: 0 0 calc(15px + 10px * var(--effect-glow-strength)) rgba(255, 107, 53, var(--effect-glow-strength));
+}
+
+.lunar-glow-strong {
+  box-shadow: 0 0 35px rgba(255, 107, 53, 0.65),
+              0 0 70px rgba(255, 107, 53, 0.35);
+}
+
+.eclipse-gradient {
+  background: linear-gradient(135deg, 
+    var(--color-gradient-start, #0A0E1A), 
+    var(--color-gradient-middle, #1A1F35), 
+    var(--color-gradient-end, #2A1F3D));
+}
+
+.moonlight-text {
+  color: var(--color-moonlight-silver, #C0CCDA);
+}
+
+.eclipse-accent {
+  color: var(--color-eclipse-orange, #FF6B35);
+}
+
+.shadow-panel {
+  background: var(--color-shadow-accent, #1F2937);
 }

@@ -645,7 +645,7 @@ function App() {
 
   return (
     <div
-      className="min-h-screen theme-gradient text-[var(--color-text)]"
+      className="min-h-screen eclipse-gradient text-[var(--color-text)]"
       data-theme={currentTheme.id}
     >
       <a href="#main-content" className="skip-link" aria-label="Skip to main content">
@@ -655,7 +655,7 @@ function App() {
       <PaperModeIndicator onSwitchToLive={handleSwitchToLive} />
 
       <header
-        className={`sticky z-40 backdrop-blur-xl border-b ${isPaperMode ? 'top-[52px]' : 'top-0'}`}
+        className={`glass-header sticky z-40 backdrop-blur-xl border-b ${isPaperMode ? 'top-[52px]' : 'top-0'}`}
         style={{
           backgroundColor: 'var(--color-background-secondary-80)',
           borderColor: 'var(--color-border)',
@@ -670,7 +670,11 @@ function App() {
               >
                 <motion.div
                   animate={{ rotate: sidebarOpen ? 180 : 0 }}
-                  className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/50"
+                  className="w-10 h-10 rounded-2xl flex items-center justify-center text-[var(--color-background)] lunar-glow"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(255, 107, 53, 0.92), rgba(255, 140, 66, 0.85))',
+                    boxShadow: '0 0 30px rgba(255, 107, 53, var(--effect-glow-strength))',
+                  }}
                 >
                   {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                 </motion.div>
@@ -745,13 +749,16 @@ function App() {
               animate={{ x: 0 }}
               exit={{ x: -320 }}
               transition={{ type: 'spring', damping: 25 }}
-              className="fixed left-0 top-0 bottom-0 w-80 z-50 bg-slate-900/95 backdrop-blur-xl border-r border-purple-500/20 shadow-2xl overflow-y-auto"
+              className="glass-panel fixed left-0 top-0 bottom-0 w-80 z-50 backdrop-blur-xl border-r shadow-2xl overflow-y-auto"
+              style={{
+                borderColor: 'rgba(255, 140, 66, 0.2)',
+              }}
               data-tutorial="sidebar"
             >
               <div className="p-6">
                 <div className="mb-8">
-                  <h2 className="text-2xl font-bold mb-2">Navigation</h2>
-                  <div className="h-px bg-gradient-to-r from-purple-500/50 to-transparent"></div>
+                  <h2 className="text-2xl font-bold mb-2 text-moonlight-silver">Navigation</h2>
+                  <div className="h-px bg-gradient-to-r from-[rgba(255,140,66,0.45)] via-[rgba(78,205,196,0.25)] to-transparent"></div>
                 </div>
 
                 <div className="space-y-4 mb-8">
@@ -760,31 +767,31 @@ function App() {
                       setTutorialMenuOpen(true);
                       setSidebarOpen(false);
                     }}
-                    className="w-full flex items-center gap-4 px-4 py-3 rounded-xl bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/30 hover:border-purple-500/50 transition-all group"
+                    className="w-full flex items-center gap-4 px-4 py-3 rounded-xl glass-card transition-all group hover:-translate-y-0.5"
                   >
-                    <GraduationCap className="w-5 h-5 text-purple-400 group-hover:text-purple-300 transition" />
-                    <span className="font-medium">Tutorials</span>
+                    <GraduationCap className="w-5 h-5 text-[var(--color-eclipse-orange)] group-hover:opacity-80 transition" />
+                    <span className="font-medium text-moonlight-silver">Tutorials</span>
                   </button>
                   <button
                     onClick={() => {
                       setCommandPaletteOpen(true);
                       setSidebarOpen(false);
                     }}
-                    className="w-full flex items-center gap-4 px-4 py-3 rounded-xl bg-slate-800/30 hover:bg-slate-800/50 transition-all group"
+                    className="w-full flex items-center gap-4 px-4 py-3 rounded-xl glass-panel transition-all group hover:-translate-y-0.5"
                     data-tutorial="command-palette"
                   >
-                    <Command className="w-5 h-5 text-cyan-400 group-hover:text-cyan-300 transition" />
-                    <span className="font-medium">Command Palette</span>
+                    <Command className="w-5 h-5 text-[var(--color-info)] group-hover:opacity-80 transition" />
+                    <span className="font-medium text-moonlight-silver">Command Palette</span>
                   </button>
                   <button
                     onClick={() => {
                       setCheatSheetOpen(true);
                       setSidebarOpen(false);
                     }}
-                    className="w-full flex items-center gap-4 px-4 py-3 rounded-xl bg-slate-800/30 hover:bg-slate-800/50 transition-all group"
+                    className="w-full flex items-center gap-4 px-4 py-3 rounded-xl glass-panel transition-all group hover:-translate-y-0.5"
                   >
-                    <Keyboard className="w-5 h-5 text-blue-400 group-hover:text-blue-300 transition" />
-                    <span className="font-medium">Keyboard Shortcuts</span>
+                    <Keyboard className="w-5 h-5 text-[var(--color-info)] group-hover:opacity-80 transition" />
+                    <span className="font-medium text-moonlight-silver">Keyboard Shortcuts</span>
                   </button>
                 </div>
 
@@ -804,12 +811,17 @@ function App() {
                       }}
                       className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all ${
                         currentPage === page.id
-                          ? 'bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 shadow-lg'
-                          : 'hover:bg-white/5'
+                          ? 'glass-card lunar-glow'
+                          : 'glass-panel hover:-translate-y-0.5'
                       }`}
+                      style={
+                        currentPage === page.id
+                          ? { borderColor: 'rgba(255, 140, 66, 0.45)' }
+                          : undefined
+                      }
                     >
-                      <page.icon className="w-5 h-5" />
-                      <span className="font-medium">{page.label}</span>
+                      <page.icon className={`w-5 h-5 ${currentPage === page.id ? 'text-[var(--color-eclipse-orange)]' : 'text-moonlight-silver'}`} />
+                      <span className={`font-medium ${currentPage === page.id ? 'text-[var(--color-eclipse-orange)]' : 'text-moonlight-silver'}`}>{page.label}</span>
                     </button>
                   ))}
                 </nav>

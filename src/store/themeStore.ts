@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Theme, ThemeColors } from '../types/theme';
+import { Theme, ThemeColors, ThemeEffects } from '../types/theme';
 import { createThemeFromPreset, DEFAULT_THEME_ID } from '../constants/themePresets';
 
 interface ThemeState {
@@ -9,12 +9,13 @@ interface ThemeState {
   
   setTheme: (themeId: string) => void;
   setThemeFromPreset: (presetId: string) => void;
-  createCustomTheme: (name: string, colors: ThemeColors) => void;
+  createCustomTheme: (name: string, colors: ThemeColors, effects?: ThemeEffects) => void;
   updateCustomTheme: (themeId: string, updates: Partial<Theme>) => void;
   deleteCustomTheme: (themeId: string) => void;
   exportTheme: (themeId: string) => string;
   importTheme: (themeJson: string) => void;
   applyThemeColors: () => void;
+  setThemeEffects: (effects: ThemeEffects) => void;
 }
 
 const hexToRgb = (hex: string) => {
@@ -71,11 +72,66 @@ const applyColorsToDom = (colors: ThemeColors) => {
   root.style.setProperty('--color-gradient-middle', colors.gradientMiddle);
   root.style.setProperty('--color-gradient-end', colors.gradientEnd);
 
+  // Lunar Eclipse specific colors
+  if (colors.deepSpace) {
+    root.style.setProperty('--color-deep-space', colors.deepSpace);
+  }
+  if (colors.eclipseOrange) {
+    root.style.setProperty('--color-eclipse-orange', colors.eclipseOrange);
+  }
+  if (colors.moonlightSilver) {
+    root.style.setProperty('--color-moonlight-silver', colors.moonlightSilver);
+  }
+  if (colors.shadowAccent) {
+    root.style.setProperty('--color-shadow-accent', colors.shadowAccent);
+  }
+
   // Derived translucent surfaces
   root.style.setProperty('--color-background-secondary-80', rgba(colors.backgroundSecondary, 0.85));
   root.style.setProperty('--color-background-tertiary-60', rgba(colors.backgroundTertiary, 0.6));
   root.style.setProperty('--color-primary-20', rgba(colors.primary, 0.2));
   root.style.setProperty('--color-accent-20', rgba(colors.accent, 0.2));
+};
+
+const defaultEffects: ThemeEffects = {
+  glowStrength: 'subtle',
+  ambience: 'balanced',
+  glassmorphism: true,
+};
+
+const glowStrengthToOpacity: Record<ThemeEffects['glowStrength'], number> = {
+  none: 0,
+  subtle: 0.2,
+  normal: 0.4,
+  strong: 0.65,
+};
+
+const ambienceToOpacity: Record<ThemeEffects['ambience'], number> = {
+  minimal: 0.1,
+  balanced: 0.25,
+  immersive: 0.4,
+};
+
+const applyEffectsToDom = (effects?: ThemeEffects) => {
+  const root = document.documentElement;
+  const finalEffects = effects ?? defaultEffects;
+
+  const glowStrength = glowStrengthToOpacity[finalEffects.glowStrength];
+  const ambience = ambienceToOpacity[finalEffects.ambience];
+  const glassOpacity = finalEffects.glassmorphism ? Math.min(0.85, 0.35 + ambience) : 0;
+  const glassBorderOpacity = finalEffects.glassmorphism ? 0.22 : 0.08;
+
+  root.style.setProperty('--effect-glow-strength', glowStrength.toString());
+  root.style.setProperty('--effect-ambience', ambience.toString());
+  root.style.setProperty('--effect-glass-enabled', finalEffects.glassmorphism ? '1' : '0');
+  root.style.setProperty('--glass-opacity', glassOpacity.toString());
+  root.style.setProperty('--glass-border-opacity', glassBorderOpacity.toString());
+
+  if (finalEffects.glassmorphism) {
+    root.classList.add('glass-enabled');
+  } else {
+    root.classList.remove('glass-enabled');
+  }
 };
 
 const generateId = () => `custom-theme-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -93,10 +149,12 @@ export const useThemeStore = create<ThemeState>()(
         if (customTheme) {
           set({ currentTheme: customTheme });
           applyColorsToDom(customTheme.colors);
+          applyEffectsToDom(customTheme.effects);
         } else {
           const theme = createThemeFromPreset(themeId);
           set({ currentTheme: theme });
           applyColorsToDom(theme.colors);
+          applyEffectsToDom(theme.effects);
         }
       },
       
@@ -104,13 +162,15 @@ export const useThemeStore = create<ThemeState>()(
         const theme = createThemeFromPreset(presetId);
         set({ currentTheme: theme });
         applyColorsToDom(theme.colors);
+        applyEffectsToDom(theme.effects);
       },
       
-      createCustomTheme: (name: string, colors: ThemeColors) => {
+      createCustomTheme: (name: string, colors: ThemeColors, effects?: ThemeEffects) => {
         const newTheme: Theme = {
           id: generateId(),
           name,
           colors,
+          effects,
           isCustom: true,
           createdAt: Date.now(),
           updatedAt: Date.now(),
@@ -122,6 +182,7 @@ export const useThemeStore = create<ThemeState>()(
         }));
         
         applyColorsToDom(colors);
+        applyEffectsToDom(effects);
       },
       
       updateCustomTheme: (themeId: string, updates: Partial<Theme>) => {
@@ -137,6 +198,7 @@ export const useThemeStore = create<ThemeState>()(
           
           if (isCurrentTheme && updatedTheme) {
             applyColorsToDom(updatedTheme.colors);
+            applyEffectsToDom(updatedTheme.effects);
             return {
               customThemes: updatedThemes,
               currentTheme: updatedTheme,
@@ -155,6 +217,7 @@ export const useThemeStore = create<ThemeState>()(
           if (isCurrentTheme) {
             const fallbackTheme = createThemeFromPreset(DEFAULT_THEME_ID);
             applyColorsToDom(fallbackTheme.colors);
+            applyEffectsToDom(fallbackTheme.effects);
             return {
               customThemes: filteredThemes,
               currentTheme: fallbackTheme,
@@ -187,6 +250,7 @@ export const useThemeStore = create<ThemeState>()(
           }));
           
           applyColorsToDom(newTheme.colors);
+          applyEffectsToDom(newTheme.effects);
         } catch (error) {
           console.error('Failed to import theme:', error);
           throw new Error('Invalid theme format');
@@ -196,6 +260,30 @@ export const useThemeStore = create<ThemeState>()(
       applyThemeColors: () => {
         const { currentTheme } = get();
         applyColorsToDom(currentTheme.colors);
+        applyEffectsToDom(currentTheme.effects);
+      },
+      
+      setThemeEffects: (effects: ThemeEffects) => {
+        applyEffectsToDom(effects);
+        set(state => {
+          const updatedTheme: Theme = {
+            ...state.currentTheme,
+            effects,
+            updatedAt: Date.now(),
+          };
+          
+          if (state.currentTheme.isCustom) {
+            const updatedCustomThemes = state.customThemes.map(theme =>
+              theme.id === state.currentTheme.id ? updatedTheme : theme
+            );
+            return {
+              currentTheme: updatedTheme,
+              customThemes: updatedCustomThemes,
+            };
+          }
+          
+          return { currentTheme: updatedTheme };
+        });
       },
     }),
     {
@@ -208,6 +296,7 @@ export const useThemeStore = create<ThemeState>()(
       onRehydrateStorage: () => state => {
         if (state) {
           applyColorsToDom(state.currentTheme.colors);
+          applyEffectsToDom(state.currentTheme.effects);
         }
       },
     }
