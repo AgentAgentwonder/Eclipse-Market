@@ -15,11 +15,12 @@ import {
   Keyboard,
   FileText,
   Server,
-
+  Bell,
   MessageSquare,
   Webhook,
   Palette,
   Accessibility,
+  Activity,
 } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { BIOMETRIC_STATUS_EVENT } from '../constants/events';
@@ -41,6 +42,7 @@ import { ShortcutSettings } from './Settings/ShortcutSettings';
 import { ThemeEditor } from '../components/theme/ThemeEditor';
 import { AccessibilityPanel } from '../components/accessibility/AccessibilityPanel';
 import { UpdateSettings } from './Settings/UpdateSettings';
+import { DiagnosticsSettings } from './Settings/DiagnosticsSettings';
 
 interface BiometricStatus {
   available: boolean;
@@ -937,6 +939,23 @@ function Settings() {
               </>
             )}
           </div>
+        </div>
+
+        {/* Diagnostics & Crash Reporting */}
+        <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center shadow-lg shadow-purple-500/30">
+              <Activity className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">Diagnostics & Crash Reporting</h2>
+              <p className="text-white/60 text-sm">
+                Manage session recordings, crash reporting, and recovery options
+              </p>
+            </div>
+          </div>
+
+          <DiagnosticsSettings />
         </div>
 
         {/* Performance Dashboard */}
