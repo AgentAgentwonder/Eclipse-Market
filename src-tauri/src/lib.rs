@@ -5,6 +5,7 @@ mod api;
 mod api_analytics;
 mod api_config;
 mod auth;
+mod backup;
 mod bots;
 mod cache_commands;
 mod chains;
@@ -28,6 +29,7 @@ mod updater;
 mod wallet;
 mod websocket;
 mod webhooks;
+mod windowing;
 
 pub use ai::*;
 pub use alerts::*;
@@ -36,6 +38,7 @@ pub use api::*;
 pub use api_analytics::*;
 pub use api_config::*;
 pub use auth::*;
+pub use backup::*;
 pub use bots::*;
 pub use chains::*;
 pub use bridges::*;
@@ -62,6 +65,7 @@ pub use webhooks::*;
 
 pub use wallet::multisig::*;
 pub use wallet::performance::*;
+pub use windowing::*;
 
 use alerts::{AlertManager, SharedAlertManager};
 use api::{ApiHealthMonitor, SharedApiHealthMonitor};
@@ -293,6 +297,18 @@ pub fn run() {
 
             let performance_state: SharedPerformanceDatabase = Arc::new(RwLock::new(performance_db));
             app.manage(performance_state.clone());
+
+            // Initialize backup service and scheduler
+            let backup_service = backup::service::BackupService::new(&app.handle());
+            let backup_service_state: backup::service::SharedBackupService = Arc::new(RwLock::new(backup_service));
+            app.manage(backup_service_state.clone());
+
+            let backup_scheduler = backup::scheduler::BackupScheduler::new(&app.handle()).map_err(|e| {
+                eprintln!("Failed to initialize backup scheduler: {e}");
+                Box::new(e) as Box<dyn Error>
+            })?;
+            let backup_scheduler_state: backup::scheduler::SharedBackupScheduler = Arc::new(RwLock::new(backup_scheduler));
+            app.manage(backup_scheduler_state.clone());
 
              let automation_handle = app.handle();
              tauri::async_runtime::spawn(async move {
@@ -1018,6 +1034,33 @@ pub fn run() {
             dismiss_update,
             get_rollback_info,
             rollback_update,
+            // Windowing & Multi-monitor commands
+            get_monitors,
+            create_floating_window,
+            close_floating_window,
+            set_window_position,
+            set_window_size,
+            set_window_always_on_top,
+            get_window_position,
+            get_window_size,
+            snap_window_to_edge,
+            maximize_window,
+            minimize_window,
+
+            // Backup & Settings Management
+            backup::service::create_backup,
+            backup::service::restore_backup,
+            backup::service::list_backups,
+            backup::service::delete_backup,
+            backup::service::verify_backup_integrity,
+            backup::service::export_settings,
+            backup::service::import_settings,
+            backup::service::reset_settings,
+            backup::service::get_settings_template,
+            backup::service::get_backup_schedule,
+            backup::service::update_backup_schedule,
+            backup::service::get_backup_status,
+            backup::service::trigger_manual_backup,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

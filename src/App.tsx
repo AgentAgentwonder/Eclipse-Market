@@ -38,7 +38,7 @@ import { PaperTradingTutorial } from './components/trading/PaperTradingTutorial'
 import ProposalNotification from './components/wallet/ProposalNotification';
 import AlertNotificationContainer from './components/alerts/AlertNotificationContainer';
 import AlertChartModal from './components/alerts/AlertChartModal';
-import { WorkspaceTabs, WorkspaceSwitcher, GridLayoutContainer, WorkspaceToolbar } from './components/workspace';
+import { WorkspaceTabs, WorkspaceSwitcher, GridLayoutContainer, WorkspaceToolbar, FloatingWindowManager } from './components/workspace';
 import Dashboard from './pages/Dashboard';
 import Coins from './pages/Coins';
 import Stocks from './pages/Stocks';
@@ -66,6 +66,7 @@ import { useThemeStore } from './store/themeStore';
 import { useAccessibilityStore } from './store/accessibilityStore';
 import { useUpdateStore } from './store/updateStore';
 import { UpdateNotificationModal } from './components/UpdateNotificationModal';
+import { PerformanceMonitor } from './components/common/PerformanceMonitor';
 
 type BiometricStatus = {
   available: boolean;
@@ -688,10 +689,11 @@ function App() {
       </AnimatePresence>
 
       {useWorkspaceMode ? (
-        <div id="main-content" className="max-w-[1800px] mx-auto px-6 py-8 space-y-6" role="main">
+        <div id="main-content" className="max-w-[1800px] mx-auto px-6 py-8 space-y-6 relative" role="main">
           <WorkspaceTabs />
           <WorkspaceToolbar />
           <GridLayoutContainer />
+          <FloatingWindowManager />
         </div>
       ) : (
         <main id="main-content" className="max-w-[1800px] mx-auto px-6 py-8" role="main">
@@ -751,6 +753,7 @@ function App() {
       <ShortcutCheatSheet isOpen={cheatSheetOpen} onClose={() => setCheatSheetOpen(false)} />
 
       <UpdateNotificationModal />
+      <PerformanceMonitor />
     </div>
   );
 }
