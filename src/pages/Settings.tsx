@@ -93,6 +93,7 @@ function Settings() {
   const [paperModeDialogOpen, setPaperModeDialogOpen] = useState(false);
   const [paperModeTarget, setPaperModeTarget] = useState<'paper' | 'live'>('paper');
   const [acknowledgeLiveTrading, setAcknowledgeLiveTrading] = useState(false);
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
 
   const { hardwareDevices, activeHardwareDevice, signingMethod } = useWalletStore();
 

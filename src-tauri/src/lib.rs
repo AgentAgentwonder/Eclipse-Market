@@ -13,6 +13,7 @@ mod cache_commands;
 mod chains;
 mod bridges;
 mod chart_stream;
+mod config;
 mod core;
 mod drawings;
 mod indicators;
@@ -50,6 +51,7 @@ pub use bots::*;
 pub use chains::*;
 pub use bridges::*;
 pub use chart_stream::*;
+pub use config::*;
 pub use core::*;
 pub use drawings::*;
 pub use indicators::*;
@@ -113,6 +115,7 @@ use market::{HolderAnalyzer, SharedHolderAnalyzer};
 use chains::{ChainManager, SharedChainManager};
 use bridges::{BridgeManager, SharedBridgeManager};
 use voice::commands::{SharedVoiceState, VoiceState};
+use config::settings_manager::{SettingsManager, SharedSettingsManager};
 
 async fn warm_cache_on_startup(
     _app_handle: tauri::AppHandle,
@@ -250,6 +253,14 @@ pub fn run() {
                 Box::new(std::io::Error::new(std::io::ErrorKind::Other, e)) as Box<dyn Error>
             })?;
             app.manage(usage_tracker);
+
+            // Initialize universal settings manager
+            let settings_manager = SettingsManager::new(&app.handle()).map_err(|e| {
+                eprintln!("Failed to initialize settings manager: {e}");
+                Box::new(e) as Box<dyn Error>
+            })?;
+            let settings_state: SharedSettingsManager = Arc::new(RwLock::new(settings_manager));
+            app.manage(settings_state.clone());
 
             tauri::async_runtime::spawn(async move {
                 use tokio::time::{sleep, Duration};
@@ -1180,6 +1191,21 @@ pub fn run() {
             backup::service::update_backup_schedule,
             backup::service::get_backup_status,
             backup::service::trigger_manual_backup,
+
+            // Universal Settings
+            config::commands::get_all_settings,
+            config::commands::update_setting,
+            config::commands::bulk_update_settings,
+            config::commands::reset_settings,
+            config::commands::export_settings,
+            config::commands::import_settings,
+            config::commands::get_setting_schema,
+            config::commands::create_settings_profile,
+            config::commands::load_settings_profile,
+            config::commands::delete_settings_profile,
+            config::commands::list_settings_profiles,
+            config::commands::get_settings_change_history,
+            config::commands::get_settings_template,
 
             // System Tray
             get_tray_settings,
