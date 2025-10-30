@@ -88,6 +88,8 @@ import { useChangelogStore } from './store/changelogStore';
 import packageJson from '../package.json';
 import { MaintenanceBanner } from './components/common/MaintenanceBanner';
 import { DeveloperConsole } from './components/common/DeveloperConsole';
+import { VoiceTradingOverlay } from './components/voice/VoiceTradingOverlay';
+import { VoiceNotificationRouter } from './components/voice/VoiceNotificationRouter';
 
 type BiometricStatus = {
   available: boolean;
@@ -933,6 +935,8 @@ function App() {
       <WhatsNewModal currentVersion={currentVersion} />
       <MaintenanceBanner />
       <DeveloperConsole />
+      <VoiceNotificationRouter />
+      <VoiceTradingOverlay />
     </div>
   );
 }

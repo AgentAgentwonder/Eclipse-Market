@@ -29,6 +29,7 @@ mod token_flow;
 mod trading;
 mod tray;
 mod updater;
+mod voice;
 pub mod voice;
 mod wallet;
 mod websocket;
@@ -1235,6 +1236,18 @@ pub fn run() {
             ai_apply_optimization,
             ai_get_pattern_warnings,
             ai_dismiss_pattern_warning,
+
+            // Voice Trading
+            execute_voice_trade,
+            get_portfolio_data,
+            get_current_price,
+            create_price_alert,
+            list_alerts,
+            get_market_summary,
+            synthesize_speech,
+            validate_voice_mfa,
+            check_voice_permission,
+            get_voice_capabilities,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
