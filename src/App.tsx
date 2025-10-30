@@ -19,6 +19,9 @@ import {
   Wallet as WalletIcon,
   LayoutGrid,
   ArrowRightLeft,
+  GraduationCap,
+  Keyboard,
+  Command,
 } from 'lucide-react';
 import { CommandPalette } from './components/common/CommandPalette';
 import { ShortcutCheatSheet } from './components/common/ShortcutCheatSheet';
@@ -67,6 +70,16 @@ import { useAccessibilityStore } from './store/accessibilityStore';
 import { useUpdateStore } from './store/updateStore';
 import { UpdateNotificationModal } from './components/UpdateNotificationModal';
 import { PerformanceMonitor } from './components/common/PerformanceMonitor';
+import { TutorialEngine } from './components/tutorials/TutorialEngine';
+import { TutorialMenu } from './components/tutorials/TutorialMenu';
+import { HelpButton } from './components/help/HelpButton';
+import { HelpPanel } from './components/help/HelpPanel';
+import { WhatsThisMode } from './components/help/WhatsThisMode';
+import { ChangelogViewer } from './components/changelog/ChangelogViewer';
+import { WhatsNewModal } from './components/changelog/WhatsNewModal';
+import { useTutorialStore } from './store/tutorialStore';
+import { useChangelogStore } from './store/changelogStore';
+import packageJson from '../package.json';
 
 type BiometricStatus = {
   available: boolean;
@@ -89,6 +102,27 @@ function App() {
   const [useWorkspaceMode, setUseWorkspaceMode] = useState(true);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [cheatSheetOpen, setCheatSheetOpen] = useState(false);
+  const [tutorialMenuOpen, setTutorialMenuOpen] = useState(false);
+
+  const currentVersion = packageJson.version ?? '1.0.0';
+  const {
+    autoStart: tutorialAutoStart,
+    getAvailableTutorials,
+    startTutorial,
+    progress: tutorialProgress,
+    isPlaying: tutorialPlaying,
+  } = useTutorialStore(state => ({
+    autoStart: state.autoStart,
+    getAvailableTutorials: state.getAvailableTutorials,
+    startTutorial: state.startTutorial,
+    progress: state.progress,
+    isPlaying: state.isPlaying,
+  }));
+  const { openWhatsNew, isWhatsNewOpen, hasUnseenChanges } = useChangelogStore(state => ({
+    openWhatsNew: state.openWhatsNew,
+    isWhatsNewOpen: state.isWhatsNewOpen,
+    hasUnseenChanges: state.hasUnseenChanges,
+  }));
 
   const wallets = useWalletStore(state => state.wallets);
   const refreshMultiWallet = useWalletStore(state => state.refreshMultiWallet);
@@ -162,6 +196,41 @@ function App() {
 
     hydrate();
   }, []);
+
+  useEffect(() => {
+    if (!tutorialAutoStart || tutorialPlaying) {
+      return;
+    }
+
+    const availableTutorials = getAvailableTutorials(currentPage);
+    const nextTutorial = availableTutorials.find(tutorial => {
+      const progress = tutorialProgress[tutorial.id];
+      if (!progress) return true;
+      if (progress.skipped) return false;
+      return !progress.completed;
+    });
+
+    if (nextTutorial) {
+      startTutorial(nextTutorial.id);
+    }
+  }, [
+    currentPage,
+    tutorialAutoStart,
+    getAvailableTutorials,
+    tutorialProgress,
+    startTutorial,
+    tutorialPlaying,
+  ]);
+
+  useEffect(() => {
+    if (!isWhatsNewOpen && hasUnseenChanges(currentVersion)) {
+      const timer = setTimeout(() => {
+        openWhatsNew();
+      }, 800);
+
+      return () => clearTimeout(timer);
+    }
+  }, [currentVersion, hasUnseenChanges, isWhatsNewOpen, openWhatsNew]);
 
   useEffect(() => {
     const commands = [
@@ -604,7 +673,24 @@ function App() {
               </button>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4" data-help="header-controls">
+              <button
+                onClick={() => setTutorialMenuOpen(true)}
+                className="inline-flex items-center gap-2 rounded-xl bg-slate-800/60 border border-purple-500/20 px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:border-purple-400/30 transition"
+                data-tutorial="tutorials-menu"
+              >
+                <GraduationCap className="w-4 h-4" aria-hidden="true" />
+                Tutorials
+              </button>
+              <button
+                onClick={() => setCommandPaletteOpen(true)}
+                className="inline-flex items-center gap-2 rounded-xl bg-slate-800/60 border border-purple-500/20 px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:border-purple-400/30 transition"
+                data-tutorial="command-palette"
+              >
+                <Command className="w-4 h-4" aria-hidden="true" />
+                Command
+              </button>
+              <HelpButton />
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -615,18 +701,23 @@ function App() {
                     : 'bg-slate-800/50 hover:bg-slate-800/70 border border-purple-500/20'
                 }`}
                 title={useWorkspaceMode ? 'Switch to Page Mode' : 'Switch to Workspace Mode'}
+                data-tutorial="workspace-mode"
               >
                 <LayoutGrid className="w-5 h-5" />
               </motion.button>
-              <ChainSelector />
-              <WalletSwitcher
-                onAddWallet={() => setAddWalletModalOpen(true)}
-                onManageGroups={() => setGroupsModalOpen(true)}
-                onWalletSettings={walletId => {
-                  setSelectedWalletId(walletId);
-                  setWalletSettingsModalOpen(true);
-                }}
-              />
+              <div data-tutorial="chain-selector">
+                <ChainSelector />
+              </div>
+              <div data-tutorial="wallet-connect" data-help="wallet-connect">
+                <WalletSwitcher
+                  onAddWallet={() => setAddWalletModalOpen(true)}
+                  onManageGroups={() => setGroupsModalOpen(true)}
+                  onWalletSettings={walletId => {
+                    setSelectedWalletId(walletId);
+                    setWalletSettingsModalOpen(true);
+                  }}
+                />
+              </div>
               <PhantomConnect />
               <ConnectionStatus />
             </div>
@@ -650,11 +741,46 @@ function App() {
               exit={{ x: -320 }}
               transition={{ type: 'spring', damping: 25 }}
               className="fixed left-0 top-0 bottom-0 w-80 z-50 bg-slate-900/95 backdrop-blur-xl border-r border-purple-500/20 shadow-2xl overflow-y-auto"
+              data-tutorial="sidebar"
             >
               <div className="p-6">
                 <div className="mb-8">
                   <h2 className="text-2xl font-bold mb-2">Navigation</h2>
                   <div className="h-px bg-gradient-to-r from-purple-500/50 to-transparent"></div>
+                </div>
+
+                <div className="space-y-4 mb-8">
+                  <button
+                    onClick={() => {
+                      setTutorialMenuOpen(true);
+                      setSidebarOpen(false);
+                    }}
+                    className="w-full flex items-center gap-4 px-4 py-3 rounded-xl bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/30 hover:border-purple-500/50 transition-all group"
+                  >
+                    <GraduationCap className="w-5 h-5 text-purple-400 group-hover:text-purple-300 transition" />
+                    <span className="font-medium">Tutorials</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setCommandPaletteOpen(true);
+                      setSidebarOpen(false);
+                    }}
+                    className="w-full flex items-center gap-4 px-4 py-3 rounded-xl bg-slate-800/30 hover:bg-slate-800/50 transition-all group"
+                    data-tutorial="command-palette"
+                  >
+                    <Command className="w-5 h-5 text-cyan-400 group-hover:text-cyan-300 transition" />
+                    <span className="font-medium">Command Palette</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setCheatSheetOpen(true);
+                      setSidebarOpen(false);
+                    }}
+                    className="w-full flex items-center gap-4 px-4 py-3 rounded-xl bg-slate-800/30 hover:bg-slate-800/50 transition-all group"
+                  >
+                    <Keyboard className="w-5 h-5 text-blue-400 group-hover:text-blue-300 transition" />
+                    <span className="font-medium">Keyboard Shortcuts</span>
+                  </button>
                 </div>
 
                 <nav className="space-y-2">
@@ -754,6 +880,17 @@ function App() {
 
       <UpdateNotificationModal />
       <PerformanceMonitor />
+      
+      <TutorialEngine />
+      <TutorialMenu
+        currentPage={currentPage}
+        isOpen={tutorialMenuOpen}
+        onClose={() => setTutorialMenuOpen(false)}
+      />
+      <HelpPanel />
+      <WhatsThisMode />
+      <ChangelogViewer />
+      <WhatsNewModal currentVersion={currentVersion} />
     </div>
   );
 }

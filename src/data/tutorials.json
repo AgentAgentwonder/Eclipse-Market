@@ -1,0 +1,193 @@
+{
+  "tutorials": [
+    {
+      "id": "welcome",
+      "title": "Welcome to Eclipse Market Pro",
+      "description": "Learn the basics and get started with your trading journey.",
+      "category": "onboarding",
+      "requiredPages": [],
+      "steps": [
+        {
+          "id": "welcome-1",
+          "title": "Welcome",
+          "content": "Eclipse Market Pro is your comprehensive crypto trading and analytics platform. Let's take a quick tour!",
+          "points": [
+            "Real-time market data and analytics",
+            "Advanced charting and risk analysis",
+            "Multi-wallet and multi-chain support",
+            "Automated trading with risk controls"
+          ],
+          "icon": "Home",
+          "action": { "type": "continue" }
+        },
+        {
+          "id": "welcome-2",
+          "title": "Connect Your Wallet",
+          "content": "Connect your Solana wallet to start trading and tracking your portfolio.",
+          "target": "[data-tutorial='wallet-connect']",
+          "highlightOffset": 8,
+          "placement": "bottom",
+          "icon": "Wallet",
+          "action": { "type": "continue" }
+        },
+        {
+          "id": "welcome-3",
+          "title": "Explore Features",
+          "content": "Navigate between Dashboard, Coins, Trading, and Portfolio pages using the sidebar.",
+          "target": "[data-tutorial='sidebar']",
+          "highlightOffset": 8,
+          "placement": "right",
+          "icon": "Menu",
+          "action": { "type": "continue" }
+        },
+        {
+          "id": "welcome-4",
+          "title": "Command Palette",
+          "content": "Press Ctrl+K (or Cmd+K on Mac) to open the command palette for quick navigation and actions.",
+          "target": "[data-tutorial='command-palette']",
+          "highlightOffset": 8,
+          "placement": "bottom",
+          "icon": "Search",
+          "action": { "type": "continue" }
+        },
+        {
+          "id": "welcome-5",
+          "title": "Get Help Anytime",
+          "content": "Click the help button on any page to access documentation, tutorials, and the changelog.",
+          "icon": "HelpCircle",
+          "action": { "type": "finish" }
+        }
+      ]
+    },
+    {
+      "id": "trading-basics",
+      "title": "Trading Basics",
+      "description": "Learn how to place your first trade and manage orders.",
+      "category": "trading",
+      "requiredPages": ["trading"],
+      "steps": [
+        {
+          "id": "trading-1",
+          "title": "Order Ticket",
+          "content": "Start by selecting your trading pair and entering order details.",
+          "target": "[data-tutorial='order-form']",
+          "highlightOffset": 8,
+          "placement": "left",
+          "icon": "ArrowRightLeft",
+          "action": { "type": "continue" }
+        },
+        {
+          "id": "trading-2",
+          "title": "Order Types",
+          "content": "Choose between Market (immediate execution), Limit (specific price), or Stop orders.",
+          "target": "[data-tutorial='order-type']",
+          "highlightOffset": 4,
+          "placement": "bottom",
+          "icon": "Settings",
+          "action": { "type": "continue" }
+        },
+        {
+          "id": "trading-3",
+          "title": "Paper Trading Mode",
+          "content": "Practice with virtual money! Toggle Paper Mode in Settings → Trading Execution.",
+          "icon": "FileText",
+          "points": [
+            "Start with $10,000 virtual balance",
+            "Test strategies risk-free",
+            "Track performance metrics",
+            "Switch to live trading when ready"
+          ],
+          "action": { "type": "continue" }
+        },
+        {
+          "id": "trading-4",
+          "title": "View Orders",
+          "content": "Monitor your open orders and trade history in the orders panel.",
+          "target": "[data-tutorial='orders-panel']",
+          "highlightOffset": 8,
+          "placement": "top",
+          "icon": "BarChart3",
+          "action": { "type": "finish" }
+        }
+      ]
+    },
+    {
+      "id": "portfolio-analysis",
+      "title": "Portfolio Analysis",
+      "description": "Understand your positions, risk, and performance metrics.",
+      "category": "portfolio",
+      "requiredPages": ["portfolio"],
+      "steps": [
+        {
+          "id": "portfolio-1",
+          "title": "Portfolio Overview",
+          "content": "View your total balance, P&L, and asset allocation at a glance.",
+          "target": "[data-tutorial='portfolio-summary']",
+          "highlightOffset": 8,
+          "placement": "bottom",
+          "icon": "Briefcase",
+          "action": { "type": "continue" }
+        },
+        {
+          "id": "portfolio-2",
+          "title": "Risk Analysis",
+          "content": "ML-powered risk scoring helps identify portfolio vulnerabilities.",
+          "target": "[data-tutorial='risk-scores']",
+          "highlightOffset": 8,
+          "placement": "left",
+          "icon": "Shield",
+          "action": { "type": "continue" }
+        },
+        {
+          "id": "portfolio-3",
+          "title": "Performance Charts",
+          "content": "Track your portfolio value over time with detailed performance charts.",
+          "target": "[data-tutorial='performance-charts']",
+          "highlightOffset": 8,
+          "placement": "top",
+          "icon": "TrendingUp",
+          "action": { "type": "finish" }
+        }
+      ]
+    },
+    {
+      "id": "alerts-setup",
+      "title": "Setting Up Alerts",
+      "description": "Configure price, volume, and anomaly alerts to stay informed.",
+      "category": "alerts",
+      "requiredPages": [],
+      "steps": [
+        {
+          "id": "alerts-1",
+          "title": "Alert Types",
+          "content": "Create alerts for price thresholds, volume spikes, or market anomalies.",
+          "icon": "Bell",
+          "points": [
+            "Price alerts: Get notified at specific price levels",
+            "Volume alerts: Track unusual trading activity",
+            "Anomaly alerts: Detect market irregularities",
+            "Custom conditions: Combine multiple criteria"
+          ],
+          "action": { "type": "continue" }
+        },
+        {
+          "id": "alerts-2",
+          "title": "Create Your First Alert",
+          "content": "Click the bell icon and select 'Create Alert' to get started.",
+          "target": "[data-tutorial='alerts-button']",
+          "highlightOffset": 8,
+          "placement": "bottom",
+          "icon": "Plus",
+          "action": { "type": "continue" }
+        },
+        {
+          "id": "alerts-3",
+          "title": "Alert Delivery",
+          "content": "Receive alerts via in-app notifications, email, Telegram, or webhooks.",
+          "icon": "Send",
+          "action": { "type": "finish" }
+        }
+      ]
+    }
+  ]
+}

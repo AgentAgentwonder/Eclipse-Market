@@ -1,0 +1,86 @@
+{
+  "sections": [
+    {
+      "id": "dashboard",
+      "title": "Dashboard Overview",
+      "summary": "Your personalized market intelligence hub.",
+      "items": [
+        {
+          "id": "dashboard.marketPulse",
+          "label": "Market Pulse",
+          "selectors": ["[data-help='market-pulse']"],
+          "description": "Track overall market health, sentiment, and trending assets in real time.",
+          "links": [
+            { "type": "docs", "label": "Dashboard Guide", "url": "https://docs.eclipsetrading.app/dashboard" },
+            { "type": "video", "label": "5-min Overview", "url": "https://videos.eclipsetrading.app/dashboard-overview.mp4" }
+          ]
+        },
+        {
+          "id": "dashboard.alerts",
+          "label": "Alerts & Signals",
+          "selectors": ["[data-help='alerts-panel']"],
+          "description": "Manage price, volume, and anomaly alerts with snooze and escalation options.",
+          "links": [
+            { "type": "docs", "label": "Alerts Architecture", "url": "https://docs.eclipsetrading.app/alerts" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trading",
+      "title": "Trading Execution",
+      "summary": "Place and manage orders with automation and risk controls.",
+      "items": [
+        {
+          "id": "trading.orderTicket",
+          "label": "Order Ticket",
+          "selectors": ["[data-help='order-ticket']"],
+          "description": "Enter market, limit, and algorithmic orders with advanced routing.",
+          "links": [
+            { "type": "docs", "label": "Order Types", "url": "https://docs.eclipsetrading.app/trading/order-types" }
+          ]
+        },
+        {
+          "id": "trading.automation",
+          "label": "Automation",
+          "selectors": ["[data-help='automation']"],
+          "description": "Create rule-based automations with risk guardrails and approvals.",
+          "links": [
+            { "type": "docs", "label": "Automation Rules", "url": "https://docs.eclipsetrading.app/trading/automation" },
+            { "type": "video", "label": "Automation Basics", "url": "https://videos.eclipsetrading.app/automation-basics.mp4" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "portfolio",
+      "title": "Portfolio Intelligence",
+      "summary": "Understand positions, risk, and performance.",
+      "items": [
+        {
+          "id": "portfolio.risk",
+          "label": "Risk Scores",
+          "selectors": ["[data-help='risk-scores']"],
+          "description": "ML-powered risk profiling with scenario analysis and alerts.",
+          "links": [
+            { "type": "docs", "label": "Risk Engine", "url": "https://docs.eclipsetrading.app/portfolio/risk" }
+          ]
+        },
+        {
+          "id": "portfolio.allocations",
+          "label": "Allocations",
+          "selectors": ["[data-help='allocations']"],
+          "description": "Monitor portfolio diversification by sector, chain, and risk band.",
+          "links": [
+            { "type": "docs", "label": "Allocation Analytics", "url": "https://docs.eclipsetrading.app/portfolio/allocations" }
+          ]
+        }
+      ]
+    }
+  ],
+  "whatsThis": {
+    "hint": "Hover elements or click to explore contextual help.",
+    "empty": "No contextual help available for this element yet.",
+    "keyboard": "Press Esc to exit What’s This? mode."
+  }
+}
