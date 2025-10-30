@@ -1,0 +1,133 @@
+{
+  "releases": [
+    {
+      "version": "1.3.0",
+      "date": "2024-01-15",
+      "categories": [
+        {
+          "name": "Features",
+          "changes": [
+            {
+              "title": "Guidance & Tutorial System",
+              "description": "Added comprehensive tutorial engine with guided tours, tooltips, and onboarding flows for major features.",
+              "tags": ["tutorials", "onboarding"]
+            },
+            {
+              "title": "Context-Sensitive Help",
+              "description": "Introduced help buttons across all pages with documentation links and 'What's This?' cursor mode for interactive help.",
+              "tags": ["help", "documentation"]
+            },
+            {
+              "title": "Changelog Viewer",
+              "description": "Added changelog viewer with version history, search, filter, and RSS feed integration.",
+              "tags": ["changelog", "updates"]
+            }
+          ]
+        },
+        {
+          "name": "Improvements",
+          "changes": [
+            {
+              "title": "Tutorial Progress Tracking",
+              "description": "Track your progress through tutorials with the ability to skip or reset at any time.",
+              "tags": ["tutorials"]
+            },
+            {
+              "title": "Accessible Help Content",
+              "description": "All help content now follows accessibility best practices with keyboard navigation and screen reader support.",
+              "tags": ["accessibility", "help"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.2.0",
+      "date": "2024-01-01",
+      "categories": [
+        {
+          "name": "Features",
+          "changes": [
+            {
+              "title": "Auto-Update System",
+              "description": "Implemented delta updates with background downloading and seamless installation.",
+              "tags": ["updates", "performance"]
+            },
+            {
+              "title": "Paper Trading Mode",
+              "description": "Practice trading strategies with virtual balance. No real money at risk.",
+              "tags": ["trading", "education"]
+            }
+          ]
+        },
+        {
+          "name": "Bug Fixes",
+          "changes": [
+            {
+              "title": "Fixed Chart Rendering Issues",
+              "description": "Resolved performance issues with real-time chart updates on multiple timeframes.",
+              "tags": ["charts", "performance"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.1.0",
+      "date": "2023-12-15",
+      "categories": [
+        {
+          "name": "Features",
+          "changes": [
+            {
+              "title": "Multi-Chain Support",
+              "description": "Added support for Ethereum, BSC, Polygon, and Arbitrum networks.",
+              "tags": ["blockchain", "chains"]
+            },
+            {
+              "title": "Advanced Risk Scoring",
+              "description": "ML-powered risk analysis with real-time scoring for tokens and portfolios.",
+              "tags": ["risk", "ml"]
+            }
+          ]
+        },
+        {
+          "name": "Improvements",
+          "changes": [
+            {
+              "title": "Performance Optimization",
+              "description": "Improved data streaming performance with worker-based processing.",
+              "tags": ["performance", "streaming"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.0.0",
+      "date": "2023-12-01",
+      "categories": [
+        {
+          "name": "Features",
+          "changes": [
+            {
+              "title": "Initial Release",
+              "description": "Eclipse Market Pro v1.0 - Your comprehensive crypto trading and analytics platform.",
+              "tags": ["release"]
+            },
+            {
+              "title": "Real-Time Market Data",
+              "description": "Live price updates, charts, and market analytics for crypto assets.",
+              "tags": ["market-data", "charts"]
+            },
+            {
+              "title": "Wallet Integration",
+              "description": "Connect with Phantom, Solflare, and other Solana wallets.",
+              "tags": ["wallet", "integration"]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
