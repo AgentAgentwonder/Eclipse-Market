@@ -204,6 +204,182 @@ const valid = await invoke<boolean>('two_factor_verify', {
 });
 ```
 
+## Smart Contract Audit Module
+
+### Backend (Rust/Tauri)
+
+**Location:** `src-tauri/src/security/audit.rs`
+
+**Features:**
+- Heuristic scanner for Solana token programs
+- External audit integration (CertiK, Trail of Bits)
+- Caching layer for audit results
+- Risk scoring and level calculation
+- Detection of:
+  - Dangerous functions (selfdestruct, delegatecall)
+  - Mint authority presence
+  - Freeze authority presence
+  - Blacklist mechanisms
+  - Honeypot patterns
+  - Low holder counts
+  - Unchecked external calls
+
+**Data Structures:**
+- `AuditResult` - Complete audit report with score, findings, and metadata
+- `Finding` - Individual security issue with severity and recommendations
+- `AuditSource` - External audit provider info
+- `AuditMetadata` - Token characteristics (mintable, freeze authority, etc.)
+- `RiskLevel` - Low, Medium, High, Critical based on score
+
+**API Commands:**
+- `scan_contract(contract_address)` - Perform full audit scan
+- `get_cached_audit(contract_address)` - Retrieve cached audit
+- `clear_audit_cache()` - Clear all cached audits
+- `check_risk_threshold(security_score, user_threshold)` - Check if score below threshold
+
+**Scoring System:**
+- Base score: 100
+- Critical findings: -30 points each
+- High findings: -15 points each
+- Medium findings: -8 points each
+- Low findings: -3 points each
+- Final score aggregated with external audit scores when available
+
+### Frontend (React/TypeScript)
+
+**Components:**
+
+1. **TokenSecurityPanel** (`src/components/security/TokenSecurityPanel.tsx`)
+   - Full security analysis dashboard
+   - Real-time scanning with refresh
+   - Metadata summary (mintable, freeze authority, etc.)
+   - External audit sources with report links
+   - Detailed findings display
+
+2. **SecurityScoreBadge** (`src/components/security/SecurityScoreBadge.tsx`)
+   - Visual score indicator with color coding
+   - Risk level badge (Low/Medium/High/Critical)
+   - Configurable sizes
+
+3. **AuditFindings** (`src/components/security/AuditFindings.tsx`)
+   - Categorized finding cards
+   - Severity indicators
+   - Recommendations display
+   - Source attribution
+
+4. **SecurityRiskAlert** (`src/components/security/SecurityRiskAlert.tsx`)
+   - Modal warning for high-risk contracts
+   - Override option with explicit confirmation
+   - Risk level specific messaging
+
+**Integration:**
+
+The `TradeConfirmationModal` now includes:
+- Automatic security scanning of destination tokens
+- Real-time security score display
+- Inline warnings for high/critical risk tokens
+- Mandatory review for flagged contracts
+- Override flow requiring explicit user confirmation
+
+**Hook:**
+
+`useSecurityAudit` provides:
+- Automatic fetching with caching
+- Loading and error states
+- Manual refresh capability
+- Contract address-based scanning
+
+**Types:**
+
+All audit types defined in `src/types/audit.ts`:
+- `AuditResult`, `Finding`, `AuditSource`, `AuditMetadata`
+- `RiskLevel`, `Severity`, `AuditStatus`
+- `SecurityAlertConfig`
+
+### Testing
+
+**Unit Tests (Rust):**
+- Risk level calculation from scores
+- Score calculation with various findings
+- Honeypot detection
+- Mintable token detection
+- Low holder count warnings
+- Full audit flow
+
+**Sample Contracts:**
+
+Mock data generation for testing includes:
+- Various token characteristics (mintable, frozen, blacklist)
+- Deterministic scoring based on address
+- Simulated external audit responses
+
+**Manual Testing Checklist:**
+
+- [ ] Audit scan completes for valid contract addresses
+- [ ] Cache properly stores and retrieves results
+- [ ] Security score calculation is accurate
+- [ ] Risk levels properly categorized
+- [ ] Findings display correct severity and recommendations
+- [ ] High-risk contracts trigger trade warnings
+- [ ] Override flow works correctly
+- [ ] External audit sources display with links
+- [ ] Refresh updates audit data
+- [ ] Loading states display correctly
+
+### Security Best Practices
+
+1. **Rate Limiting:** Consider implementing rate limits for API calls to external audit providers
+2. **Data Validation:** All contract addresses validated before scanning
+3. **Error Handling:** Graceful fallbacks if audit services unavailable
+4. **User Warnings:** Clear, non-dismissible warnings for critical risks
+5. **Audit Trail:** All security overrides logged for accountability
+
+### Usage Examples
+
+**Backend:**
+```rust
+// Scan a contract
+let result = scan_contract("TokenMintAddress123".to_string(), app).await?;
+
+// Check if score below threshold
+let is_risky = check_risk_threshold(result.security_score, Some(60))?;
+```
+
+**Frontend:**
+```typescript
+// Use audit hook
+const { audit, loading, refresh } = useSecurityAudit({
+  contractAddress: 'TokenMintAddress123',
+  autoFetch: true,
+});
+
+// Display security panel
+<TokenSecurityPanel contractAddress={tokenAddress} />
+
+// Show security badge
+{audit && (
+  <SecurityScoreBadge
+    score={audit.securityScore}
+    riskLevel={audit.riskLevel}
+  />
+)}
+```
+
+### Configuration
+
+**Cache Duration:** 1 hour (configurable in `AuditCache::new()`)
+
+**Risk Thresholds:**
+- Low: 80-100
+- Medium: 60-79
+- High: 40-59
+- Critical: 0-39
+
+**Trade Blocking:**
+- By default, high and critical risk tokens trigger warnings
+- Users can override with explicit confirmation
+- Can be configured to hard-block certain risk levels
+
 ## Future Enhancements
 
 1. Per-trade 2FA enforcement thresholds
@@ -212,3 +388,9 @@ const valid = await invoke<boolean>('two_factor_verify', {
 4. Audit log for security events
 5. Rate limiting for 2FA attempts
 6. Emergency contact recovery
+7. Real-time contract bytecode analysis
+8. Integration with additional audit providers (Quantstamp, OpenZeppelin)
+9. Historical audit tracking and comparison
+10. Automated alerts for new security findings
+11. Community-driven security reports
+12. Smart contract simulation before execution
