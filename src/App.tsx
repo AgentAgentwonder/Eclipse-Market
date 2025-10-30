@@ -62,6 +62,8 @@ import { useAlertNotifications } from './hooks/useAlertNotifications';
 import { useMonitorConfig } from './hooks/useMonitorConfig';
 import { createPanelDefinition } from './utils/workspace';
 import { PanelType } from './types/workspace';
+import { useThemeStore } from './store/themeStore';
+import { useAccessibilityStore } from './store/accessibilityStore';
 
 type BiometricStatus = {
   available: boolean;
@@ -120,6 +122,14 @@ function App() {
     },
     onAction: handleShortcutAction,
   });
+  const currentTheme = useThemeStore(state => state.currentTheme);
+  const applyThemeColors = useThemeStore(state => state.applyThemeColors);
+  const applyAccessibilitySettings = useAccessibilityStore(state => state.applyAccessibilitySettings);
+
+  useEffect(() => {
+    applyThemeColors();
+    applyAccessibilitySettings();
+  }, [applyThemeColors, applyAccessibilitySettings, currentTheme]);
 
   useEffect(() => {
     const hydrate = async () => {
@@ -544,11 +554,22 @@ function App() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+    <div
+      className="min-h-screen theme-gradient text-[var(--color-text)]"
+      data-theme={currentTheme.id}
+    >
+      <a href="#main-content" className="skip-link" aria-label="Skip to main content">
+        Skip to main content
+      </a>
+
       <PaperModeIndicator onSwitchToLive={handleSwitchToLive} />
 
       <header
-        className={`sticky z-40 backdrop-blur-xl bg-slate-900/80 border-b border-purple-500/20 ${isPaperMode ? 'top-[52px]' : 'top-0'}`}
+        className={`sticky z-40 backdrop-blur-xl border-b ${isPaperMode ? 'top-[52px]' : 'top-0'}`}
+        style={{
+          backgroundColor: 'var(--color-background-secondary-80)',
+          borderColor: 'var(--color-border)',
+        }}
       >
         <div className="max-w-[1800px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
@@ -652,13 +673,13 @@ function App() {
       </AnimatePresence>
 
       {useWorkspaceMode ? (
-        <div className="max-w-[1800px] mx-auto px-6 py-8 space-y-6">
+        <div id="main-content" className="max-w-[1800px] mx-auto px-6 py-8 space-y-6" role="main">
           <WorkspaceTabs />
           <WorkspaceToolbar />
           <GridLayoutContainer />
         </div>
       ) : (
-        <main className="max-w-[1800px] mx-auto px-6 py-8">
+        <main id="main-content" className="max-w-[1800px] mx-auto px-6 py-8" role="main">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentPage}

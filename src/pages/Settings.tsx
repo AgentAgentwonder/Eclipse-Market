@@ -18,6 +18,8 @@ import {
 
   MessageSquare,
   Webhook,
+  Palette,
+  Accessibility,
 } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { BIOMETRIC_STATUS_EVENT } from '../constants/events';
@@ -35,6 +37,8 @@ import { StorageSettings } from './Settings/StorageSettings';
 import ChatIntegrations from './Settings/ChatIntegrations';
 import WebhookSettings from './Settings/WebhookSettings';
 import { ShortcutSettings } from './Settings/ShortcutSettings';
+import { ThemeEditor } from '../components/theme/ThemeEditor';
+import { AccessibilityPanel } from '../components/accessibility/AccessibilityPanel';
 
 interface BiometricStatus {
   available: boolean;
@@ -75,7 +79,7 @@ function Settings() {
   const [networkLoading, setNetworkLoading] = useState(false);
   const [networkError, setNetworkError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<
-    'security' | 'hardware' | 'trading' | 'activity' | 'alerts'
+    'security' | 'hardware' | 'trading' | 'activity' | 'alerts' | 'theme' | 'accessibility'
   >('security');
   const [paperModeDialogOpen, setPaperModeDialogOpen] = useState(false);
   const [paperModeTarget, setPaperModeTarget] = useState<'paper' | 'live'>('paper');
@@ -1181,6 +1185,36 @@ function Settings() {
       {/* Cache Management */}
       <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6">
         <CacheSettings />
+      </div>
+
+      {/* Theme Editor */}
+      <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center shadow-lg shadow-pink-500/30">
+            <Palette className="w-6 h-6" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold">Theme Editor</h2>
+            <p className="text-white/60 text-sm">Customize colors, create themes, and share with the community</p>
+          </div>
+        </div>
+
+        <ThemeEditor />
+      </div>
+
+      {/* Accessibility */}
+      <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-green-500/30">
+            <Accessibility className="w-6 h-6" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold">Accessibility</h2>
+            <p className="text-white/60 text-sm">Customize accessibility features for a better user experience</p>
+          </div>
+        </div>
+
+        <AccessibilityPanel />
       </div>
     </div>
   );
