@@ -87,6 +87,7 @@ use wallet::multisig::{MultisigDatabase, SharedMultisigDatabase};
 use wallet::performance::{PerformanceDatabase, SharedPerformanceDatabase};
 use security::keystore::Keystore;
 use security::activity_log::ActivityLogger;
+use security::audit::AuditCache;
 use data::event_store::{EventStore, SharedEventStore};
 use auth::session_manager::SessionManager;
 use auth::two_factor::TwoFactorManager;
@@ -170,6 +171,9 @@ pub fn run() {
                 eprintln!("Failed to initialize keystore: {e}");
                 Box::new(e) as Box<dyn Error>
             })?;
+
+            let audit_cache = AuditCache::new();
+            app.manage(audit_cache);
 
             let session_manager = SessionManager::new();
             if let Err(e) = session_manager.hydrate(&keystore) {
@@ -961,6 +965,12 @@ pub fn run() {
             security::activity_log::cleanup_activity_logs,
             security::activity_log::get_activity_retention,
             security::activity_log::set_activity_retention,
+
+            // Smart Contract Security
+            security::audit::scan_contract,
+            security::audit::get_cached_audit,
+            security::audit::clear_audit_cache,
+            security::audit::check_risk_threshold,
 
             // Performance & Diagnostics
             get_performance_metrics,

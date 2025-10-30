@@ -21,6 +21,7 @@ import { LargeTransfersTable } from '../components/holders/LargeTransfersTable';
 import { MetadataViewer } from '../components/holders/MetadataViewer';
 import { VerificationBadges } from '../components/holders/VerificationBadges';
 import { RiskAnalysisPanel } from '../components/risk/RiskAnalysisPanel';
+import { TokenSecurityPanel } from '../components/security/TokenSecurityPanel';
 import {
   HolderDistribution,
   HolderTrend,
@@ -219,9 +220,12 @@ export default function TokenDetail({ tokenAddress, onBack }: TokenDetailProps) 
         </div>
       </div>
 
-      {/* ML Risk Analysis */}
-      <div className="rounded-2xl border border-purple-500/20 bg-slate-900/40 p-6">
-        <RiskAnalysisPanel tokenAddress={tokenAddress} />
+      {/* Risk & Security Analysis */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="rounded-2xl border border-purple-500/20 bg-slate-900/40 p-6">
+          <RiskAnalysisPanel tokenAddress={tokenAddress} />
+        </div>
+        <TokenSecurityPanel contractAddress={tokenAddress} />
       </div>
 
       {/* Tabs */}
