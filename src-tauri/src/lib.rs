@@ -27,6 +27,7 @@ mod trading;
 mod wallet;
 mod websocket;
 mod webhooks;
+mod windowing;
 
 pub use ai::*;
 pub use alerts::*;
@@ -60,6 +61,7 @@ pub use webhooks::*;
 
 pub use wallet::multisig::*;
 pub use wallet::performance::*;
+pub use windowing::*;
 
 use alerts::{AlertManager, SharedAlertManager};
 use api::{ApiHealthMonitor, SharedApiHealthMonitor};
@@ -1000,6 +1002,19 @@ pub fn run() {
             stocks::get_insider_activity,
             stocks::create_stock_alert,
             stocks::get_stock_alerts,
+
+            // Windowing & Multi-monitor commands
+            get_monitors,
+            create_floating_window,
+            close_floating_window,
+            set_window_position,
+            set_window_size,
+            set_window_always_on_top,
+            get_window_position,
+            get_window_size,
+            snap_window_to_edge,
+            maximize_window,
+            minimize_window,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
