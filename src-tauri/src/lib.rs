@@ -79,7 +79,7 @@ pub use wallet::performance::*;
 pub use windowing::*;
 
 use ai::SharedAIAssistant;
-use alerts::{AlertManager, SharedAlertManager};
+use alerts::{AlertManager, SharedAlertManager, SharedSmartAlertManager, SmartAlertManager};
 use api::{ApiHealthMonitor, SharedApiHealthMonitor};
 use drawings::{DrawingManager, SharedDrawingManager};
 use indicators::{IndicatorManager, SharedIndicatorManager};
@@ -394,6 +394,16 @@ pub fn run() {
              let alert_state: SharedAlertManager = Arc::new(RwLock::new(alert_manager));
              app.manage(alert_state.clone());
 
+             let smart_alert_manager = tauri::async_runtime::block_on(async {
+                 SmartAlertManager::new(&app.handle()).await
+             }).map_err(|e| {
+                 eprintln!("Failed to initialize smart alert manager: {e}");
+                 Box::new(e) as Box<dyn Error>
+             })?;
+
+             let smart_alert_state: SharedSmartAlertManager = Arc::new(RwLock::new(smart_alert_manager));
+             app.manage(smart_alert_state.clone());
+
              // Start alert cooldown reset task
              let alert_reset_state = alert_state.clone();
              tauri::async_runtime::spawn(async move {
@@ -408,7 +418,7 @@ pub fn run() {
              });
 
              // Initialize notification router
-             let notification_router = tauri::async_runtime::block_on(async {
+
                  NotificationRouter::new(&app.handle()).await
              }).map_err(|e| {
                  eprintln!("Failed to initialize notification router: {e}");
@@ -870,6 +880,13 @@ pub fn run() {
             alert_test,
             alert_check_triggers,
             alert_reset_cooldowns,
+            smart_alert_create_rule,
+            smart_alert_update_rule,
+            smart_alert_delete_rule,
+            smart_alert_list_rules,
+            smart_alert_get_rule,
+            smart_alert_dry_run,
+            smart_alert_execute,
             // Chat Integrations
             chat_integration_get_settings,
             chat_integration_save_settings,
