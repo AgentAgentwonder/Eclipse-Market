@@ -15,6 +15,9 @@ import ProCharts from '../../pages/ProCharts';
 import TokenFlow from '../../pages/TokenFlow';
 import { MarketSurveillance } from '../../pages/MarketSurveillance';
 import { PaperTradingDashboard } from '../../pages/PaperTrading/Dashboard';
+import { AIAnalysis } from '../../pages/AIAnalysis';
+import PredictionMarkets from '../../pages/PredictionMarkets';
+import DeFi from '../../pages/DeFi';
 import SettingsPage from '../../pages/Settings';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
@@ -32,6 +35,9 @@ const componentMap: Record<string, ComponentType> = {
   'token-flow': TokenFlow,
   surveillance: MarketSurveillance,
   'paper-trading': PaperTradingDashboard,
+  'ai-analysis': AIAnalysis,
+  'prediction-markets': PredictionMarkets,
+  defi: DeFi,
   settings: SettingsPage,
 };
 
