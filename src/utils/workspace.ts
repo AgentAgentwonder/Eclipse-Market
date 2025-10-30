@@ -1,8 +1,45 @@
-import { Panel, PanelLayout, PanelType, WorkspaceLayout } from '../types/workspace';
+import { Panel, PanelLayout, PanelType, WorkspaceLayout, SplitConfig, FloatingWindowState, MonitorLayoutAssignment } from '../types/workspace';
+
+export const SPLIT_PLACEHOLDER_PREFIX = 'split-empty-';
+
+export const createSplitPlaceholderId = () =>
+  `${SPLIT_PLACEHOLDER_PREFIX}${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+
+export const isSplitPlaceholder = (value: string) => value.startsWith(SPLIT_PLACEHOLDER_PREFIX);
+
+export const cloneSplitConfig = (split?: SplitConfig): SplitConfig | undefined => {
+  if (!split) return undefined;
+
+  return {
+    direction: split.direction,
+    sizes: [...split.sizes],
+    minSizes: split.minSizes ? [...split.minSizes] : undefined,
+    children: split.children.map(child =>
+      typeof child === 'string' ? child : (cloneSplitConfig(child) as SplitConfig)
+    ),
+  };
+};
+
+export const cloneFloatingWindows = (windows?: FloatingWindowState[]) => {
+  if (!windows) return undefined;
+  return windows.map(window => ({ ...window }));
+};
+
+export const cloneMonitorAssignments = (assignments?: MonitorLayoutAssignment[]) => {
+  if (!assignments) return undefined;
+  return assignments.map(assignment => ({
+    monitorId: assignment.monitorId,
+    panelIds: [...assignment.panelIds],
+    split: cloneSplitConfig(assignment.split),
+  }));
+};
 
 export const cloneWorkspaceLayout = (layout: WorkspaceLayout): WorkspaceLayout => ({
   panels: layout.panels.map(panel => ({ ...panel })),
   layouts: layout.layouts.map(layoutItem => ({ ...layoutItem })),
+  splits: cloneSplitConfig(layout.splits),
+  floatingWindows: cloneFloatingWindows(layout.floatingWindows),
+  monitorAssignments: cloneMonitorAssignments(layout.monitorAssignments),
   monitorConfig: layout.monitorConfig ? { ...layout.monitorConfig } : undefined,
 });
 

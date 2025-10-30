@@ -31,18 +31,28 @@ export const useMonitorConfig = () => {
 
       if (typeof window !== 'undefined' && '__TAURI__' in window) {
         try {
-          const { availableMonitors } = await import('@tauri-apps/api/window');
-          const monitors = await availableMonitors();
+          const { invoke } = await import('@tauri-apps/api/tauri');
+          const monitorsData = await invoke<any[]>('get_monitors');
 
-          if (monitors && monitors.length > 0) {
-            const primary = monitors.find(monitor => monitor.position?.x === 0 && monitor.position?.y === 0);
-            const referenceMonitor = primary || monitors[0];
+          if (monitorsData && monitorsData.length > 0) {
+            const primary = monitorsData.find(m => m.is_primary);
+            const referenceMonitor = primary || monitorsData[0];
 
             config = {
-              width: referenceMonitor.size?.width ?? window.screen.width,
-              height: referenceMonitor.size?.height ?? window.screen.height,
-              devicePixelRatio: referenceMonitor.scaleFactor ?? (window.devicePixelRatio || 1),
-              count: monitors.length,
+              width: referenceMonitor.width ?? window.screen.width,
+              height: referenceMonitor.height ?? window.screen.height,
+              devicePixelRatio: referenceMonitor.scale_factor ?? (window.devicePixelRatio || 1),
+              count: monitorsData.length,
+              monitors: monitorsData.map((m: any, idx: number) => ({
+                id: m.id || `monitor-${idx}`,
+                name: m.name || `Monitor ${idx + 1}`,
+                width: m.width,
+                height: m.height,
+                x: m.x,
+                y: m.y,
+                scaleFactor: m.scale_factor,
+                isPrimary: m.is_primary || false,
+              })),
             };
           }
         } catch (error) {
@@ -58,7 +68,7 @@ export const useMonitorConfig = () => {
     collectMonitorInfo();
 
     const handleResize = () => {
-      updateMonitorConfig(getFallbackConfig());
+      collectMonitorInfo();
     };
 
     window.addEventListener('resize', handleResize);
