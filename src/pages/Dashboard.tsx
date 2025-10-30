@@ -13,9 +13,15 @@ import {
   Shield,
 } from 'lucide-react';
 import { usePriceStream } from '../hooks/usePriceStream';
+import { useParallax, useParallaxLayer } from '../hooks/useParallax';
+import { useMotionPreferences } from '../hooks/useMotionPreferences';
 import WatchlistWidget from '../components/portfolio/WatchlistWidget';
 import WatchlistManager from '../components/portfolio/WatchlistManager';
 import AlertsManager from '../components/alerts/AlertsManager';
+import { ConstellationBackground } from '../components/common/ConstellationBackground';
+import { EclipseLoader } from '../components/common/EclipseLoader';
+import { MoonPhaseIndicator } from '../components/common/MoonPhaseIndicator';
+import { cardHoverVariants, fadeInStaggerVariants, getAccessibleVariants, panelRevealVariants } from '../utils/animations';
 
 interface Alert {
   id: string;
@@ -154,18 +160,30 @@ export default function Dashboard() {
     setAlertsManagerOpen(true);
   };
 
+  const reducedMotion = useMotionPreferences();
+  const parallaxBackground = useParallaxLayer(0.2);
+  const { ref: trendingRef, style: trendingParallax } = useParallax({ distance: 50 });
+
+  const accessibleCardHoverVariants = getAccessibleVariants(cardHoverVariants, reducedMotion);
+
   return (
     <>
-      <div className="space-y-6">
+      <div className="relative space-y-6">
+        {/* Constellation Background with parallax */}
+        <motion.div style={parallaxBackground} className="absolute inset-0 pointer-events-none">
+          <ConstellationBackground starCount={30} linkCount={15} opacity={0.2} />
+        </motion.div>
+
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              whileHover={{ y: -4 }}
+              transition={reducedMotion ? { duration: 0.01 } : { delay: i * 0.1 }}
+              variants={accessibleCardHoverVariants}
+              whileHover={reducedMotion ? undefined : 'hover'}
               className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-500/20 shadow-xl hover:shadow-purple-500/20 transition-all cursor-pointer"
             >
               <div className="flex items-start justify-between mb-4">
@@ -182,10 +200,12 @@ export default function Dashboard() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Trending Coins */}
           <div className="lg:col-span-2 space-y-6">
             <motion.div
+              ref={trendingRef}
+              style={trendingParallax}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
@@ -200,34 +220,45 @@ export default function Dashboard() {
                   <RefreshCw className="w-5 h-5" />
                 </button>
               </div>
-              <div className="p-6 space-y-3">
-                {trendingCoins.map((coin, idx) => (
+              <div className="p-6">
+                {loading ? (
+                  <div className="flex justify-center py-12">
+                    <EclipseLoader size="lg" />
+                  </div>
+                ) : (
                   <motion.div
-                    key={coin.symbol}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.3 + idx * 0.05 }}
-                    whileHover={{ scale: 1.02 }}
-                    className="flex items-center gap-4 p-4 rounded-xl bg-slate-700/30 hover:bg-slate-700/50 transition-all cursor-pointer"
+                    className="space-y-3"
+                    variants={reducedMotion ? undefined : fadeInStaggerVariants.container}
+                    initial="hidden"
+                    animate="visible"
                   >
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold shadow-lg">
-                      #{coin.rank}
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-semibold">{coin.symbol}</div>
-                      <div className="text-sm text-gray-400">{coin.name}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg font-bold">${coin.price.toFixed(6)}</div>
-                      <div
-                        className={`text-sm ${coin.change > 0 ? 'text-green-400' : 'text-red-400'}`}
+                    {trendingCoins.map(coin => (
+                      <motion.div
+                        key={coin.symbol}
+                        variants={reducedMotion ? undefined : fadeInStaggerVariants.item}
+                        whileHover={reducedMotion ? undefined : { scale: 1.02 }}
+                        className="flex items-center gap-4 p-4 rounded-xl bg-slate-700/30 hover:bg-slate-700/50 transition-all cursor-pointer"
                       >
-                        {coin.change > 0 ? '+' : ''}
-                        {coin.change.toFixed(2)}%
-                      </div>
-                    </div>
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold shadow-lg">
+                          #{coin.rank}
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-semibold">{coin.symbol}</div>
+                          <div className="text-sm text-gray-400">{coin.name}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold">${coin.price.toFixed(6)}</div>
+                          <div
+                            className={`text-sm ${coin.change > 0 ? 'text-green-400' : 'text-red-400'}`}
+                          >
+                            {coin.change > 0 ? '+' : ''}
+                            {coin.change.toFixed(2)}%
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
                   </motion.div>
-                ))}
+                )}
               </div>
             </motion.div>
 
