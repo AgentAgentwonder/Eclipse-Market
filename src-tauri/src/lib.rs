@@ -607,48 +607,53 @@ pub fn run() {
              }
 
              // Start background compression job (runs daily at 3 AM)
-             let compression_job = shared_compression_manager.clone();
-             tauri::async_runtime::spawn(async move {
+              let compression_job = shared_compression_manager.clone();
+              tauri::async_runtime::spawn(async move {
 
-                 use tokio::time::{sleep, Duration};
+                  use tokio::time::{sleep, Duration};
 
-                 loop {
-                     let now = chrono::Utc::now();
-                     
-                     // Calculate time until 3 AM
-                     let mut next_run = now
-                         .date_naive()
-                         .and_hms_opt(3, 0, 0)
-                         .unwrap()
-                         .and_utc();
-                     
-                     if now.hour() >= 3 {
-                         next_run = next_run + chrono::Duration::days(1);
-                     }
-                     
-                     let duration_until_next = next_run.signed_duration_since(now);
-                     let sleep_secs = duration_until_next.num_seconds().max(0) as u64;
-                     
-                     sleep(Duration::from_secs(sleep_secs)).await;
-                     
-                     // Run compression
-                     let manager = compression_job.read().await;
-                     let config = manager.get_config().await;
-                     
-                     if config.enabled && config.auto_compress {
-                         if let Err(err) = manager.compress_old_events().await {
-                             eprintln!("Failed to compress old events: {err}");
-                         }
-                         if let Err(err) = manager.compress_old_trades().await {
-                             eprintln!("Failed to compress old trades: {err}");
-                         }
-                         manager.cleanup_cache().await;
-                     }
-                 }
-             });
+                  loop {
+                      let now = chrono::Utc::now();
 
-             Ok(())
-             })
+                      // Calculate time until 3 AM
+                      let mut next_run = now
+                          .date_naive()
+                          .and_hms_opt(3, 0, 0)
+                          .unwrap()
+                          .and_utc();
+
+                      if now.hour() >= 3 {
+                          next_run = next_run + chrono::Duration::days(1);
+                      }
+
+                      let duration_until_next = next_run.signed_duration_since(now);
+                      let sleep_secs = duration_until_next.num_seconds().max(0) as u64;
+
+                      sleep(Duration::from_secs(sleep_secs)).await;
+
+                      // Run compression
+                      let manager = compression_job.read().await;
+                      let config = manager.get_config().await;
+
+                      if config.enabled && config.auto_compress {
+                          if let Err(err) = manager.compress_old_events().await {
+                              eprintln!("Failed to compress old events: {err}");
+                          }
+                          if let Err(err) = manager.compress_old_trades().await {
+                              eprintln!("Failed to compress old trades: {err}");
+                          }
+                          manager.cleanup_cache().await;
+                      }
+                  }
+              });
+
+              // Initialize prediction market service
+              let prediction_service = market::PredictionMarketService::new();
+              let shared_prediction_service: market::SharedPredictionMarketService = Arc::new(RwLock::new(prediction_service));
+              app.manage(shared_prediction_service.clone());
+
+              Ok(())
+              })
 
              // Wallet
              phantom_connect,
@@ -1074,9 +1079,19 @@ pub fn run() {
             market::holders::export_holder_data,
             market::holders::export_metadata_snapshot,
 
+            // Prediction Markets
+            market::get_prediction_markets,
+            market::search_prediction_markets,
+            market::create_custom_prediction,
+            market::get_custom_predictions,
+            market::update_custom_prediction,
+            market::get_portfolio_comparison,
+            market::get_consensus_data,
+            market::record_prediction_performance,
+
             // Indicator & drawing commands
             indicator_save_state,
-            indicator_load_state,
+
             indicator_list_presets,
             indicator_save_preset,
             indicator_delete_preset,

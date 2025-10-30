@@ -3,10 +3,16 @@ pub use trending_coins::*;
 pub mod new_coins_scanner;
 pub mod top_coins;
 pub mod holders;
+pub mod polymarket_adapter;
+pub mod drift_adapter;
+pub mod predictions;
 
 pub use new_coins_scanner::*;
 pub use top_coins::*;
 pub use holders::*;
+pub use polymarket_adapter::*;
+pub use drift_adapter::*;
+pub use predictions::*;
 
 use serde::{Deserialize, Serialize};
 use reqwest;
