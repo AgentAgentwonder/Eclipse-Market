@@ -79,7 +79,7 @@ sysinfo = { version = "0.30.11", default-features = false, features = ["cpu"] }
 # Compression
 zstd = "0.13.0"
 
-tauri = { version = "1.5.3", features = ["shell-open"] }
+tauri = { version = "1.5.3", features = ["shell-open", "updater"] }
 
 curve25519-dalek = { version = "3.2.1", default-features = false }
 rand = "0.9.2"

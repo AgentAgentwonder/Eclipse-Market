@@ -64,6 +64,8 @@ import { createPanelDefinition } from './utils/workspace';
 import { PanelType } from './types/workspace';
 import { useThemeStore } from './store/themeStore';
 import { useAccessibilityStore } from './store/accessibilityStore';
+import { useUpdateStore } from './store/updateStore';
+import { UpdateNotificationModal } from './components/UpdateNotificationModal';
 
 type BiometricStatus = {
   available: boolean;
@@ -125,11 +127,24 @@ function App() {
   const currentTheme = useThemeStore(state => state.currentTheme);
   const applyThemeColors = useThemeStore(state => state.applyThemeColors);
   const applyAccessibilitySettings = useAccessibilityStore(state => state.applyAccessibilitySettings);
+  const setupEventListeners = useUpdateStore(state => state.setupEventListeners);
+  const loadSettings = useUpdateStore(state => state.loadSettings);
+  const checkForUpdates = useUpdateStore(state => state.checkForUpdates);
 
   useEffect(() => {
     applyThemeColors();
     applyAccessibilitySettings();
   }, [applyThemeColors, applyAccessibilitySettings, currentTheme]);
+
+  useEffect(() => {
+    setupEventListeners();
+    loadSettings();
+    
+    // Check for updates on startup (after a delay)
+    setTimeout(() => {
+      checkForUpdates().catch(console.error);
+    }, 5000);
+  }, [setupEventListeners, loadSettings, checkForUpdates]);
 
   useEffect(() => {
     const hydrate = async () => {
@@ -734,6 +749,8 @@ function App() {
 
       <CommandPalette isOpen={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} />
       <ShortcutCheatSheet isOpen={cheatSheetOpen} onClose={() => setCheatSheetOpen(false)} />
+
+      <UpdateNotificationModal />
     </div>
   );
 }

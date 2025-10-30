@@ -39,6 +39,7 @@ import WebhookSettings from './Settings/WebhookSettings';
 import { ShortcutSettings } from './Settings/ShortcutSettings';
 import { ThemeEditor } from '../components/theme/ThemeEditor';
 import { AccessibilityPanel } from '../components/accessibility/AccessibilityPanel';
+import { UpdateSettings } from './Settings/UpdateSettings';
 
 interface BiometricStatus {
   available: boolean;
@@ -1176,6 +1177,11 @@ function Settings() {
           </>
         )}
       </AnimatePresence>
+
+      {/* Auto Update */}
+      <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6">
+        <UpdateSettings />
+      </div>
 
       {/* Storage Management */}
       <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6">
