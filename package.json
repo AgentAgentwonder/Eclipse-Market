@@ -18,6 +18,8 @@
     "@ledgerhq/hw-app-solana": "^7.5.5",
     "@ledgerhq/hw-transport-webhid": "^6.30.8",
     "@react-spring/web": "^9.7.2",
+    "@sentry/react": "^10.22.0",
+    "@sentry/tracing": "^7.120.4",
     "@solana/wallet-adapter-base": "^0.9.27",
     "@solana/wallet-adapter-phantom": "^0.9.28",
     "@solana/wallet-adapter-react": "0.15.0",
@@ -41,6 +43,8 @@
     "react-router-dom": "^7.9.4",
     "react-window": "^2.2.2",
     "recharts": "^3.3.0",
+    "rrweb": "^2.0.0-alpha.4",
+    "rrweb-player": "^1.0.0-alpha.4",
     "tailwindcss": "^3.3.0",
     "xlsx": "^0.18.5",
     "zustand": "^5.0.8"
