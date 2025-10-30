@@ -34,6 +34,7 @@ import { CacheSettings } from '../components/CacheSettings';
 import { ApiSettings } from './Settings/ApiSettings';
 import AlertSettings from './Settings/AlertSettings';
 import { StorageSettings } from './Settings/StorageSettings';
+import { BackupSettings } from './Settings/BackupSettings';
 import ChatIntegrations from './Settings/ChatIntegrations';
 import WebhookSettings from './Settings/WebhookSettings';
 import { ShortcutSettings } from './Settings/ShortcutSettings';
@@ -1176,6 +1177,20 @@ function Settings() {
           </>
         )}
       </AnimatePresence>
+
+      {/* Backup & Settings Management */}
+      <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30">
+            <Server className="w-6 h-6" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold">Backup & Settings</h2>
+            <p className="text-white/60 text-sm">Encrypted cloud backups and settings management</p>
+          </div>
+        </div>
+        <BackupSettings />
+      </div>
 
       {/* Storage Management */}
       <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6">

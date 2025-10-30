@@ -5,6 +5,7 @@ mod api;
 mod api_analytics;
 mod api_config;
 mod auth;
+mod backup;
 mod bots;
 mod cache_commands;
 mod chains;
@@ -36,6 +37,7 @@ pub use api::*;
 pub use api_analytics::*;
 pub use api_config::*;
 pub use auth::*;
+pub use backup::*;
 pub use bots::*;
 pub use chains::*;
 pub use bridges::*;
@@ -293,6 +295,18 @@ pub fn run() {
 
             let performance_state: SharedPerformanceDatabase = Arc::new(RwLock::new(performance_db));
             app.manage(performance_state.clone());
+
+            // Initialize backup service and scheduler
+            let backup_service = backup::service::BackupService::new(&app.handle());
+            let backup_service_state: backup::service::SharedBackupService = Arc::new(RwLock::new(backup_service));
+            app.manage(backup_service_state.clone());
+
+            let backup_scheduler = backup::scheduler::BackupScheduler::new(&app.handle()).map_err(|e| {
+                eprintln!("Failed to initialize backup scheduler: {e}");
+                Box::new(e) as Box<dyn Error>
+            })?;
+            let backup_scheduler_state: backup::scheduler::SharedBackupScheduler = Arc::new(RwLock::new(backup_scheduler));
+            app.manage(backup_scheduler_state.clone());
 
              let automation_handle = app.handle();
              tauri::async_runtime::spawn(async move {
@@ -1015,6 +1029,21 @@ pub fn run() {
             snap_window_to_edge,
             maximize_window,
             minimize_window,
+
+            // Backup & Settings Management
+            backup::service::create_backup,
+            backup::service::restore_backup,
+            backup::service::list_backups,
+            backup::service::delete_backup,
+            backup::service::verify_backup_integrity,
+            backup::service::export_settings,
+            backup::service::import_settings,
+            backup::service::reset_settings,
+            backup::service::get_settings_template,
+            backup::service::get_backup_schedule,
+            backup::service::update_backup_schedule,
+            backup::service::get_backup_status,
+            backup::service::trigger_manual_backup,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
