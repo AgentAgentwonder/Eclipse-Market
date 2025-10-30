@@ -21,7 +21,8 @@ import {
   Palette,
   Accessibility,
   Activity,
-} from 'lucide-react';
+  Mic,
+  } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { BIOMETRIC_STATUS_EVENT } from '../constants/events';
 import HardwareWalletManager from '../components/wallet/HardwareWalletManager';
@@ -46,6 +47,7 @@ import { MaintenanceSettings } from '../components/common/MaintenanceSettings';
 import { DiagnosticsSettings } from './Settings/DiagnosticsSettings';
 import { TraySettings } from './Settings/TraySettings';
 import { StartupSettings } from './Settings/StartupSettings';
+import { VoiceSettings } from './Settings/VoiceSettings';
 
 interface BiometricStatus {
   available: boolean;
@@ -479,6 +481,23 @@ function Settings() {
           </div>
 
           <ApiSettings />
+        </div>
+
+        {/* Voice Interaction */}
+        <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-500 to-purple-500 flex items-center justify-center shadow-lg shadow-rose-500/20">
+              <Mic className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">Voice Interaction</h2>
+              <p className="text-white/60 text-sm">
+                Configure wake words, multilingual speech recognition, and privacy controls
+              </p>
+            </div>
+          </div>
+
+          <VoiceSettings />
         </div>
 
         {/* Webhooks */}
