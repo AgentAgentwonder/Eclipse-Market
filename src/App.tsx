@@ -22,6 +22,7 @@ import {
   GraduationCap,
   Keyboard,
   Command,
+  MessageSquare,
 } from 'lucide-react';
 import { CommandPalette } from './components/common/CommandPalette';
 import { ShortcutCheatSheet } from './components/common/ShortcutCheatSheet';
@@ -55,6 +56,7 @@ import TokenFlow from './pages/TokenFlow';
 import Wallet from './pages/Wallet';
 import { MarketSurveillance } from './pages/MarketSurveillance';
 import { PaperTradingDashboard } from './pages/PaperTrading/Dashboard';
+import { AIAnalysis } from './pages/AIAnalysis';
 import SettingsPage from './pages/Settings';
 import MultiChain from './pages/MultiChain';
 import { BIOMETRIC_STATUS_EVENT } from './constants/events';
@@ -325,6 +327,14 @@ function App() {
         keywords: ['charts', 'technical', 'analysis'],
       },
       {
+        id: 'nav-ai-analysis',
+        title: 'AI Assistant',
+        description: 'AI trading assistant and analysis',
+        category: 'analytics' as const,
+        action: () => setCurrentPage('ai-analysis'),
+        keywords: ['ai', 'assistant', 'chat', 'analysis'],
+      },
+      {
         id: 'toggle-sidebar',
         title: 'Toggle Sidebar',
         description: 'Show or hide the navigation sidebar',
@@ -479,6 +489,7 @@ function App() {
         panelType: 'trading' as PanelType,
       },
       { id: 'pro-charts', label: 'Pro Charts', icon: LineChart, component: ProCharts, panelType: 'pro-charts' as PanelType },
+      { id: 'ai-analysis', label: 'AI Assistant', icon: MessageSquare, component: AIAnalysis, panelType: 'ai-analysis' as PanelType },
       { id: 'api-health', label: 'API Health', icon: Activity, component: ApiHealth, panelType: 'api-health' as PanelType },
       { id: 'settings', label: 'Settings', icon: Settings, component: SettingsPage, panelType: 'settings' as PanelType },
     ];

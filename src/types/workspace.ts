@@ -45,6 +45,7 @@ export type PanelType =
   | 'token-flow'
   | 'surveillance'
   | 'paper-trading'
+  | 'ai-analysis'
   | 'settings';
 
 export interface Monitor {

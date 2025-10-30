@@ -1,4 +1,5 @@
 mod ai;
+mod ai_chat;
 mod alerts;
 mod anomalies;
 mod api;
@@ -34,6 +35,7 @@ mod webhooks;
 mod windowing;
 
 pub use ai::*;
+pub use ai_chat::*;
 pub use alerts::*;
 pub use anomalies::*;
 pub use api::*;
@@ -1159,6 +1161,16 @@ pub fn run() {
             check_auto_start_enabled,
             enable_auto_start,
             disable_auto_start,
+
+            // AI Chat
+            ai_chat_message,
+            ai_chat_message_stream,
+            ai_submit_feedback,
+            ai_execute_quick_action,
+            ai_optimize_portfolio,
+            ai_apply_optimization,
+            ai_get_pattern_warnings,
+            ai_dismiss_pattern_warning,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

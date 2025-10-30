@@ -76,6 +76,69 @@
           ]
         }
       ]
+    },
+    {
+      "id": "ai-assistant",
+      "title": "AI Trading Assistant",
+      "summary": "Conversational AI for market analysis and trading automation.",
+      "items": [
+        {
+          "id": "ai.chat",
+          "label": "Chat Interface",
+          "selectors": ["[data-help='ai-chat']"],
+          "description": "Ask the AI assistant about market conditions, portfolio analysis, risk assessment, and trading strategies. Conversations maintain context across multiple turns and include reasoning traces to explain recommendations.",
+          "links": [
+            { "type": "docs", "label": "AI Assistant Guide", "url": "https://docs.eclipsetrading.app/ai/assistant" },
+            { "type": "video", "label": "Getting Started with AI", "url": "https://videos.eclipsetrading.app/ai-intro.mp4" }
+          ]
+        },
+        {
+          "id": "ai.quickActions",
+          "label": "Quick Actions",
+          "selectors": ["[data-help='quick-actions']"],
+          "description": "Create automated trading rules like 'Buy SOL when price drops 5%' or 'Sell if risk score exceeds 75'. The AI monitors market conditions 24/7 and executes actions when conditions are met.",
+          "links": [
+            { "type": "docs", "label": "Quick Actions Setup", "url": "https://docs.eclipsetrading.app/ai/quick-actions" }
+          ]
+        },
+        {
+          "id": "ai.optimization",
+          "label": "Portfolio Optimization",
+          "selectors": ["[data-help='portfolio-optimization']"],
+          "description": "Request AI-powered portfolio optimization suggestions based on Modern Portfolio Theory. Get specific buy/sell recommendations with expected return and risk metrics.",
+          "links": [
+            { "type": "docs", "label": "Optimization Algorithm", "url": "https://docs.eclipsetrading.app/ai/optimization" },
+            { "type": "video", "label": "Portfolio Optimization", "url": "https://videos.eclipsetrading.app/optimization.mp4" }
+          ]
+        },
+        {
+          "id": "ai.patterns",
+          "label": "Pattern Recognition",
+          "selectors": ["[data-help='pattern-warnings']"],
+          "description": "Real-time detection of market patterns including pump-and-dump schemes, whale accumulation, liquidity drain risks, and other anomalies. Receive severity-based alerts with actionable recommendations.",
+          "links": [
+            { "type": "docs", "label": "Pattern Detection", "url": "https://docs.eclipsetrading.app/ai/patterns" }
+          ]
+        },
+        {
+          "id": "ai.commands",
+          "label": "Command Types",
+          "selectors": ["[data-help='command-suggestions']"],
+          "description": "Use specialized commands for focused analysis: Risk Analysis, Market Analysis, Trade Suggestions, Pattern Recognition, Portfolio Optimization, and Quick Action creation. Each command type optimizes the AI's response for that specific task.",
+          "links": [
+            { "type": "docs", "label": "Command Reference", "url": "https://docs.eclipsetrading.app/ai/commands" }
+          ]
+        },
+        {
+          "id": "ai.feedback",
+          "label": "Feedback System",
+          "selectors": ["[data-help='ai-feedback']"],
+          "description": "Rate AI responses with thumbs up/down and provide comments. Your feedback helps improve the AI's accuracy and relevance over time through reinforcement learning.",
+          "links": [
+            { "type": "docs", "label": "Improving AI Accuracy", "url": "https://docs.eclipsetrading.app/ai/feedback" }
+          ]
+        }
+      ]
     }
   ],
   "whatsThis": {
