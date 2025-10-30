@@ -30,6 +30,7 @@ mod trading;
 mod tray;
 mod updater;
 mod voice;
+pub mod voice;
 mod wallet;
 mod websocket;
 mod webhooks;
@@ -111,6 +112,7 @@ use core::cache_manager::{CacheType, SharedCacheManager};
 use market::{HolderAnalyzer, SharedHolderAnalyzer};
 use chains::{ChainManager, SharedChainManager};
 use bridges::{BridgeManager, SharedBridgeManager};
+use voice::commands::{SharedVoiceState, VoiceState};
 
 async fn warm_cache_on_startup(
     _app_handle: tauri::AppHandle,
@@ -576,6 +578,11 @@ pub fn run() {
              let shared_auto_start_manager: SharedAutoStartManager = Arc::new(auto_start_manager);
              app.manage(shared_auto_start_manager.clone());
 
+             // Initialize voice state
+             let voice_state = VoiceState::new();
+             let shared_voice_state: SharedVoiceState = Arc::new(RwLock::new(voice_state));
+             app.manage(shared_voice_state.clone());
+
              // Attach tray window listeners
              if let Some(window) = app.get_window("main") {
                  attach_window_listeners(&window, shared_tray_manager.clone());
@@ -609,48 +616,53 @@ pub fn run() {
              }
 
              // Start background compression job (runs daily at 3 AM)
-             let compression_job = shared_compression_manager.clone();
-             tauri::async_runtime::spawn(async move {
+              let compression_job = shared_compression_manager.clone();
+              tauri::async_runtime::spawn(async move {
 
-                 use tokio::time::{sleep, Duration};
+                  use tokio::time::{sleep, Duration};
 
-                 loop {
-                     let now = chrono::Utc::now();
-                     
-                     // Calculate time until 3 AM
-                     let mut next_run = now
-                         .date_naive()
-                         .and_hms_opt(3, 0, 0)
-                         .unwrap()
-                         .and_utc();
-                     
-                     if now.hour() >= 3 {
-                         next_run = next_run + chrono::Duration::days(1);
-                     }
-                     
-                     let duration_until_next = next_run.signed_duration_since(now);
-                     let sleep_secs = duration_until_next.num_seconds().max(0) as u64;
-                     
-                     sleep(Duration::from_secs(sleep_secs)).await;
-                     
-                     // Run compression
-                     let manager = compression_job.read().await;
-                     let config = manager.get_config().await;
-                     
-                     if config.enabled && config.auto_compress {
-                         if let Err(err) = manager.compress_old_events().await {
-                             eprintln!("Failed to compress old events: {err}");
-                         }
-                         if let Err(err) = manager.compress_old_trades().await {
-                             eprintln!("Failed to compress old trades: {err}");
-                         }
-                         manager.cleanup_cache().await;
-                     }
-                 }
-             });
+                  loop {
+                      let now = chrono::Utc::now();
 
-             Ok(())
-             })
+                      // Calculate time until 3 AM
+                      let mut next_run = now
+                          .date_naive()
+                          .and_hms_opt(3, 0, 0)
+                          .unwrap()
+                          .and_utc();
+
+                      if now.hour() >= 3 {
+                          next_run = next_run + chrono::Duration::days(1);
+                      }
+
+                      let duration_until_next = next_run.signed_duration_since(now);
+                      let sleep_secs = duration_until_next.num_seconds().max(0) as u64;
+
+                      sleep(Duration::from_secs(sleep_secs)).await;
+
+                      // Run compression
+                      let manager = compression_job.read().await;
+                      let config = manager.get_config().await;
+
+                      if config.enabled && config.auto_compress {
+                          if let Err(err) = manager.compress_old_events().await {
+                              eprintln!("Failed to compress old events: {err}");
+                          }
+                          if let Err(err) = manager.compress_old_trades().await {
+                              eprintln!("Failed to compress old trades: {err}");
+                          }
+                          manager.cleanup_cache().await;
+                      }
+                  }
+              });
+
+              // Initialize prediction market service
+              let prediction_service = market::PredictionMarketService::new();
+              let shared_prediction_service: market::SharedPredictionMarketService = Arc::new(RwLock::new(prediction_service));
+              app.manage(shared_prediction_service.clone());
+
+              Ok(())
+              })
 
              // Wallet
              phantom_connect,
@@ -1076,9 +1088,19 @@ pub fn run() {
             market::holders::export_holder_data,
             market::holders::export_metadata_snapshot,
 
+            // Prediction Markets
+            market::get_prediction_markets,
+            market::search_prediction_markets,
+            market::create_custom_prediction,
+            market::get_custom_predictions,
+            market::update_custom_prediction,
+            market::get_portfolio_comparison,
+            market::get_consensus_data,
+            market::record_prediction_performance,
+
             // Indicator & drawing commands
             indicator_save_state,
-            indicator_load_state,
+
             indicator_list_presets,
             indicator_save_preset,
             indicator_delete_preset,
@@ -1173,6 +1195,37 @@ pub fn run() {
             check_auto_start_enabled,
             enable_auto_start,
             disable_auto_start,
+
+            // Voice Interaction
+            voice_request_permissions,
+            voice_revoke_permissions,
+            voice_start_microphone,
+            voice_stop_microphone,
+            voice_get_audio_status,
+            voice_start_wake_word,
+            voice_stop_wake_word,
+            voice_get_wake_word_config,
+            voice_update_wake_word_config,
+            voice_process_audio_for_wake_word,
+            voice_start_recognition,
+            voice_stop_recognition,
+            voice_get_stt_config,
+            voice_update_stt_config,
+            voice_get_supported_languages,
+            voice_set_stt_language,
+            voice_simulate_transcription,
+            voice_speak,
+            voice_stop_speaking,
+            voice_pause_speaking,
+            voice_resume_speaking,
+            voice_get_tts_status,
+            voice_get_tts_config,
+            voice_update_tts_config,
+            voice_get_available_voices,
+            voice_set_voice,
+            voice_set_rate,
+            voice_set_pitch,
+            voice_set_volume,
 
             // AI Chat
             ai_chat_message,

@@ -46,6 +46,7 @@ export type PanelType =
   | 'surveillance'
   | 'paper-trading'
   | 'ai-analysis'
+  | 'prediction-markets'
   | 'settings';
 
 export interface Monitor {
