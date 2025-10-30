@@ -29,6 +29,7 @@ mod token_flow;
 mod trading;
 mod tray;
 mod updater;
+pub mod voice;
 mod wallet;
 mod websocket;
 mod webhooks;
@@ -62,6 +63,7 @@ pub use token_flow::*;
 pub use trading::*;
 pub use tray::*;
 pub use updater::*;
+pub use voice::*;
 pub use wallet::hardware_wallet::*;
 pub use wallet::ledger::*;
 pub use wallet::multi_wallet::*;
@@ -109,6 +111,7 @@ use core::cache_manager::{CacheType, SharedCacheManager};
 use market::{HolderAnalyzer, SharedHolderAnalyzer};
 use chains::{ChainManager, SharedChainManager};
 use bridges::{BridgeManager, SharedBridgeManager};
+use voice::commands::{SharedVoiceState, VoiceState};
 
 async fn warm_cache_on_startup(
     _app_handle: tauri::AppHandle,
@@ -573,6 +576,11 @@ pub fn run() {
              auto_start_manager.initialize(&app.handle());
              let shared_auto_start_manager: SharedAutoStartManager = Arc::new(auto_start_manager);
              app.manage(shared_auto_start_manager.clone());
+
+             // Initialize voice state
+             let voice_state = VoiceState::new();
+             let shared_voice_state: SharedVoiceState = Arc::new(RwLock::new(voice_state));
+             app.manage(shared_voice_state.clone());
 
              // Attach tray window listeners
              if let Some(window) = app.get_window("main") {
@@ -1186,6 +1194,37 @@ pub fn run() {
             check_auto_start_enabled,
             enable_auto_start,
             disable_auto_start,
+
+            // Voice Interaction
+            voice_request_permissions,
+            voice_revoke_permissions,
+            voice_start_microphone,
+            voice_stop_microphone,
+            voice_get_audio_status,
+            voice_start_wake_word,
+            voice_stop_wake_word,
+            voice_get_wake_word_config,
+            voice_update_wake_word_config,
+            voice_process_audio_for_wake_word,
+            voice_start_recognition,
+            voice_stop_recognition,
+            voice_get_stt_config,
+            voice_update_stt_config,
+            voice_get_supported_languages,
+            voice_set_stt_language,
+            voice_simulate_transcription,
+            voice_speak,
+            voice_stop_speaking,
+            voice_pause_speaking,
+            voice_resume_speaking,
+            voice_get_tts_status,
+            voice_get_tts_config,
+            voice_update_tts_config,
+            voice_get_available_voices,
+            voice_set_voice,
+            voice_set_rate,
+            voice_set_pitch,
+            voice_set_volume,
 
             // AI Chat
             ai_chat_message,
