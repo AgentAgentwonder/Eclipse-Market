@@ -35,7 +35,7 @@ import { GroupManagementModal } from './components/wallet/GroupManagementModal';
 import { WalletSettingsModal } from './components/wallet/WalletSettingsModal';
 import { ChainSelector } from './components/chains/ChainSelector';
 import { LockScreen } from './components/auth/LockScreen';
-import { ConnectionStatus } from './components/common/ConnectionStatus';
+import { NetworkStatusIndicator } from './components/common/NetworkStatusIndicator';
 import { PaperModeIndicator } from './components/trading/PaperModeIndicator';
 import { PaperTradingTutorial } from './components/trading/PaperTradingTutorial';
 import ProposalNotification from './components/wallet/ProposalNotification';
@@ -63,11 +63,13 @@ import { usePaperTradingStore } from './store/paperTradingStore';
 import { useWorkspaceStore } from './store/workspaceStore';
 import { useAlertNotifications } from './hooks/useAlertNotifications';
 import { useMonitorConfig } from './hooks/useMonitorConfig';
+import { useDevConsoleCommands } from './hooks/useDevConsoleCommands';
 import { createPanelDefinition } from './utils/workspace';
 import { PanelType } from './types/workspace';
 import { useThemeStore } from './store/themeStore';
 import { useAccessibilityStore } from './store/accessibilityStore';
 import { useUpdateStore } from './store/updateStore';
+import { useMaintenanceStore } from './store/maintenanceStore';
 import { UpdateNotificationModal } from './components/UpdateNotificationModal';
 import { PerformanceMonitor } from './components/common/PerformanceMonitor';
 import { TutorialEngine } from './components/tutorials/TutorialEngine';
@@ -80,6 +82,8 @@ import { WhatsNewModal } from './components/changelog/WhatsNewModal';
 import { useTutorialStore } from './store/tutorialStore';
 import { useChangelogStore } from './store/changelogStore';
 import packageJson from '../package.json';
+import { MaintenanceBanner } from './components/common/MaintenanceBanner';
+import { DeveloperConsole } from './components/common/DeveloperConsole';
 
 type BiometricStatus = {
   available: boolean;
@@ -144,6 +148,7 @@ function App() {
 
   useAlertNotifications();
   useMonitorConfig();
+  useDevConsoleCommands();
 
   useKeyboardShortcuts({
     onCommandPalette: () => setCommandPaletteOpen(true),
@@ -719,7 +724,7 @@ function App() {
                 />
               </div>
               <PhantomConnect />
-              <ConnectionStatus />
+              <NetworkStatusIndicator />
             </div>
           </div>
         </div>
@@ -891,6 +896,8 @@ function App() {
       <WhatsThisMode />
       <ChangelogViewer />
       <WhatsNewModal currentVersion={currentVersion} />
+      <MaintenanceBanner />
+      <DeveloperConsole />
     </div>
   );
 }
