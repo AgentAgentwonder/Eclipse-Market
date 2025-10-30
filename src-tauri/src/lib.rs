@@ -25,6 +25,7 @@ mod stocks;
 mod stream_commands;
 mod token_flow;
 mod trading;
+mod updater;
 mod wallet;
 mod websocket;
 mod webhooks;
@@ -54,6 +55,7 @@ pub use sentiment::*;
 pub use stocks::*;
 pub use token_flow::*;
 pub use trading::*;
+pub use updater::*;
 pub use wallet::hardware_wallet::*;
 pub use wallet::ledger::*;
 pub use wallet::multi_wallet::*;
@@ -512,6 +514,15 @@ pub fn run() {
 
              let shared_ai_advisor: SharedAIPortfolioAdvisor = Arc::new(RwLock::new(ai_advisor));
              app.manage(shared_ai_advisor.clone());
+
+             // Initialize updater state
+             let updater_state = UpdaterState::new(&app.handle()).map_err(|e| {
+                 eprintln!("Failed to initialize updater state: {e}");
+                 Box::new(std::io::Error::new(std::io::ErrorKind::Other, e)) as Box<dyn Error>
+             })?;
+
+             let shared_updater_state: SharedUpdaterState = Arc::new(updater_state);
+             app.manage(shared_updater_state.clone());
 
              // Start background compression job (runs daily at 3 AM)
              let compression_job = shared_compression_manager.clone();
@@ -1017,6 +1028,12 @@ pub fn run() {
             stocks::create_stock_alert,
             stocks::get_stock_alerts,
 
+            // Updater commands
+            get_update_settings,
+            save_update_settings,
+            dismiss_update,
+            get_rollback_info,
+            rollback_update,
             // Windowing & Multi-monitor commands
             get_monitors,
             create_floating_window,
