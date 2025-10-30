@@ -5,6 +5,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tauri::{AppHandle, State};
 use tokio::sync::RwLock;
+use uuid::Uuid;
+use crate::security::keystore::Keystore;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -597,6 +599,1275 @@ pub async fn get_latest_risk_score(
         .map_err(|e| format!("Failed to get latest risk score: {}", e))
 }
 
+// ==================== LLM Integration ====================
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum LLMProvider {
+    Claude,
+    GPT4,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LLMConfig {
+    pub provider: LLMProvider,
+    pub model: String,
+    pub api_key: String,
+    pub max_tokens: u32,
+    pub temperature: f32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Message {
+    pub role: String,
+    pub content: String,
+    pub timestamp: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FunctionCall {
+    pub name: String,
+    pub arguments: serde_json::Value,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FunctionDefinition {
+    pub name: String,
+    pub description: String,
+    pub parameters: serde_json::Value,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TradingContext {
+    pub portfolio: Option<serde_json::Value>,
+    pub active_alerts: Vec<String>,
+    pub market_data: HashMap<String, serde_json::Value>,
+    pub recent_trades: Vec<serde_json::Value>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Conversation {
+    pub id: String,
+    pub user_id: String,
+    pub messages: Vec<Message>,
+    pub context: TradingContext,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatRequest {
+    pub conversation_id: Option<String>,
+    pub message: String,
+    pub include_context: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatResponse {
+    pub conversation_id: String,
+    pub message: String,
+    pub function_calls: Vec<FunctionCall>,
+    pub timestamp: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UsageStats {
+    pub requests_count: u32,
+    pub tokens_used: u64,
+    pub last_request_at: String,
+    pub window_start: String,
+}
+
+// Claude API request/response structures
+#[derive(Debug, Serialize, Deserialize)]
+struct ClaudeRequest {
+    model: String,
+    max_tokens: u32,
+    messages: Vec<ClaudeMessage>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    system: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    temperature: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tools: Option<Vec<ClaudeTool>>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ClaudeMessage {
+    role: String,
+    content: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ClaudeTool {
+    name: String,
+    description: String,
+    input_schema: serde_json::Value,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ClaudeResponse {
+    id: String,
+    content: Vec<ClaudeContent>,
+    #[serde(default)]
+    stop_reason: String,
+    usage: ClaudeUsage,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "type")]
+enum ClaudeContent {
+    #[serde(rename = "text")]
+    Text { text: String },
+    #[serde(rename = "tool_use")]
+    ToolUse {
+        id: String,
+        name: String,
+        input: serde_json::Value,
+    },
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ClaudeUsage {
+    input_tokens: u32,
+    output_tokens: u32,
+}
+
+// GPT-4 API request/response structures
+#[derive(Debug, Serialize, Deserialize)]
+struct GPTRequest {
+    model: String,
+    messages: Vec<GPTMessage>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    temperature: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    max_tokens: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tools: Option<Vec<GPTTool>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tool_choice: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct GPTMessage {
+    role: String,
+    content: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct GPTTool {
+    #[serde(rename = "type")]
+    tool_type: String,
+    function: GPTFunction,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct GPTFunction {
+    name: String,
+    description: String,
+    parameters: serde_json::Value,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct GPTResponse {
+    id: String,
+    choices: Vec<GPTChoice>,
+    usage: GPTUsage,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct GPTChoice {
+    message: GPTResponseMessage,
+    finish_reason: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct GPTResponseMessage {
+    role: String,
+    #[serde(default)]
+    content: Option<String>,
+    #[serde(default)]
+    tool_calls: Option<Vec<GPTToolCall>>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct GPTToolCall {
+    id: String,
+    #[serde(rename = "type")]
+    call_type: String,
+    function: GPTFunctionCall,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct GPTFunctionCall {
+    name: String,
+    arguments: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct GPTUsage {
+    prompt_tokens: u32,
+    completion_tokens: u32,
+    total_tokens: u32,
+}
+
+pub struct LLMClient {
+    config: LLMConfig,
+    http_client: reqwest::Client,
+    anthropic_url: String,
+    openai_url: String,
+}
+
+impl LLMClient {
+    pub fn new(config: LLMConfig) -> Self {
+        Self {
+            config,
+            http_client: reqwest::Client::new(),
+            anthropic_url: "https://api.anthropic.com/v1/messages".to_string(),
+            openai_url: "https://api.openai.com/v1/chat/completions".to_string(),
+        }
+    }
+
+    #[cfg(test)]
+    pub fn new_with_endpoints(
+        config: LLMConfig,
+        anthropic_url: String,
+        openai_url: String,
+    ) -> Self {
+        Self {
+            config,
+            http_client: reqwest::Client::new(),
+            anthropic_url,
+            openai_url,
+        }
+    }
+
+    pub async fn chat(
+        &self,
+        messages: Vec<Message>,
+        system_prompt: Option<String>,
+        functions: Vec<FunctionDefinition>,
+    ) -> Result<ChatResponse, String> {
+        match self.config.provider {
+            LLMProvider::Claude => self.chat_claude(messages, system_prompt, functions).await,
+            LLMProvider::GPT4 => self.chat_gpt4(messages, system_prompt, functions).await,
+        }
+    }
+
+    async fn chat_claude(
+        &self,
+        messages: Vec<Message>,
+        system_prompt: Option<String>,
+        functions: Vec<FunctionDefinition>,
+    ) -> Result<ChatResponse, String> {
+        let tools: Vec<ClaudeTool> = functions
+            .iter()
+            .map(|f| ClaudeTool {
+                name: f.name.clone(),
+                description: f.description.clone(),
+                input_schema: f.parameters.clone(),
+            })
+            .collect();
+
+        let claude_messages: Vec<ClaudeMessage> = messages
+            .iter()
+            .map(|m| ClaudeMessage {
+                role: m.role.clone(),
+                content: m.content.clone(),
+            })
+            .collect();
+
+        let request = ClaudeRequest {
+            model: self.config.model.clone(),
+            max_tokens: self.config.max_tokens,
+            messages: claude_messages,
+            system: system_prompt,
+            temperature: Some(self.config.temperature),
+            tools: if tools.is_empty() { None } else { Some(tools) },
+        };
+
+        let response = self
+            .http_client
+            .post(&self.anthropic_url)
+            .header("x-api-key", &self.config.api_key)
+            .header("anthropic-version", "2023-06-01")
+            .header("content-type", "application/json")
+            .json(&request)
+            .send()
+            .await
+            .map_err(|e| format!("Claude API request failed: {}", e))?;
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(format!("Claude API error: {}", error_text));
+        }
+
+        let claude_response: ClaudeResponse = response
+            .json()
+            .await
+            .map_err(|e| format!("Failed to parse Claude response: {}", e))?;
+
+        let mut message_text = String::new();
+        let mut function_calls = Vec::new();
+
+        for content in claude_response.content {
+            match content {
+                ClaudeContent::Text { text } => {
+                    message_text.push_str(&text);
+                }
+                ClaudeContent::ToolUse { name, input, .. } => {
+                    function_calls.push(FunctionCall {
+                        name,
+                        arguments: input,
+                    });
+                }
+            }
+        }
+
+        Ok(ChatResponse {
+            conversation_id: claude_response.id,
+            message: message_text,
+            function_calls,
+            timestamp: Utc::now().to_rfc3339(),
+        })
+    }
+
+    async fn chat_gpt4(
+        &self,
+        messages: Vec<Message>,
+        system_prompt: Option<String>,
+        functions: Vec<FunctionDefinition>,
+    ) -> Result<ChatResponse, String> {
+        let mut gpt_messages: Vec<GPTMessage> = Vec::new();
+
+        if let Some(system) = system_prompt {
+            gpt_messages.push(GPTMessage {
+                role: "system".to_string(),
+                content: system,
+            });
+        }
+
+        for msg in messages {
+            gpt_messages.push(GPTMessage {
+                role: msg.role,
+                content: msg.content,
+            });
+        }
+
+        let tools: Option<Vec<GPTTool>> = if functions.is_empty() {
+            None
+        } else {
+            Some(
+                functions
+                    .iter()
+                    .map(|f| GPTTool {
+                        tool_type: "function".to_string(),
+                        function: GPTFunction {
+                            name: f.name.clone(),
+                            description: f.description.clone(),
+                            parameters: f.parameters.clone(),
+                        },
+                    })
+                    .collect(),
+            )
+        };
+
+        let request = GPTRequest {
+            model: self.config.model.clone(),
+            messages: gpt_messages,
+            temperature: Some(self.config.temperature),
+            max_tokens: Some(self.config.max_tokens),
+            tools,
+            tool_choice: None,
+        };
+
+        let response = self
+            .http_client
+            .post(&self.openai_url)
+            .header("Authorization", format!("Bearer {}", self.config.api_key))
+            .header("content-type", "application/json")
+            .json(&request)
+            .send()
+            .await
+            .map_err(|e| format!("GPT-4 API request failed: {}", e))?;
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(format!("GPT-4 API error: {}", error_text));
+        }
+
+        let gpt_response: GPTResponse = response
+            .json()
+            .await
+            .map_err(|e| format!("Failed to parse GPT-4 response: {}", e))?;
+
+        let choice = gpt_response
+            .choices
+            .first()
+            .ok_or_else(|| "No response from GPT-4".to_string())?;
+
+        let message = choice.message.content.clone().unwrap_or_default();
+        let mut function_calls = Vec::new();
+
+        if let Some(tool_calls) = &choice.message.tool_calls {
+            for call in tool_calls {
+                let arguments: serde_json::Value = serde_json::from_str(&call.function.arguments)
+                    .unwrap_or(serde_json::json!({}));
+                function_calls.push(FunctionCall {
+                    name: call.function.name.clone(),
+                    arguments,
+                });
+            }
+        }
+
+        Ok(ChatResponse {
+            conversation_id: gpt_response.id,
+            message,
+            function_calls,
+            timestamp: Utc::now().to_rfc3339(),
+        })
+    }
+}
+
+// ==================== Conversation Manager ====================
+
+pub struct ConversationManager {
+    pool: Pool<Sqlite>,
+}
+
+impl ConversationManager {
+    pub async fn new(app: &AppHandle) -> Result<Self, sqlx::Error> {
+        let mut db_path = app
+            .path_resolver()
+            .app_data_dir()
+            .ok_or_else(|| {
+                sqlx::Error::Io(std::io::Error::new(
+                    std::io::ErrorKind::NotFound,
+                    "App data dir not found",
+                ))
+            })?;
+
+        std::fs::create_dir_all(&db_path).map_err(sqlx::Error::Io)?;
+        db_path.push("conversations.db");
+
+        let db_url = format!("sqlite:{}?mode=rwc", db_path.display());
+        let pool = SqlitePool::connect(&db_url).await?;
+
+        let manager = Self { pool };
+        manager.initialize().await?;
+        Ok(manager)
+    }
+
+    async fn initialize(&self) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS conversations (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                context TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+            "#,
+        )
+        .execute(&self.pool)
+        .await?;
+
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                conversation_id TEXT NOT NULL,
+                role TEXT NOT NULL,
+                content TEXT NOT NULL,
+                timestamp TEXT NOT NULL,
+                FOREIGN KEY (conversation_id) REFERENCES conversations(id)
+            )
+            "#,
+        )
+        .execute(&self.pool)
+        .await?;
+
+        sqlx::query(
+            r#"
+            CREATE INDEX IF NOT EXISTS idx_messages_conversation 
+            ON messages(conversation_id, timestamp);
+            "#,
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    pub async fn create_conversation(
+        &self,
+        user_id: &str,
+        context: TradingContext,
+    ) -> Result<String, sqlx::Error> {
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = Utc::now().to_rfc3339();
+        let context_json = serde_json::to_string(&context).unwrap_or_default();
+
+        sqlx::query(
+            r#"
+            INSERT INTO conversations (id, user_id, context, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?)
+            "#,
+        )
+        .bind(&id)
+        .bind(user_id)
+        .bind(&context_json)
+        .bind(&now)
+        .bind(&now)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(id)
+    }
+
+    pub async fn add_message(
+        &self,
+        conversation_id: &str,
+        message: Message,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            r#"
+            INSERT INTO messages (conversation_id, role, content, timestamp)
+            VALUES (?, ?, ?, ?)
+            "#,
+        )
+        .bind(conversation_id)
+        .bind(&message.role)
+        .bind(&message.content)
+        .bind(&message.timestamp)
+        .execute(&self.pool)
+        .await?;
+
+        // Update conversation timestamp
+        sqlx::query(
+            r#"
+            UPDATE conversations SET updated_at = ? WHERE id = ?
+            "#,
+        )
+        .bind(&message.timestamp)
+        .bind(conversation_id)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    pub async fn get_messages(
+        &self,
+        conversation_id: &str,
+        limit: u32,
+    ) -> Result<Vec<Message>, sqlx::Error> {
+        let rows = sqlx::query(
+            r#"
+            SELECT role, content, timestamp
+            FROM messages
+            WHERE conversation_id = ?
+            ORDER BY timestamp ASC
+            LIMIT ?
+            "#,
+        )
+        .bind(conversation_id)
+        .bind(limit as i64)
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(rows
+            .iter()
+            .map(|row| Message {
+                role: row.get("role"),
+                content: row.get("content"),
+                timestamp: row.get("timestamp"),
+            })
+            .collect())
+    }
+
+    pub async fn get_conversation(
+        &self,
+        conversation_id: &str,
+    ) -> Result<Option<Conversation>, sqlx::Error> {
+        let row = sqlx::query(
+            r#"
+            SELECT user_id, context, created_at, updated_at
+            FROM conversations
+            WHERE id = ?
+            "#,
+        )
+        .bind(conversation_id)
+        .fetch_optional(&self.pool)
+        .await?;
+
+        if let Some(row) = row {
+            let context_json: String = row.get("context");
+            let context: TradingContext =
+                serde_json::from_str(&context_json).unwrap_or_else(|_| TradingContext {
+                    portfolio: None,
+                    active_alerts: Vec::new(),
+                    market_data: HashMap::new(),
+                    recent_trades: Vec::new(),
+                });
+
+            let messages = self.get_messages(conversation_id, 100).await?;
+
+            Ok(Some(Conversation {
+                id: conversation_id.to_string(),
+                user_id: row.get("user_id"),
+                messages,
+                context,
+                created_at: row.get("created_at"),
+                updated_at: row.get("updated_at"),
+            }))
+        } else {
+            Ok(None)
+        }
+    }
+
+    pub async fn list_conversations(
+        &self,
+        user_id: &str,
+        limit: u32,
+    ) -> Result<Vec<Conversation>, sqlx::Error> {
+        let rows = sqlx::query(
+            r#"
+            SELECT id FROM conversations
+            WHERE user_id = ?
+            ORDER BY updated_at DESC
+            LIMIT ?
+            "#,
+        )
+        .bind(user_id)
+        .bind(limit as i64)
+        .fetch_all(&self.pool)
+        .await?;
+
+        let mut conversations = Vec::new();
+        for row in rows {
+            let id: String = row.get("id");
+            if let Some(conv) = self.get_conversation(&id).await? {
+                conversations.push(conv);
+            }
+        }
+
+        Ok(conversations)
+    }
+
+    pub async fn delete_conversation(&self, conversation_id: &str) -> Result<(), sqlx::Error> {
+        sqlx::query("DELETE FROM messages WHERE conversation_id = ?")
+            .bind(conversation_id)
+            .execute(&self.pool)
+            .await?;
+
+        sqlx::query("DELETE FROM conversations WHERE id = ?")
+            .bind(conversation_id)
+            .execute(&self.pool)
+            .await?;
+
+        Ok(())
+    }
+}
+
+// ==================== Usage Throttle ====================
+
+pub struct UsageThrottle {
+    pool: Pool<Sqlite>,
+    max_requests_per_hour: u32,
+    max_tokens_per_day: u64,
+}
+
+impl UsageThrottle {
+    pub async fn new(
+        app: &AppHandle,
+        max_requests_per_hour: u32,
+        max_tokens_per_day: u64,
+    ) -> Result<Self, sqlx::Error> {
+        let mut db_path = app
+            .path_resolver()
+            .app_data_dir()
+            .ok_or_else(|| {
+                sqlx::Error::Io(std::io::Error::new(
+                    std::io::ErrorKind::NotFound,
+                    "App data dir not found",
+                ))
+            })?;
+
+        std::fs::create_dir_all(&db_path).map_err(sqlx::Error::Io)?;
+        db_path.push("usage.db");
+
+        let db_url = format!("sqlite:{}?mode=rwc", db_path.display());
+        let pool = SqlitePool::connect(&db_url).await?;
+
+        let throttle = Self {
+            pool,
+            max_requests_per_hour,
+            max_tokens_per_day,
+        };
+        throttle.initialize().await?;
+        Ok(throttle)
+    }
+
+    async fn initialize(&self) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS usage_stats (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                requests_count INTEGER NOT NULL,
+                tokens_used INTEGER NOT NULL,
+                timestamp TEXT NOT NULL
+            )
+            "#,
+        )
+        .execute(&self.pool)
+        .await?;
+
+        sqlx::query(
+            r#"
+            CREATE INDEX IF NOT EXISTS idx_usage_user_time 
+            ON usage_stats(user_id, timestamp DESC);
+            "#,
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    pub async fn check_and_record(
+        &self,
+        user_id: &str,
+        tokens: u64,
+    ) -> Result<bool, sqlx::Error> {
+        // Check hourly request limit
+        let hour_ago = (Utc::now() - chrono::Duration::hours(1)).to_rfc3339();
+        let hourly_count: i64 = sqlx::query_scalar(
+            r#"
+            SELECT COUNT(*) FROM usage_stats
+            WHERE user_id = ? AND timestamp >= ?
+            "#,
+        )
+        .bind(user_id)
+        .bind(&hour_ago)
+        .fetch_one(&self.pool)
+        .await?;
+
+        if hourly_count >= self.max_requests_per_hour as i64 {
+            return Ok(false);
+        }
+
+        // Check daily token limit
+        let day_ago = (Utc::now() - chrono::Duration::days(1)).to_rfc3339();
+        let daily_tokens: Option<i64> = sqlx::query_scalar(
+            r#"
+            SELECT SUM(tokens_used) FROM usage_stats
+            WHERE user_id = ? AND timestamp >= ?
+            "#,
+        )
+        .bind(user_id)
+        .bind(&day_ago)
+        .fetch_one(&self.pool)
+        .await?;
+
+        let total_tokens = daily_tokens.unwrap_or(0) as u64 + tokens;
+        if total_tokens > self.max_tokens_per_day {
+            return Ok(false);
+        }
+
+        // Record usage
+        sqlx::query(
+            r#"
+            INSERT INTO usage_stats (user_id, requests_count, tokens_used, timestamp)
+            VALUES (?, 1, ?, ?)
+            "#,
+        )
+        .bind(user_id)
+        .bind(tokens as i64)
+        .bind(Utc::now().to_rfc3339())
+        .execute(&self.pool)
+        .await?;
+
+        Ok(true)
+    }
+
+    pub async fn get_usage_stats(&self, user_id: &str) -> Result<UsageStats, sqlx::Error> {
+        let hour_ago = (Utc::now() - chrono::Duration::hours(1)).to_rfc3339();
+        let day_ago = (Utc::now() - chrono::Duration::days(1)).to_rfc3339();
+
+        let hourly_count: i64 = sqlx::query_scalar(
+            r#"
+            SELECT COUNT(*) FROM usage_stats
+            WHERE user_id = ? AND timestamp >= ?
+            "#,
+        )
+        .bind(user_id)
+        .bind(&hour_ago)
+        .fetch_one(&self.pool)
+        .await?;
+
+        let daily_tokens: Option<i64> = sqlx::query_scalar(
+            r#"
+            SELECT SUM(tokens_used) FROM usage_stats
+            WHERE user_id = ? AND timestamp >= ?
+            "#,
+        )
+        .bind(user_id)
+        .bind(&day_ago)
+        .fetch_one(&self.pool)
+        .await?;
+
+        let last_request: Option<String> = sqlx::query_scalar(
+            r#"
+            SELECT timestamp FROM usage_stats
+            WHERE user_id = ?
+            ORDER BY timestamp DESC
+            LIMIT 1
+            "#,
+        )
+        .bind(user_id)
+        .fetch_optional(&self.pool)
+        .await?;
+
+        Ok(UsageStats {
+            requests_count: hourly_count as u32,
+            tokens_used: daily_tokens.unwrap_or(0) as u64,
+            last_request_at: last_request.unwrap_or_else(|| Utc::now().to_rfc3339()),
+            window_start: hour_ago,
+        })
+    }
+}
+
+// ==================== AI Assistant ====================
+
+pub struct AIAssistant {
+    llm_client: Option<Arc<LLMClient>>,
+    conversation_manager: Arc<ConversationManager>,
+    usage_throttle: Arc<UsageThrottle>,
+    functions: Vec<FunctionDefinition>,
+}
+
+pub type SharedAIAssistant = Arc<RwLock<AIAssistant>>;
+
+impl AIAssistant {
+    pub async fn new(
+        app: &AppHandle,
+        keystore: &Keystore,
+    ) -> Result<Self, String> {
+        // Try to retrieve API key from keystore (it may not exist yet)
+        let llm_client = Self::load_llm_client(keystore);
+
+        let conversation_manager = Arc::new(
+            ConversationManager::new(app)
+                .await
+                .map_err(|e| format!("Failed to initialize conversation manager: {}", e))?,
+        );
+
+        let usage_throttle = Arc::new(
+            UsageThrottle::new(app, 60, 100_000)
+                .await
+                .map_err(|e| format!("Failed to initialize usage throttle: {}", e))?,
+        );
+
+        let functions = Self::register_functions();
+
+        Ok(Self {
+            llm_client,
+            conversation_manager,
+            usage_throttle,
+            functions,
+        })
+    }
+
+    pub fn is_configured(&self) -> bool {
+        self.llm_client.is_some()
+    }
+
+    fn load_llm_client(keystore: &Keystore) -> Option<Arc<LLMClient>> {
+        keystore
+            .retrieve_secret("llm_api_key")
+            .ok()
+            .and_then(|key| String::from_utf8(key.to_vec()).ok())
+            .and_then(|api_key| {
+                // Retrieve provider preference (default to Claude)
+                let provider_str = keystore
+                    .retrieve_secret("llm_provider")
+                    .ok()
+                    .and_then(|p| String::from_utf8(p.to_vec()).ok())
+                    .unwrap_or_else(|| "claude".to_string());
+
+                let provider = match provider_str.to_lowercase().as_str() {
+                    "gpt4" | "gpt-4" | "openai" => LLMProvider::GPT4,
+                    _ => LLMProvider::Claude,
+                };
+
+                let model = match provider {
+                    LLMProvider::Claude => "claude-3-5-sonnet-20241022".to_string(),
+                    LLMProvider::GPT4 => "gpt-4-turbo-preview".to_string(),
+                };
+
+                let config = LLMConfig {
+                    provider,
+                    model,
+                    api_key,
+                    max_tokens: 4096,
+                    temperature: 0.7,
+                };
+
+                Some(Arc::new(LLMClient::new(config)))
+            })
+    }
+
+    pub fn reload_llm_client(&mut self, keystore: &Keystore) {
+        self.llm_client = Self::load_llm_client(keystore);
+    }
+
+    fn register_functions() -> Vec<FunctionDefinition> {
+        vec![
+            FunctionDefinition {
+                name: "execute_trade".to_string(),
+                description: "Execute a trade (buy/sell) for a given token".to_string(),
+                parameters: serde_json::json!({
+                    "type": "object",
+                    "properties": {
+                        "action": {
+                            "type": "string",
+                            "enum": ["buy", "sell"],
+                            "description": "Trade action"
+                        },
+                        "token_address": {
+                            "type": "string",
+                            "description": "Token address to trade"
+                        },
+                        "amount": {
+                            "type": "number",
+                            "description": "Amount to trade"
+                        },
+                        "slippage": {
+                            "type": "number",
+                            "description": "Maximum slippage tolerance (percentage)"
+                        }
+                    },
+                    "required": ["action", "token_address", "amount"]
+                }),
+            },
+            FunctionDefinition {
+                name: "create_alert".to_string(),
+                description: "Create a price alert for a token".to_string(),
+                parameters: serde_json::json!({
+                    "type": "object",
+                    "properties": {
+                        "token_address": {
+                            "type": "string",
+                            "description": "Token address to monitor"
+                        },
+                        "condition": {
+                            "type": "string",
+                            "enum": ["above", "below"],
+                            "description": "Alert condition"
+                        },
+                        "price": {
+                            "type": "number",
+                            "description": "Target price for alert"
+                        },
+                        "message": {
+                            "type": "string",
+                            "description": "Custom alert message"
+                        }
+                    },
+                    "required": ["token_address", "condition", "price"]
+                }),
+            },
+            FunctionDefinition {
+                name: "get_portfolio_analytics".to_string(),
+                description: "Get detailed portfolio analytics and performance metrics".to_string(),
+                parameters: serde_json::json!({
+                    "type": "object",
+                    "properties": {
+                        "timeframe": {
+                            "type": "string",
+                            "enum": ["24h", "7d", "30d", "all"],
+                            "description": "Timeframe for analytics"
+                        },
+                        "include_breakdown": {
+                            "type": "boolean",
+                            "description": "Include per-token breakdown"
+                        }
+                    }
+                }),
+            },
+            FunctionDefinition {
+                name: "get_token_info".to_string(),
+                description: "Get detailed information about a token including price, volume, and risk score".to_string(),
+                parameters: serde_json::json!({
+                    "type": "object",
+                    "properties": {
+                        "token_address": {
+                            "type": "string",
+                            "description": "Token address to query"
+                        },
+                        "include_risk": {
+                            "type": "boolean",
+                            "description": "Include risk score analysis"
+                        }
+                    },
+                    "required": ["token_address"]
+                }),
+            },
+            FunctionDefinition {
+                name: "search_tokens".to_string(),
+                description: "Search for tokens by name or symbol".to_string(),
+                parameters: serde_json::json!({
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Search query"
+                        },
+                        "limit": {
+                            "type": "integer",
+                            "description": "Maximum number of results"
+                        }
+                    },
+                    "required": ["query"]
+                }),
+            },
+        ]
+    }
+
+    pub async fn chat(
+        &self,
+        user_id: &str,
+        request: ChatRequest,
+    ) -> Result<ChatResponse, String> {
+        // Check if LLM client is configured
+        let llm_client = self.llm_client.as_ref()
+            .ok_or_else(|| "AI assistant not configured. Please set API key first.".to_string())?;
+
+        // Check throttle limits (estimate 1000 tokens for request)
+        let allowed = self
+            .usage_throttle
+            .check_and_record(user_id, 1000)
+            .await
+            .map_err(|e| format!("Throttle check failed: {}", e))?;
+
+        if !allowed {
+            return Err("Rate limit exceeded. Please try again later.".to_string());
+        }
+
+        // Get or create conversation
+        let conversation_id = if let Some(id) = request.conversation_id.clone() {
+            id
+        } else {
+            let context = if request.include_context {
+                self.build_trading_context(user_id).await?
+            } else {
+                TradingContext {
+                    portfolio: None,
+                    active_alerts: Vec::new(),
+                    market_data: HashMap::new(),
+                    recent_trades: Vec::new(),
+                }
+            };
+
+            self.conversation_manager
+                .create_conversation(user_id, context)
+                .await
+                .map_err(|e| format!("Failed to create conversation: {}", e))?
+        };
+
+        // Add user message to conversation
+        let user_message = Message {
+            role: "user".to_string(),
+            content: request.message.clone(),
+            timestamp: Utc::now().to_rfc3339(),
+        };
+
+        self.conversation_manager
+            .add_message(&conversation_id, user_message.clone())
+            .await
+            .map_err(|e| format!("Failed to save message: {}", e))?;
+
+        // Get conversation history
+        let messages = self
+            .conversation_manager
+            .get_messages(&conversation_id, 20)
+            .await
+            .map_err(|e| format!("Failed to get messages: {}", e))?;
+
+        // Build system prompt with context
+        let system_prompt = self.build_system_prompt(user_id, request.include_context).await?;
+
+        // Call LLM
+        let response = llm_client
+            .chat(messages, Some(system_prompt), self.functions.clone())
+            .await?;
+
+        // Save assistant response
+        let assistant_message = Message {
+            role: "assistant".to_string(),
+            content: response.message.clone(),
+            timestamp: response.timestamp.clone(),
+        };
+
+        self.conversation_manager
+            .add_message(&conversation_id, assistant_message)
+            .await
+            .map_err(|e| format!("Failed to save response: {}", e))?;
+
+        Ok(ChatResponse {
+            conversation_id,
+            ..response
+        })
+    }
+
+    async fn build_trading_context(&self, _user_id: &str) -> Result<TradingContext, String> {
+        // In a real implementation, this would fetch actual portfolio, alerts, etc.
+        // For now, return mock context
+        Ok(TradingContext {
+            portfolio: Some(serde_json::json!({
+                "total_value": 10000.0,
+                "tokens": []
+            })),
+            active_alerts: vec![],
+            market_data: HashMap::new(),
+            recent_trades: vec![],
+        })
+    }
+
+    async fn build_system_prompt(
+        &self,
+        user_id: &str,
+        include_context: bool,
+    ) -> Result<String, String> {
+        let mut prompt = String::from(
+            "You are an AI trading assistant for a cryptocurrency trading platform. \
+            You help users analyze markets, manage their portfolio, execute trades, and create alerts. \
+            Always prioritize risk management and provide clear explanations. \
+            When executing trades or creating alerts, use the available function calls. \
+            Be concise but informative.",
+        );
+
+        if include_context {
+            let context = self.build_trading_context(user_id).await?;
+
+            if let Some(portfolio) = context.portfolio {
+                prompt.push_str(&format!("\n\nCurrent Portfolio: {}", portfolio));
+            }
+
+            if !context.active_alerts.is_empty() {
+                prompt.push_str(&format!(
+                    "\n\nActive Alerts: {}",
+                    context.active_alerts.join(", ")
+                ));
+            }
+        }
+
+        Ok(prompt)
+    }
+
+    pub async fn get_conversations(&self, user_id: &str) -> Result<Vec<Conversation>, String> {
+        self.conversation_manager
+            .list_conversations(user_id, 50)
+            .await
+            .map_err(|e| format!("Failed to list conversations: {}", e))
+    }
+
+    pub async fn delete_conversation(&self, conversation_id: &str) -> Result<(), String> {
+        self.conversation_manager
+            .delete_conversation(conversation_id)
+            .await
+            .map_err(|e| format!("Failed to delete conversation: {}", e))
+    }
+
+    pub async fn get_usage_stats(&self, user_id: &str) -> Result<UsageStats, String> {
+        self.usage_throttle
+            .get_usage_stats(user_id)
+            .await
+            .map_err(|e| format!("Failed to get usage stats: {}", e))
+    }
+}
+
+// ==================== Tauri Commands ====================
+
+#[tauri::command]
+pub async fn ai_chat(
+    user_id: String,
+    request: ChatRequest,
+    ai_assistant: State<'_, SharedAIAssistant>,
+) -> Result<ChatResponse, String> {
+    let assistant = ai_assistant.read().await;
+    assistant.chat(&user_id, request).await
+}
+
+#[tauri::command]
+pub async fn ai_get_conversations(
+    user_id: String,
+    ai_assistant: State<'_, SharedAIAssistant>,
+) -> Result<Vec<Conversation>, String> {
+    let assistant = ai_assistant.read().await;
+    assistant.get_conversations(&user_id).await
+}
+
+#[tauri::command]
+pub async fn ai_delete_conversation(
+    conversation_id: String,
+    ai_assistant: State<'_, SharedAIAssistant>,
+) -> Result<(), String> {
+    let assistant = ai_assistant.read().await;
+    assistant.delete_conversation(&conversation_id).await
+}
+
+#[tauri::command]
+pub async fn ai_get_usage_stats(
+    user_id: String,
+    ai_assistant: State<'_, SharedAIAssistant>,
+) -> Result<UsageStats, String> {
+    let assistant = ai_assistant.read().await;
+    assistant.get_usage_stats(&user_id).await
+}
+
+#[tauri::command]
+pub async fn ai_set_api_key(
+    provider: String,
+    api_key: String,
+    keystore: State<'_, Keystore>,
+    ai_assistant: State<'_, SharedAIAssistant>,
+) -> Result<(), String> {
+    keystore
+        .store_secret("llm_api_key", api_key.as_bytes())
+        .map_err(|e| format!("Failed to store API key: {}", e))?;
+
+    keystore
+        .store_secret("llm_provider", provider.as_bytes())
+        .map_err(|e| format!("Failed to store provider: {}", e))?;
+
+    // Reload LLM client with new API key
+    let mut assistant = ai_assistant.write().await;
+    assistant.reload_llm_client(&keystore);
+
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn ai_is_configured(
+    ai_assistant: State<'_, SharedAIAssistant>,
+) -> Result<bool, String> {
+    let assistant = ai_assistant.read().await;
+    Ok(assistant.is_configured())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -683,5 +1954,137 @@ mod tests {
         
         assert!(score >= 0.0 && score <= 100.0, "Score should be in valid range");
         assert!(factors.len() <= 5, "Should have at most 5 top factors");
+    }
+
+    #[test]
+    fn test_function_registration() {
+        let functions = AIAssistant::register_functions();
+        
+        assert!(!functions.is_empty(), "Should register functions");
+        assert!(functions.iter().any(|f| f.name == "execute_trade"), "Should register execute_trade");
+        assert!(functions.iter().any(|f| f.name == "create_alert"), "Should register create_alert");
+        assert!(functions.iter().any(|f| f.name == "get_portfolio_analytics"), "Should register get_portfolio_analytics");
+    }
+
+    #[test]
+    fn test_trading_context_serialization() {
+        let context = TradingContext {
+            portfolio: Some(serde_json::json!({"balance": 1000})),
+            active_alerts: vec!["alert1".to_string(), "alert2".to_string()],
+            market_data: HashMap::new(),
+            recent_trades: vec![],
+        };
+
+        let json = serde_json::to_string(&context).expect("Should serialize");
+        let deserialized: TradingContext = serde_json::from_str(&json).expect("Should deserialize");
+
+        assert_eq!(context.active_alerts.len(), deserialized.active_alerts.len());
+    }
+
+    #[test]
+    fn test_message_structure() {
+        let message = Message {
+            role: "user".to_string(),
+            content: "What's the price of SOL?".to_string(),
+            timestamp: Utc::now().to_rfc3339(),
+        };
+
+        let json = serde_json::to_string(&message).expect("Should serialize");
+        let deserialized: Message = serde_json::from_str(&json).expect("Should deserialize");
+
+        assert_eq!(message.role, deserialized.role);
+        assert_eq!(message.content, deserialized.content);
+    }
+
+    #[test]
+    fn test_function_call_structure() {
+        let function_call = FunctionCall {
+            name: "execute_trade".to_string(),
+            arguments: serde_json::json!({
+                "action": "buy",
+                "token_address": "So11111111111111111111111111111111111111112",
+                "amount": 100.0
+            }),
+        };
+
+        let json = serde_json::to_string(&function_call).expect("Should serialize");
+        let deserialized: FunctionCall = serde_json::from_str(&json).expect("Should deserialize");
+
+        assert_eq!(function_call.name, deserialized.name);
+    }
+
+    #[tokio::test]
+    async fn test_usage_throttle_limits() {
+        use tempfile::tempdir;
+        use std::fs;
+
+        let temp_dir = tempdir().unwrap();
+        let db_path = temp_dir.path().join("test_usage.db");
+        fs::create_dir_all(temp_dir.path()).unwrap();
+
+        let db_url = format!("sqlite:{}?mode=rwc", db_path.display());
+        let pool = SqlitePool::connect(&db_url).await.unwrap();
+
+        let throttle = UsageThrottle {
+            pool,
+            max_requests_per_hour: 2,
+            max_tokens_per_day: 5000,
+        };
+
+        throttle.initialize().await.unwrap();
+
+        // First request should succeed
+        let result1 = throttle.check_and_record("user1", 1000).await.unwrap();
+        assert!(result1, "First request should be allowed");
+
+        // Second request should succeed
+        let result2 = throttle.check_and_record("user1", 1000).await.unwrap();
+        assert!(result2, "Second request should be allowed");
+
+        // Third request should fail (exceeds hourly limit)
+        let result3 = throttle.check_and_record("user1", 1000).await.unwrap();
+        assert!(!result3, "Third request should be throttled");
+    }
+
+    #[test]
+    fn test_llm_provider_parsing() {
+        let provider = LLMProvider::Claude;
+        let json = serde_json::to_string(&provider).unwrap();
+        assert!(json.contains("claude"));
+
+        let provider = LLMProvider::GPT4;
+        let json = serde_json::to_string(&provider).unwrap();
+        assert!(json.contains("gpt4"));
+    }
+
+    #[test]
+    fn test_chat_request_validation() {
+        let request = ChatRequest {
+            conversation_id: Some("test-conv-id".to_string()),
+            message: "Hello AI".to_string(),
+            include_context: true,
+        };
+
+        let json = serde_json::to_string(&request).unwrap();
+        let deserialized: ChatRequest = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(request.message, deserialized.message);
+        assert_eq!(request.include_context, deserialized.include_context);
+    }
+
+    #[test]
+    fn test_usage_stats_structure() {
+        let stats = UsageStats {
+            requests_count: 10,
+            tokens_used: 5000,
+            last_request_at: Utc::now().to_rfc3339(),
+            window_start: (Utc::now() - chrono::Duration::hours(1)).to_rfc3339(),
+        };
+
+        let json = serde_json::to_string(&stats).unwrap();
+        let deserialized: UsageStats = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(stats.requests_count, deserialized.requests_count);
+        assert_eq!(stats.tokens_used, deserialized.tokens_used);
     }
 }
