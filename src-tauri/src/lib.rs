@@ -71,6 +71,7 @@ pub use wallet::multisig::*;
 pub use wallet::performance::*;
 pub use windowing::*;
 
+use ai::SharedAIAssistant;
 use alerts::{AlertManager, SharedAlertManager};
 use api::{ApiHealthMonitor, SharedApiHealthMonitor};
 use drawings::{DrawingManager, SharedDrawingManager};
@@ -525,6 +526,17 @@ pub fn run() {
              let shared_ai_advisor: SharedAIPortfolioAdvisor = Arc::new(RwLock::new(ai_advisor));
              app.manage(shared_ai_advisor.clone());
 
+             // Initialize AI Assistant
+             let ai_assistant = tauri::async_runtime::block_on(async {
+                 ai::AIAssistant::new(&app.handle(), &keystore).await
+             }).map_err(|e| {
+                 eprintln!("Failed to initialize AI assistant: {e}");
+                 Box::new(std::io::Error::new(std::io::ErrorKind::Other, e)) as Box<dyn Error>
+             })?;
+
+             let shared_ai_assistant: ai::SharedAIAssistant = Arc::new(RwLock::new(ai_assistant));
+             app.manage(shared_ai_assistant.clone());
+
              // Initialize updater state
              let updater_state = UpdaterState::new(&app.handle()).map_err(|e| {
                  eprintln!("Failed to initialize updater state: {e}");
@@ -757,6 +769,13 @@ pub fn run() {
             get_token_risk_score,
             get_risk_history,
             get_latest_risk_score,
+            // AI Assistant
+            ai_chat,
+            ai_get_conversations,
+            ai_delete_conversation,
+            ai_get_usage_stats,
+            ai_set_api_key,
+            ai_is_configured,
             // Market Data
             get_coin_price,
             get_price_history,
