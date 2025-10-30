@@ -20,6 +20,10 @@ import {
   LayoutGrid,
   ArrowRightLeft,
 } from 'lucide-react';
+import { CommandPalette } from './components/common/CommandPalette';
+import { ShortcutCheatSheet } from './components/common/ShortcutCheatSheet';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useCommandStore } from './store/commandStore';
 import { invoke } from '@tauri-apps/api/tauri';
 import { PhantomConnect } from './components/wallet/PhantomConnect';
 import { WalletSwitcher } from './components/wallet/WalletSwitcher';
@@ -78,6 +82,8 @@ function App() {
   const [chartSymbol, setChartSymbol] = useState<string | null>(null);
   const [chartTimestamp, setChartTimestamp] = useState<string | null>(null);
   const [useWorkspaceMode, setUseWorkspaceMode] = useState(true);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [cheatSheetOpen, setCheatSheetOpen] = useState(false);
 
   const wallets = useWalletStore(state => state.wallets);
   const refreshMultiWallet = useWalletStore(state => state.refreshMultiWallet);
@@ -88,6 +94,9 @@ function App() {
   const workspaces = useWorkspaceStore(state => state.workspaces);
   const addPanelToWorkspace = useWorkspaceStore(state => state.addPanel);
   const setPanelMinimized = useWorkspaceStore(state => state.setPanelMinimized);
+  const setActiveWorkspace = useWorkspaceStore(state => state.setActiveWorkspace);
+  const registerCommands = useCommandStore(state => state.registerCommands);
+  const unregisterCommands = useCommandStore(state => state.unregisterCommands);
 
   const activeWorkspace = useMemo(
     () => workspaces.find(workspace => workspace.id === activeWorkspaceId),
@@ -96,6 +105,21 @@ function App() {
 
   useAlertNotifications();
   useMonitorConfig();
+
+  useKeyboardShortcuts({
+    onCommandPalette: () => setCommandPaletteOpen(true),
+    onHelp: () => setCheatSheetOpen(true),
+    onEscape: () => {
+      if (commandPaletteOpen) {
+        setCommandPaletteOpen(false);
+      } else if (cheatSheetOpen) {
+        setCheatSheetOpen(false);
+      } else if (sidebarOpen) {
+        setSidebarOpen(false);
+      }
+    },
+    onAction: handleShortcutAction,
+  });
 
   useEffect(() => {
     const hydrate = async () => {
@@ -112,6 +136,154 @@ function App() {
 
     hydrate();
   }, []);
+
+  useEffect(() => {
+    const commands = [
+      {
+        id: 'nav-dashboard',
+        title: 'Dashboard',
+        description: 'Navigate to Dashboard',
+        category: 'navigation' as const,
+        action: () => setCurrentPage('dashboard'),
+        shortcutId: 'nav:dashboard',
+        keywords: ['home', 'main', 'overview'],
+      },
+      {
+        id: 'nav-coins',
+        title: 'Coins',
+        description: 'View cryptocurrency list',
+        category: 'navigation' as const,
+        action: () => setCurrentPage('coins'),
+        shortcutId: 'nav:coins',
+        keywords: ['crypto', 'tokens', 'market'],
+      },
+      {
+        id: 'nav-portfolio',
+        title: 'Portfolio',
+        description: 'View your portfolio',
+        category: 'navigation' as const,
+        action: () => setCurrentPage('portfolio'),
+        shortcutId: 'nav:portfolio',
+        keywords: ['holdings', 'assets', 'balance'],
+      },
+      {
+        id: 'nav-trading',
+        title: 'Trading',
+        description: 'Open trading interface',
+        category: 'navigation' as const,
+        action: () => setCurrentPage('trading'),
+        shortcutId: 'nav:trading',
+        keywords: ['trade', 'buy', 'sell', 'swap'],
+      },
+      {
+        id: 'nav-settings',
+        title: 'Settings',
+        description: 'Open application settings',
+        category: 'system' as const,
+        action: () => setCurrentPage('settings'),
+        shortcutId: 'nav:settings',
+        keywords: ['preferences', 'config', 'configuration'],
+      },
+      {
+        id: 'nav-stocks',
+        title: 'Stocks',
+        description: 'View stocks and equities',
+        category: 'navigation' as const,
+        action: () => setCurrentPage('stocks'),
+        keywords: ['equities', 'shares', 'market'],
+      },
+      {
+        id: 'nav-insiders',
+        title: 'Insiders',
+        description: 'View insider trading data',
+        category: 'analytics' as const,
+        action: () => setCurrentPage('insiders'),
+        keywords: ['insider', 'executives'],
+      },
+      {
+        id: 'nav-token-flow',
+        title: 'Token Flow',
+        description: 'View token flow analysis',
+        category: 'analytics' as const,
+        action: () => setCurrentPage('token-flow'),
+        keywords: ['flow', 'tokens', 'transfers'],
+      },
+      {
+        id: 'nav-surveillance',
+        title: 'Market Surveillance',
+        description: 'View market surveillance',
+        category: 'analytics' as const,
+        action: () => setCurrentPage('surveillance'),
+        keywords: ['anomaly', 'alerts', 'monitoring'],
+      },
+      {
+        id: 'nav-pro-charts',
+        title: 'Pro Charts',
+        description: 'Advanced charting tools',
+        category: 'analytics' as const,
+        action: () => setCurrentPage('pro-charts'),
+        keywords: ['charts', 'technical', 'analysis'],
+      },
+      {
+        id: 'toggle-sidebar',
+        title: 'Toggle Sidebar',
+        description: 'Show or hide the navigation sidebar',
+        category: 'workspace' as const,
+        action: () => setSidebarOpen(prev => !prev),
+        shortcutId: 'window:toggle-sidebar',
+        keywords: ['menu', 'navigation'],
+      },
+      {
+        id: 'toggle-workspace-mode',
+        title: 'Toggle Workspace Mode',
+        description: 'Switch between page and workspace mode',
+        category: 'workspace' as const,
+        action: () => setUseWorkspaceMode(prev => !prev),
+        keywords: ['layout', 'view', 'mode'],
+      },
+      {
+        id: 'next-workspace',
+        title: 'Next Workspace',
+        description: 'Switch to next workspace',
+        category: 'workspace' as const,
+        action: () => {
+          const currentIndex = workspaces.findIndex(w => w.id === activeWorkspaceId);
+          const nextIndex = (currentIndex + 1) % workspaces.length;
+          setActiveWorkspace(workspaces[nextIndex].id);
+        },
+        shortcutId: 'window:next-workspace',
+        keywords: ['workspace', 'switch'],
+      },
+      {
+        id: 'prev-workspace',
+        title: 'Previous Workspace',
+        description: 'Switch to previous workspace',
+        category: 'workspace' as const,
+        action: () => {
+          const currentIndex = workspaces.findIndex(w => w.id === activeWorkspaceId);
+          const prevIndex = (currentIndex - 1 + workspaces.length) % workspaces.length;
+          setActiveWorkspace(workspaces[prevIndex].id);
+        },
+        shortcutId: 'window:prev-workspace',
+        keywords: ['workspace', 'switch'],
+      },
+      {
+        id: 'refresh-page',
+        title: 'Refresh Page',
+        description: 'Reload the current page',
+        category: 'system' as const,
+        action: () => window.location.reload(),
+        shortcutId: 'general:refresh',
+        keywords: ['reload', 'refresh'],
+      },
+    ];
+
+    registerCommands(commands);
+
+    return () => {
+      unregisterCommands(commands.map(cmd => cmd.id));
+    };
+  }, [registerCommands, unregisterCommands, workspaces, activeWorkspaceId, setActiveWorkspace]);
 
   useEffect(() => {
     refreshMultiWallet().catch(error => {
@@ -225,6 +397,121 @@ function App() {
   }, [isPaperMode]);
 
   const CurrentPageComponent = pages.find(p => p.id === currentPage)?.component || Dashboard;
+
+  const navigateToPage = useCallback(
+    (pageId: string) => {
+      const target = pages.find(page => page.id === pageId);
+      if (!target) return;
+
+      setCurrentPage(pageId);
+      if (useWorkspaceMode && target.panelType) {
+        ensurePanelForPage(target.panelType);
+      }
+      setSidebarOpen(false);
+    },
+    [pages, useWorkspaceMode, ensurePanelForPage]
+  );
+
+  const cycleWorkspace = useCallback(
+    (direction: 'next' | 'prev') => {
+      if (!workspaces.length) return;
+
+      const currentIndex = Math.max(workspaces.findIndex(w => w.id === activeWorkspaceId), 0);
+      const offset = direction === 'next' ? 1 : -1;
+      const nextIndex = (currentIndex + offset + workspaces.length) % workspaces.length;
+      const target = workspaces[nextIndex];
+      if (target) {
+        setActiveWorkspace(target.id);
+      }
+    },
+    [workspaces, activeWorkspaceId, setActiveWorkspace]
+  );
+
+  const emitShortcutAction = useCallback((action: string, payload?: Record<string, unknown>) => {
+    window.dispatchEvent(new CustomEvent('app:shortcut-action', { detail: { action, payload } }));
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (typeof document === 'undefined') return;
+    const doc: any = document;
+    const docEl: any = document.documentElement;
+
+    if (!docEl) return;
+
+    if (doc.fullscreenElement || doc.webkitFullscreenElement) {
+      if (doc.exitFullscreen) {
+        doc.exitFullscreen().catch(() => undefined);
+      } else if (doc.webkitExitFullscreen) {
+        doc.webkitExitFullscreen();
+      }
+      emitShortcutAction('window:fullscreen', { enabled: false });
+    } else {
+      const request = docEl.requestFullscreen || docEl.webkitRequestFullscreen;
+      if (request) {
+        Promise.resolve(request.call(docEl)).catch(() => undefined);
+        emitShortcutAction('window:fullscreen', { enabled: true });
+      }
+    }
+  }, [emitShortcutAction]);
+
+  const handleShortcutAction = useCallback(
+    (action: string) => {
+      switch (action) {
+        case 'nav:dashboard':
+        case 'nav:coins':
+        case 'nav:portfolio':
+        case 'nav:trading':
+        case 'nav:settings':
+          navigateToPage(action.split(':')[1]);
+          emitShortcutAction(action);
+          break;
+        case 'window:toggle-sidebar':
+          setSidebarOpen(prev => {
+            const next = !prev;
+            emitShortcutAction(action, { open: next });
+            return next;
+          });
+          break;
+        case 'window:next-workspace':
+          cycleWorkspace('next');
+          emitShortcutAction(action);
+          break;
+        case 'window:prev-workspace':
+          cycleWorkspace('prev');
+          emitShortcutAction(action);
+          break;
+        case 'window:fullscreen':
+          toggleFullscreen();
+          break;
+        case 'general:refresh':
+          emitShortcutAction(action);
+          window.location.reload();
+          break;
+        case 'general:search':
+          emitShortcutAction(action);
+          break;
+        case 'tools:calculator':
+          setCommandPaletteOpen(true);
+          emitShortcutAction(action);
+          break;
+        case 'tools:export':
+          emitShortcutAction(action);
+          break;
+        case 'trading:quick-buy':
+        case 'trading:quick-sell':
+        case 'trading:swap':
+        case 'trading:limit-order':
+        case 'trading:cancel-all':
+          navigateToPage('trading');
+          emitShortcutAction(action);
+          break;
+        default:
+          emitShortcutAction(action);
+          break;
+      }
+    },
+    [navigateToPage, emitShortcutAction, setCommandPaletteOpen, cycleWorkspace, toggleFullscreen, sidebarOpen]
+  );
 
   const handleSwitchToLive = () => {
     setCurrentPage('settings');
@@ -423,6 +710,9 @@ function App() {
       )}
 
       <WorkspaceSwitcher />
+
+      <CommandPalette isOpen={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} />
+      <ShortcutCheatSheet isOpen={cheatSheetOpen} onClose={() => setCheatSheetOpen(false)} />
     </div>
   );
 }
