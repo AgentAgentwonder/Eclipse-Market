@@ -64,6 +64,7 @@ import { createPanelDefinition } from './utils/workspace';
 import { PanelType } from './types/workspace';
 import { useThemeStore } from './store/themeStore';
 import { useAccessibilityStore } from './store/accessibilityStore';
+import { PerformanceMonitor } from './components/common/PerformanceMonitor';
 
 type BiometricStatus = {
   available: boolean;
@@ -734,6 +735,8 @@ function App() {
 
       <CommandPalette isOpen={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} />
       <ShortcutCheatSheet isOpen={cheatSheetOpen} onClose={() => setCheatSheetOpen(false)} />
+
+      <PerformanceMonitor />
     </div>
   );
 }
