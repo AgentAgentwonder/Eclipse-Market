@@ -41,6 +41,7 @@ import { ShortcutSettings } from './Settings/ShortcutSettings';
 import { ThemeEditor } from '../components/theme/ThemeEditor';
 import { AccessibilityPanel } from '../components/accessibility/AccessibilityPanel';
 import { UpdateSettings } from './Settings/UpdateSettings';
+import { MaintenanceSettings } from '../components/common/MaintenanceSettings';
 
 interface BiometricStatus {
   available: boolean;
@@ -444,6 +445,21 @@ function Settings() {
               )}
             </>
           )}
+        </div>
+
+        {/* Maintenance */}
+        <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-purple-500/20 p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">Maintenance Mode</h2>
+              <p className="text-white/60 text-sm">Manage maintenance windows and read-only access</p>
+            </div>
+          </div>
+
+          <MaintenanceSettings />
         </div>
 
         {/* API Settings */}
