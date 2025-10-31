@@ -27,6 +27,8 @@ import {
   PieChart,
   Clock,
   Wrench,
+  Terminal,
+  Rocket,
   } from 'lucide-react';
 
 import { ShortcutCheatSheet } from './components/common/ShortcutCheatSheet';
@@ -59,6 +61,7 @@ import ApiHealth from './pages/ApiHealth';
 import ProCharts from './pages/ProCharts';
 import TokenFlow from './pages/TokenFlow';
 import Wallet from './pages/Wallet';
+import Launchpad from './pages/Launchpad';
 import { MarketSurveillance } from './pages/MarketSurveillance';
 import { PaperTradingDashboard } from './pages/PaperTrading/Dashboard';
 import { AIAnalysis } from './pages/AIAnalysis';
@@ -529,6 +532,7 @@ function App() {
       { id: 'stocks', label: 'Stocks', icon: BarChart3, component: Stocks, panelType: 'stocks' as PanelType },
       { id: 'insiders', label: 'Insiders', icon: Users, component: Insiders, panelType: 'insiders' as PanelType },
       { id: 'token-flow', label: 'Token Flow', icon: Network, component: TokenFlow, panelType: 'token-flow' as PanelType },
+      { id: 'launchpad', label: 'Launchpad', icon: Rocket, component: Launchpad, panelType: 'launchpad' as PanelType },
       {
         id: 'surveillance',
         label: 'Market Surveillance',
@@ -546,6 +550,7 @@ function App() {
       { id: 'stocks', label: 'Stocks', icon: BarChart3, component: Stocks },
       { id: 'insiders', label: 'Insiders', icon: Users, component: Insiders },
       { id: 'token-flow', label: 'Token Flow', icon: Network, component: TokenFlow },
+      { id: 'launchpad', label: 'Launchpad', icon: Rocket, component: Launchpad },
       { id: 'surveillance', label: 'Market Surveillance', icon: AlertTriangle, component: MarketSurveillance },
       {
         id: 'trading',

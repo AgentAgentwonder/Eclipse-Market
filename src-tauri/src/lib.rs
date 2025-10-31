@@ -25,6 +25,7 @@ mod errors;
 mod fixer;
 mod indicators;
 mod insiders;
+mod launchpad;
 mod logger;
 mod market;
 mod monitor;
@@ -73,6 +74,7 @@ pub use errors::*;
 pub use fixer::*;
 pub use indicators::*;
 pub use insiders::*;
+pub use launchpad::*;
 pub use logger::*;
 pub use market::*;
 pub use monitor::*;
@@ -297,6 +299,11 @@ pub fn run() {
             })?;
             let settings_state: SharedSettingsManager = Arc::new(RwLock::new(settings_manager));
             app.manage(settings_state.clone());
+
+            // Initialize launchpad state
+            let rpc_url = "https://api.mainnet-beta.solana.com".to_string();
+            let launchpad_state = launchpad::commands::create_launchpad_state(rpc_url);
+            app.manage(launchpad_state);
 
             tauri::async_runtime::spawn(async move {
                 use tokio::time::{sleep, Duration};
@@ -1305,6 +1312,31 @@ pub fn run() {
             bridge_update_transaction_status,
             bridge_update_transaction_hash,
             bridge_poll_status,
+
+            // Launchpad commands
+            create_launch_config,
+            update_launch_config,
+            get_launch_config,
+            list_launches,
+            simulate_token_creation,
+            launchpad_create_token,
+            check_launch_safety,
+            check_vesting_compliance,
+            check_liquidity_lock_compliance,
+            create_liquidity_lock,
+            unlock_liquidity,
+            get_liquidity_lock,
+            list_liquidity_locks,
+            create_vesting_schedule,
+            release_vested_tokens,
+            get_vesting_schedule,
+            list_vesting_schedules,
+            create_airdrop,
+            activate_airdrop,
+            claim_airdrop_tokens,
+            get_airdrop,
+            get_airdrop_metrics,
+            get_distribution_metrics,
 
             // Stock commands
             stocks::get_trending_stocks,
