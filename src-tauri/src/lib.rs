@@ -48,7 +48,9 @@ mod wallet;
 mod websocket;
 mod webhooks;
 mod windowing;
+mod academy;
 
+pub use academy::*;
 pub use ai::*;
 pub use ai_chat::*;
 pub use alerts::*;
@@ -263,6 +265,17 @@ pub fn run() {
 
             let shared_reputation_engine: SharedReputationEngine = Arc::new(RwLock::new(reputation_engine));
             app.manage(shared_reputation_engine.clone());
+
+            // Initialize academy engine
+            let academy_engine = tauri::async_runtime::block_on(async {
+                academy::AcademyEngine::new(&app.handle()).await
+            }).map_err(|e| {
+                eprintln!("Failed to initialize academy engine: {e}");
+                Box::new(std::io::Error::new(std::io::ErrorKind::Other, e)) as Box<dyn Error>
+            })?;
+
+            let shared_academy_engine: academy::SharedAcademyEngine = Arc::new(RwLock::new(academy_engine));
+            app.manage(shared_academy_engine.clone());
 
             // Initialize API config manager
             let api_config_manager = api_config::ApiConfigManager::new();
@@ -1222,6 +1235,50 @@ pub fn run() {
             security::reputation::get_reputation_stats,
             security::reputation::get_reputation_settings,
             security::reputation::update_reputation_settings,
+
+            // Academy System
+            academy::create_course,
+            academy::get_course,
+            academy::list_courses,
+            academy::create_lesson,
+            academy::get_course_lessons,
+            academy::create_quiz,
+            academy::get_quiz,
+            academy::create_challenge,
+            academy::list_challenges,
+            academy::create_webinar,
+            academy::list_webinars,
+            academy::create_mentor,
+            academy::list_mentors,
+            academy::get_content_stats,
+            academy::start_course,
+            academy::get_user_progress,
+            academy::complete_course,
+            academy::start_lesson,
+            academy::get_lesson_progress,
+            academy::update_lesson_progress,
+            academy::complete_lesson,
+            academy::submit_quiz,
+            academy::get_quiz_attempts,
+            academy::submit_challenge,
+            academy::get_challenge_submissions,
+            academy::record_webinar_attendance,
+            academy::create_mentor_session,
+            academy::get_user_mentor_sessions,
+            academy::get_user_stats,
+            academy::get_leaderboard,
+            academy::create_badge,
+            academy::get_badge,
+            academy::list_badges,
+            academy::award_badge,
+            academy::get_user_badges,
+            academy::issue_certificate,
+            academy::get_user_certificates,
+            academy::verify_certificate,
+            academy::get_user_rewards,
+            academy::claim_reward,
+            academy::claim_all_rewards,
+            academy::get_reward_stats,
 
             // Performance & Diagnostics
             get_performance_metrics,
