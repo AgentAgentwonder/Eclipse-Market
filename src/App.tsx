@@ -25,8 +25,9 @@ import {
   Command,
   MessageSquare,
   PieChart,
-} from 'lucide-react';
-import { CommandPalette } from './components/common/CommandPalette';
+  Clock,
+  } from 'lucide-react';
+
 import { ShortcutCheatSheet } from './components/common/ShortcutCheatSheet';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useCommandStore } from './store/commandStore';
@@ -60,9 +61,11 @@ import { MarketSurveillance } from './pages/MarketSurveillance';
 import { PaperTradingDashboard } from './pages/PaperTrading/Dashboard';
 import { AIAnalysis } from './pages/AIAnalysis';
 import SettingsPage from './pages/Settings';
+import AdvancedSettings from './pages/Settings/AdvancedSettings';
 import MultiChain from './pages/MultiChain';
 import PredictionMarkets from './pages/PredictionMarkets';
 import DeFi from './pages/DeFi';
+import HistoricalReplay from './pages/HistoricalReplay';
 import { BIOMETRIC_STATUS_EVENT } from './constants/events';
 import { useWalletStore } from './store/walletStore';
 import { usePaperTradingStore } from './store/paperTradingStore';
@@ -302,6 +305,15 @@ function App() {
         keywords: ['preferences', 'config', 'configuration'],
       },
       {
+        id: 'nav-advanced-settings',
+        title: 'Advanced Settings',
+        description: 'Configure all application settings',
+        category: 'system' as const,
+        action: () => setCurrentPage('advanced-settings'),
+        shortcutId: 'nav:advanced-settings',
+        keywords: ['preferences', 'config', 'configuration', 'advanced', 'universal'],
+      },
+      {
         id: 'nav-stocks',
         title: 'Stocks',
         description: 'View stocks and equities',
@@ -357,6 +369,15 @@ function App() {
         action: () => setCurrentPage('prediction-markets'),
         shortcutId: 'nav:prediction-markets',
         keywords: ['prediction', 'markets', 'polymarket', 'drift'],
+      },
+      {
+        id: 'nav-historical-replay',
+        title: 'Historical Replay',
+        description: 'Simulate historical trading scenarios',
+        category: 'analytics' as const,
+        action: () => setCurrentPage('historical-replay'),
+        shortcutId: 'nav:historical-replay',
+        keywords: ['historical', 'replay', 'backtest', 'time machine'],
       },
       {
         id: 'toggle-sidebar',
@@ -516,8 +537,10 @@ function App() {
       { id: 'ai-analysis', label: 'AI Assistant', icon: MessageSquare, component: AIAnalysis, panelType: 'ai-analysis' as PanelType },
       { id: 'prediction-markets', label: 'Prediction Markets', icon: PieChart, component: PredictionMarkets, panelType: 'prediction-markets' as PanelType },
       { id: 'defi', label: 'DeFi', icon: BanknoteIcon, component: DeFi, panelType: 'defi' as PanelType },
+      { id: 'historical-replay', label: 'Historical Replay', icon: Clock, component: HistoricalReplay, panelType: 'historical-replay' as PanelType },
       { id: 'api-health', label: 'API Health', icon: Activity, component: ApiHealth, panelType: 'api-health' as PanelType },
       { id: 'settings', label: 'Settings', icon: Settings, component: SettingsPage, panelType: 'settings' as PanelType },
+      { id: 'advanced-settings', label: 'Advanced Settings', icon: LayoutGrid, component: AdvancedSettings, panelType: 'settings' as PanelType },
     ];
 
     if (isPaperMode) {

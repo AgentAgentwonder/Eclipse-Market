@@ -48,6 +48,7 @@ export type PanelType =
   | 'ai-analysis'
   | 'prediction-markets'
   | 'defi'
+  | 'historical-replay'
   | 'settings';
 
 export interface Monitor {

@@ -13,6 +13,7 @@ mod cache_commands;
 mod chains;
 mod bridges;
 mod chart_stream;
+mod config;
 mod core;
 mod drawings;
 mod indicators;
@@ -52,6 +53,7 @@ pub use bots::*;
 pub use chains::*;
 pub use bridges::*;
 pub use chart_stream::*;
+pub use config::*;
 pub use core::*;
 pub use drawings::*;
 pub use indicators::*;
@@ -81,7 +83,7 @@ pub use wallet::performance::*;
 pub use windowing::*;
 
 use ai::SharedAIAssistant;
-use alerts::{AlertManager, SharedAlertManager};
+use alerts::{AlertManager, SharedAlertManager, SharedSmartAlertManager, SmartAlertManager};
 use api::{ApiHealthMonitor, SharedApiHealthMonitor};
 use drawings::{DrawingManager, SharedDrawingManager};
 use indicators::{IndicatorManager, SharedIndicatorManager};
@@ -99,6 +101,7 @@ use security::keystore::Keystore;
 use security::activity_log::ActivityLogger;
 use security::audit::AuditCache;
 use data::event_store::{EventStore, SharedEventStore};
+use data::historical::{HistoricalReplayManager, SharedHistoricalReplayManager};
 use auth::session_manager::SessionManager;
 use auth::two_factor::TwoFactorManager;
 use std::error::Error;
@@ -117,6 +120,7 @@ use market::{HolderAnalyzer, SharedHolderAnalyzer};
 use chains::{ChainManager, SharedChainManager};
 use bridges::{BridgeManager, SharedBridgeManager};
 use voice::commands::{SharedVoiceState, VoiceState};
+use config::settings_manager::{SettingsManager, SharedSettingsManager};
 
 async fn warm_cache_on_startup(
     _app_handle: tauri::AppHandle,
@@ -254,6 +258,14 @@ pub fn run() {
                 Box::new(std::io::Error::new(std::io::ErrorKind::Other, e)) as Box<dyn Error>
             })?;
             app.manage(usage_tracker);
+
+            // Initialize universal settings manager
+            let settings_manager = SettingsManager::new(&app.handle()).map_err(|e| {
+                eprintln!("Failed to initialize settings manager: {e}");
+                Box::new(e) as Box<dyn Error>
+            })?;
+            let settings_state: SharedSettingsManager = Arc::new(RwLock::new(settings_manager));
+            app.manage(settings_state.clone());
 
             tauri::async_runtime::spawn(async move {
                 use tokio::time::{sleep, Duration};
@@ -396,6 +408,16 @@ pub fn run() {
              let alert_state: SharedAlertManager = Arc::new(RwLock::new(alert_manager));
              app.manage(alert_state.clone());
 
+             let smart_alert_manager = tauri::async_runtime::block_on(async {
+                 SmartAlertManager::new(&app.handle()).await
+             }).map_err(|e| {
+                 eprintln!("Failed to initialize smart alert manager: {e}");
+                 Box::new(e) as Box<dyn Error>
+             })?;
+
+             let smart_alert_state: SharedSmartAlertManager = Arc::new(RwLock::new(smart_alert_manager));
+             app.manage(smart_alert_state.clone());
+
              // Start alert cooldown reset task
              let alert_reset_state = alert_state.clone();
              tauri::async_runtime::spawn(async move {
@@ -410,7 +432,7 @@ pub fn run() {
              });
 
              // Initialize notification router
-             let notification_router = tauri::async_runtime::block_on(async {
+
                  NotificationRouter::new(&app.handle()).await
              }).map_err(|e| {
                  eprintln!("Failed to initialize notification router: {e}");
@@ -581,6 +603,17 @@ pub fn run() {
              auto_start_manager.initialize(&app.handle());
              let shared_auto_start_manager: SharedAutoStartManager = Arc::new(auto_start_manager);
              app.manage(shared_auto_start_manager.clone());
+
+             // Initialize historical replay manager
+             let historical_replay_manager = tauri::async_runtime::block_on(async {
+                 HistoricalReplayManager::new(&app.handle(), None).await
+             }).map_err(|e| {
+                 eprintln!("Failed to initialize historical replay manager: {e}");
+                 Box::new(std::io::Error::new(std::io::ErrorKind::Other, e)) as Box<dyn Error>
+             })?;
+
+             let shared_historical_manager: SharedHistoricalReplayManager = Arc::new(RwLock::new(historical_replay_manager));
+             app.manage(shared_historical_manager.clone());
 
              // Initialize voice state
              let voice_state = VoiceState::new();
@@ -872,6 +905,13 @@ pub fn run() {
             alert_test,
             alert_check_triggers,
             alert_reset_cooldowns,
+            smart_alert_create_rule,
+            smart_alert_update_rule,
+            smart_alert_delete_rule,
+            smart_alert_list_rules,
+            smart_alert_get_rule,
+            smart_alert_dry_run,
+            smart_alert_execute,
             // Chat Integrations
             chat_integration_get_settings,
             chat_integration_save_settings,
@@ -1220,6 +1260,21 @@ pub fn run() {
             backup::service::get_backup_status,
             backup::service::trigger_manual_backup,
 
+            // Universal Settings
+            config::commands::get_all_settings,
+            config::commands::update_setting,
+            config::commands::bulk_update_settings,
+            config::commands::reset_settings,
+            config::commands::export_settings,
+            config::commands::import_settings,
+            config::commands::get_setting_schema,
+            config::commands::create_settings_profile,
+            config::commands::load_settings_profile,
+            config::commands::delete_settings_profile,
+            config::commands::list_settings_profiles,
+            config::commands::get_settings_change_history,
+            config::commands::get_settings_template,
+
             // System Tray
             get_tray_settings,
             update_tray_settings,
@@ -1234,6 +1289,15 @@ pub fn run() {
             check_auto_start_enabled,
             enable_auto_start,
             disable_auto_start,
+
+            // Historical Replay
+            historical_fetch_dataset,
+            historical_fetch_orderbooks,
+            historical_run_simulation,
+            historical_compute_counterfactual,
+            historical_get_cache_stats,
+            historical_clear_old_data,
+            historical_set_api_key,
 
             // Voice Interaction
             voice_request_permissions,
