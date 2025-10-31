@@ -52,9 +52,11 @@ mod webhooks;
 mod windowing;
 mod academy;
 mod governance;
+mod journal;
 
 pub use academy::*;
 pub use governance::*;
+pub use journal::*;
 pub use ai::*;
 pub use ai_chat::*;
 pub use alerts::*;
@@ -172,6 +174,7 @@ use mobile::{
 use voice::commands::{SharedVoiceState, VoiceState};
 use config::settings_manager::{SettingsManager, SharedSettingsManager};
 use governance::commands::*;
+use journal::{JournalDatabase, SharedJournalDatabase};
 
 async fn warm_cache_on_startup(
     _app_handle: tauri::AppHandle,
@@ -425,6 +428,23 @@ pub fn run() {
 
             let performance_state: SharedPerformanceDatabase = Arc::new(RwLock::new(performance_db));
             app.manage(performance_state.clone());
+
+            // Initialize journal database
+            let mut journal_db_path = app
+                .path_resolver()
+                .app_data_dir()
+                .ok_or_else(|| "Unable to resolve app data directory".to_string())?;
+
+            journal_db_path.push("journal.db");
+
+            let journal_db = tauri::async_runtime::block_on(JournalDatabase::new(journal_db_path))
+                .map_err(|e| {
+                    eprintln!("Failed to initialize journal database: {e}");
+                    Box::new(e) as Box<dyn Error>
+                })?;
+
+            let journal_state: SharedJournalDatabase = Arc::new(RwLock::new(journal_db));
+            app.manage(journal_state.clone());
 
             // Initialize backup service and scheduler
             let backup_service = backup::service::BackupService::new(&app.handle());
@@ -1751,6 +1771,19 @@ pub fn run() {
             prepare_vote_signature,
             verify_vote_signature,
             prepare_vote_transaction,
+
+            // Journal
+            create_journal_entry,
+            get_journal_entry,
+            update_journal_entry,
+            delete_journal_entry,
+            get_journal_entries,
+            get_journal_entries_count,
+            generate_weekly_report,
+            get_weekly_report,
+            get_weekly_reports,
+            get_behavioral_analytics,
+            get_journal_stats,
 
             // Dev Tools
             compile_now,
