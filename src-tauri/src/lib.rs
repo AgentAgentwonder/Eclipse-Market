@@ -13,6 +13,7 @@ mod cache_commands;
 mod chains;
 mod bridges;
 mod chart_stream;
+mod collab;
 mod compiler;
 mod config;
 mod core;
@@ -66,6 +67,7 @@ pub use bots::*;
 pub use chains::*;
 pub use bridges::*;
 pub use chart_stream::*;
+pub use collab::*;
 pub use compiler::*;
 pub use config::*;
 pub use core::*;
@@ -119,6 +121,7 @@ use ai::launch_predictor::{
 use ai::SharedAIAssistant;
 use alerts::{AlertManager, SharedAlertManager, SharedSmartAlertManager, SmartAlertManager};
 use api::{ApiHealthMonitor, SharedApiHealthMonitor};
+use collab::state::CollabState;
 use drawings::{DrawingManager, SharedDrawingManager};
 use indicators::{IndicatorManager, SharedIndicatorManager};
 use notifications::router::{NotificationRouter, SharedNotificationRouter};
@@ -340,6 +343,11 @@ pub fn run() {
             let rpc_url = "https://api.mainnet-beta.solana.com".to_string();
             let launchpad_state = launchpad::commands::create_launchpad_state(rpc_url);
             app.manage(launchpad_state);
+
+            // Initialize collaborative rooms state
+            let collab_websocket = collab::websocket::CollabWebSocketManager::new(app.handle());
+            let collab_state = CollabState::new(collab_websocket);
+            app.manage(collab_state);
 
             tauri::async_runtime::spawn(async move {
                 use tokio::time::{sleep, Duration};
@@ -1675,6 +1683,31 @@ pub fn run() {
             mobile_safety_checks,
             mobile_get_widget_data,
             mobile_get_all_widgets,
+
+            // Collaborative Rooms
+            collab::commands::collab_create_room,
+            collab::commands::collab_list_rooms,
+            collab::commands::collab_get_room,
+            collab::commands::collab_delete_room,
+            collab::commands::collab_join_room,
+            collab::commands::collab_leave_room,
+            collab::commands::collab_get_participants,
+            collab::commands::collab_update_permissions,
+            collab::commands::collab_send_message,
+            collab::commands::collab_get_messages,
+            collab::commands::collab_share_watchlist,
+            collab::commands::collab_get_watchlists,
+            collab::commands::collab_share_order,
+            collab::commands::collab_get_orders,
+            collab::commands::collab_update_order,
+            collab::commands::collab_share_strategy,
+            collab::commands::collab_send_webrtc_signal,
+            collab::commands::collab_get_webrtc_signals,
+            collab::commands::collab_moderate_user,
+            collab::commands::collab_get_room_state,
+            collab::commands::collab_set_competition,
+            collab::commands::collab_get_competition,
+            collab::commands::collab_update_leaderboard,
 
             // Diagnostics & Troubleshooter
             diagnostics::tauri_commands::run_diagnostics,
