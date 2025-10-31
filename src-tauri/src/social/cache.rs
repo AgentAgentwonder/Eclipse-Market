@@ -51,6 +51,7 @@ pub struct TrendSnapshot {
     pub engagement_total: i64,
 }
 
+#[derive(Clone)]
 pub struct SocialCache {
     pool: Pool<Sqlite>,
 }
@@ -127,6 +128,82 @@ impl SocialCache {
             CREATE INDEX IF NOT EXISTS idx_posts_timestamp ON social_posts(timestamp);
             CREATE INDEX IF NOT EXISTS idx_mentions_token ON mention_aggregates(token);
             CREATE INDEX IF NOT EXISTS idx_trends_token_time ON trend_snapshots(token, snapshot_time);
+            "#,
+        )
+        .execute(&self.pool)
+        .await?;
+
+        // Create tables for sentiment analysis and derived metrics
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS sentiment_lexicon (
+                term TEXT PRIMARY KEY,
+                weight REAL NOT NULL,
+                category TEXT,
+                is_negation INTEGER NOT NULL DEFAULT 0,
+                metadata TEXT,
+                updated_at INTEGER NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS sentiment_scores (
+                post_id TEXT PRIMARY KEY,
+                token TEXT,
+                source TEXT,
+                timestamp INTEGER NOT NULL,
+                score REAL NOT NULL,
+                label TEXT NOT NULL,
+                confidence REAL NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS sentiment_snapshots (
+                token TEXT PRIMARY KEY,
+                avg_score REAL NOT NULL,
+                momentum REAL NOT NULL,
+                mention_count INTEGER NOT NULL,
+                positive_mentions INTEGER NOT NULL,
+                negative_mentions INTEGER NOT NULL,
+                neutral_mentions INTEGER NOT NULL,
+                confidence REAL NOT NULL,
+                dominant_label TEXT NOT NULL,
+                last_post_timestamp INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS social_trends (
+                token TEXT NOT NULL,
+                window_minutes INTEGER NOT NULL,
+                mentions INTEGER NOT NULL,
+                velocity REAL NOT NULL,
+                acceleration REAL NOT NULL,
+                volume_spike REAL NOT NULL,
+                sentiment_avg REAL NOT NULL,
+                engagement_total INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL,
+                PRIMARY KEY (token, window_minutes)
+            );
+            CREATE TABLE IF NOT EXISTS social_influencer_scores (
+                influencer TEXT PRIMARY KEY,
+                follower_score REAL NOT NULL,
+                engagement_score REAL NOT NULL,
+                accuracy_score REAL NOT NULL,
+                impact_score REAL NOT NULL,
+                sample_size INTEGER NOT NULL,
+                tokens TEXT NOT NULL,
+                updated_at INTEGER NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS social_gauges (
+                token TEXT PRIMARY KEY,
+                fomo_score REAL NOT NULL,
+                fomo_level TEXT NOT NULL,
+                fud_score REAL NOT NULL,
+                fud_level TEXT NOT NULL,
+                drivers TEXT NOT NULL,
+                updated_at INTEGER NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_sentiment_scores_token_time ON sentiment_scores(token, timestamp);
+            CREATE INDEX IF NOT EXISTS idx_sentiment_scores_label ON sentiment_scores(label);
+            CREATE INDEX IF NOT EXISTS idx_social_trends_token ON social_trends(token);
+            CREATE INDEX IF NOT EXISTS idx_social_trends_updated ON social_trends(updated_at);
+            CREATE INDEX IF NOT EXISTS idx_social_influencer_scores_impact ON social_influencer_scores(impact_score);
+            CREATE INDEX IF NOT EXISTS idx_social_gauges_token ON social_gauges(token);
+            CREATE INDEX IF NOT EXISTS idx_sentiment_lexicon_category ON sentiment_lexicon(category);
             "#,
         )
         .execute(&self.pool)
@@ -385,5 +462,9 @@ impl SocialCache {
             .await?;
 
         Ok(result.rows_affected() as i64)
+    }
+
+    pub fn pool(&self) -> &Pool<Sqlite> {
+        &self.pool
     }
 }
