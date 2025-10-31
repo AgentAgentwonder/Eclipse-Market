@@ -53,7 +53,8 @@ export type PanelType =
   | 'troubleshooter'
   | 'settings'
   | 'dev-console'
-  | 'launch-predictor';
+  | 'launch-predictor'
+  | 'p2p-marketplace';
 
 export interface Monitor {
   id: string;
