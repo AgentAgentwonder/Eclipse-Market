@@ -34,6 +34,7 @@ mod portfolio;
 mod recovery;
 mod security;
 mod sentiment;
+mod social;
 mod stocks;
 mod stream_commands;
 mod tax;
@@ -82,6 +83,7 @@ pub use notifications::*;
 pub use portfolio::*;
 pub use recovery::*;
 pub use sentiment::*;
+pub use social::*;
 pub use stocks::*;
 pub use tax::*;
 pub use token_flow::*;
@@ -151,6 +153,7 @@ use mobile::{
 };
 use voice::commands::{SharedVoiceState, VoiceState};
 use config::settings_manager::{SettingsManager, SharedSettingsManager};
+use social::{SharedSocialManager, SocialConfig, SocialIntelligenceManager};
 
 async fn warm_cache_on_startup(
     _app_handle: tauri::AppHandle,
@@ -541,6 +544,42 @@ pub fn run() {
              let anomaly_detector = anomalies::AnomalyDetector::new();
              let anomaly_state: anomalies::SharedAnomalyDetector = Arc::new(RwLock::new(anomaly_detector));
              app.manage(anomaly_state.clone());
+
+             // Initialize social intelligence manager
+             let social_config = SocialConfig::default();
+             let social_manager = SocialIntelligenceManager::new(social_config);
+             let social_state: SharedSocialManager = Arc::new(RwLock::new(social_manager));
+
+             if let Err(err) = tauri::async_runtime::block_on(async {
+                 let mut manager = social_state.write().await;
+                 manager.refresh_social_data().await
+             }) {
+                 tracing::warn!("Initial social data refresh failed: {}", err);
+             }
+
+             {
+                 let social_state_clone = social_state.clone();
+                 tauri::async_runtime::spawn(async move {
+                     use tokio::time::{sleep, Duration};
+                     loop {
+                         let interval = {
+                             let mgr = social_state_clone.read().await;
+                             mgr.get_config().update_interval_seconds.max(60)
+                         };
+
+                         if let Err(err) = {
+                             let mut mgr = social_state_clone.write().await;
+                             mgr.refresh_social_data().await
+                         } {
+                             tracing::warn!("Scheduled social data refresh failed: {}", err);
+                         }
+
+                         sleep(Duration::from_secs(interval)).await;
+                     }
+                 });
+             }
+
+             app.manage(social_state.clone());
 
              // Initialize event store
              let mut event_store_path = app
@@ -1557,9 +1596,25 @@ pub fn run() {
             mobile_get_widget_data,
             mobile_get_all_widgets,
 
-            // Diagnostics & Troubleshooter
-            diagnostics::tauri_commands::run_diagnostics,
-            diagnostics::tauri_commands::get_health_report,
+             // Social Intelligence Hub
+             social_get_dashboard_snapshot,
+             social_refresh_data,
+             social_add_influencer,
+             social_remove_influencer,
+             social_update_influencer,
+             social_get_influencers,
+             social_follow_whale,
+             social_unfollow_whale,
+             social_get_followed_whales,
+             social_get_all_whales,
+             social_cluster_whales,
+             social_analyze_whale_behavior,
+             social_update_config,
+             social_get_config,
+
+             // Diagnostics & Troubleshooter
+             diagnostics::tauri_commands::run_diagnostics,
+
             diagnostics::tauri_commands::auto_repair_issue,
             diagnostics::tauri_commands::auto_repair,
             diagnostics::tauri_commands::verify_integrity,
