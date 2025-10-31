@@ -73,6 +73,7 @@ import MultiChain from './pages/MultiChain';
 import LaunchPredictor from './pages/LaunchPredictor';
 import PredictionMarkets from './pages/PredictionMarkets';
 import DeFi from './pages/DeFi';
+import Governance from './pages/Governance';
 import HistoricalReplay from './pages/HistoricalReplay';
 import Troubleshooter from './pages/Troubleshooter';
 import { BIOMETRIC_STATUS_EVENT } from './constants/events';
@@ -575,6 +576,7 @@ function App() {
       { id: 'launch-predictor', label: 'Launch Predictor', icon: Rocket, component: LaunchPredictor, panelType: 'launch-predictor' as PanelType },
       { id: 'prediction-markets', label: 'Prediction Markets', icon: PieChart, component: PredictionMarkets, panelType: 'prediction-markets' as PanelType },
       { id: 'defi', label: 'DeFi', icon: BanknoteIcon, component: DeFi, panelType: 'defi' as PanelType },
+      { id: 'governance', label: 'Governance', icon: Vote, component: Governance, panelType: 'governance' as PanelType },
       { id: 'historical-replay', label: 'Historical Replay', icon: Clock, component: HistoricalReplay, panelType: 'historical-replay' as PanelType },
       { id: 'api-health', label: 'API Health', icon: Activity, component: ApiHealth, panelType: 'api-health' as PanelType },
       { id: 'troubleshooter', label: 'Troubleshooter', icon: Wrench, component: Troubleshooter, panelType: 'troubleshooter' as PanelType },
