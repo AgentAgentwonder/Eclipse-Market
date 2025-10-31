@@ -51,9 +51,9 @@ export type PanelType =
   | 'defi'
   | 'historical-replay'
   | 'troubleshooter'
-  | 'settings';
   | 'settings'
-  | 'dev-console';
+  | 'dev-console'
+  | 'launch-predictor';
 
 export interface Monitor {
   id: string;

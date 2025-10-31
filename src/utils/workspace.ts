@@ -61,8 +61,10 @@ const panelTitles: Record<PanelType, string> = {
   'prediction-markets': 'Prediction Markets',
   defi: 'DeFi Hub',
   'historical-replay': 'Historical Replay',
+  troubleshooter: 'Troubleshooter',
   settings: 'Settings',
   'dev-console': 'Developer Console',
+  'launch-predictor': 'Launch Predictor AI',
 };
 
 export const createPanelDefinition = (type: PanelType, width = 6, height = 8) => {
