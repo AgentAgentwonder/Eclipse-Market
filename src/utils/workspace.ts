@@ -61,6 +61,8 @@ const panelTitles: Record<PanelType, string> = {
   'prediction-markets': 'Prediction Markets',
   defi: 'DeFi Hub',
   'historical-replay': 'Historical Replay',
+  troubleshooter: 'Troubleshooter',
+  'social-momentum': 'Social Momentum',
   settings: 'Settings',
   'dev-console': 'Developer Console',
 };
