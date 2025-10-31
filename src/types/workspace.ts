@@ -39,6 +39,7 @@ export type PanelType =
   | 'insiders'
   | 'trading'
   | 'portfolio'
+  | 'portfolio-analytics'
   | 'multisig'
   | 'api-health'
   | 'pro-charts'
