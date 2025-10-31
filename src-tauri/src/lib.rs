@@ -35,6 +35,7 @@ mod notifications;
 mod portfolio;
 mod recovery;
 mod security;
+mod social;
 mod sentiment;
 mod stocks;
 mod stream_commands;
@@ -96,6 +97,7 @@ pub use monitor::*;
 pub use notifications::*;
 pub use portfolio::*;
 pub use recovery::*;
+pub use social::*;
 pub use sentiment::*;
 pub use stocks::*;
 pub use tax::*;
@@ -614,6 +616,16 @@ pub fn run() {
              let sentiment_state: sentiment::SharedSentimentManager = Arc::new(RwLock::new(sentiment_manager));
              app.manage(sentiment_state.clone());
 
+             // Initialize social data service
+             let social_service = tauri::async_runtime::block_on(async {
+                 SocialDataService::new(&app.handle()).await
+             }).map_err(|e| {
+                 eprintln!("Failed to initialize social data service: {e}");
+                 Box::new(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())) as Box<dyn Error>
+             })?;
+             let social_state: SharedSocialDataService = Arc::new(RwLock::new(social_service));
+             app.manage(social_state.clone());
+
              // Initialize anomaly detector
              let anomaly_detector = anomalies::AnomalyDetector::new();
              let anomaly_state: anomalies::SharedAnomalyDetector = Arc::new(RwLock::new(anomaly_detector));
@@ -1066,6 +1078,17 @@ pub fn run() {
             get_token_risk_score,
             get_risk_history,
             get_latest_risk_score,
+            // Social Data
+            social_fetch_reddit,
+            social_search_reddit_mentions,
+            social_fetch_twitter,
+            social_fetch_twitter_user,
+            social_get_cached_mentions,
+            social_get_mention_aggregates,
+            social_get_trend_snapshots,
+            social_create_trend_snapshot,
+            social_set_twitter_bearer_token,
+            social_cleanup_old_posts,
             // Launch Predictor
             extract_token_features,
             predict_launch_success,

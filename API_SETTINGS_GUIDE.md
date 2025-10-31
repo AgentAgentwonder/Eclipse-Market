@@ -30,6 +30,21 @@ The API Settings Hub provides a secure, centralized interface for managing API k
 - **Features**: Transaction submission, account queries, program interaction
 - **Custom RPC Providers**: QuickNode, Alchemy, Helius, GenesysGo
 
+### 5. Twitter / X
+- **Purpose**: Social sentiment and influencer tracking
+- **Endpoint**: `https://api.twitter.com/2`
+- **Features**: Recent tweet search, influencer monitoring, mention aggregation
+- **Credentials**: Bearer token (OAuth 2.0) stored securely in the keystore
+- **Get API Access**: [https://developer.twitter.com/](https://developer.twitter.com/)
+- **Rate Limits**: Recent search allows ~450 requests per 15 minute window (subject to account tier)
+
+### 6. Reddit
+- **Purpose**: Community monitoring for crypto subreddits
+- **Endpoint**: `https://www.reddit.com/r/<subreddit>/search.json`
+- **Features**: Keyword tracking, new post ingestion, sentiment snapshots
+- **Credentials**: No API key required for read-only JSON endpoints (authenticated keys recommended for higher throughput)
+- **Rate Limits**: Reddit enforces adaptive limits via `x-ratelimit-*` headers; default client obeys limits automatically
+
 ## Security Features
 
 ### Encryption
