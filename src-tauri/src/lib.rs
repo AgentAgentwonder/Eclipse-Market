@@ -27,6 +27,7 @@ mod security;
 mod sentiment;
 mod stocks;
 mod stream_commands;
+mod tax;
 mod token_flow;
 mod trading;
 mod tray;
@@ -65,6 +66,7 @@ pub use notifications::*;
 pub use portfolio::*;
 pub use sentiment::*;
 pub use stocks::*;
+pub use tax::*;
 pub use token_flow::*;
 pub use trading::*;
 pub use tray::*;
@@ -187,6 +189,8 @@ pub fn run() {
                 eprintln!("Failed to initialize keystore: {e}");
                 Box::new(e) as Box<dyn Error>
             })?;
+
+            let tax_engine = tax::initialize_tax_engine(&keystore);
 
             let audit_cache = AuditCache::new();
             app.manage(audit_cache);
@@ -382,6 +386,7 @@ pub fn run() {
              app.manage(std::sync::Mutex::new(portfolio_data));
              app.manage(std::sync::Mutex::new(rebalancer_state));
              app.manage(std::sync::Mutex::new(tax_lots_state));
+             app.manage(tax_engine.clone());
 
              // Initialize new coins scanner
              let new_coins_scanner = tauri::async_runtime::block_on(async {
@@ -894,6 +899,9 @@ pub fn run() {
             generate_tax_report,
             export_tax_report,
             get_tax_loss_harvesting_suggestions,
+            get_tax_center_summary,
+            update_tax_settings,
+            export_tax_center_report,
             watchlist_create,
             watchlist_list,
             watchlist_get,
