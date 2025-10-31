@@ -30,6 +30,7 @@ import {
   Wrench,
   Terminal,
   Rocket,
+  Handshake,
   } from 'lucide-react';
 
 import { ShortcutCheatSheet } from './components/common/ShortcutCheatSheet';
@@ -76,6 +77,7 @@ import DeFi from './pages/DeFi';
 import Governance from './pages/Governance';
 import HistoricalReplay from './pages/HistoricalReplay';
 import Troubleshooter from './pages/Troubleshooter';
+import P2PMarketplace from './pages/P2PMarketplace';
 import { BIOMETRIC_STATUS_EVENT } from './constants/events';
 import { useWalletStore } from './store/walletStore';
 import { usePaperTradingStore } from './store/paperTradingStore';
@@ -541,6 +543,7 @@ function App() {
         panelType: 'portfolio-analytics' as PanelType,
       },
       { id: 'multisig', label: 'Multisig', icon: Shield, component: Multisig, panelType: 'multisig' as PanelType },
+      { id: 'p2p-marketplace', label: 'P2P Marketplace', icon: Handshake, component: P2PMarketplace, panelType: 'p2p-marketplace' as PanelType },
       { id: 'stocks', label: 'Stocks', icon: BarChart3, component: Stocks, panelType: 'stocks' as PanelType },
       { id: 'insiders', label: 'Insiders', icon: Users, component: Insiders, panelType: 'insiders' as PanelType },
       { id: 'token-flow', label: 'Token Flow', icon: Network, component: TokenFlow, panelType: 'token-flow' as PanelType },
