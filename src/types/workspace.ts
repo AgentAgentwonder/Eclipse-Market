@@ -54,7 +54,8 @@ export type PanelType =
   | 'settings'
   | 'dev-console'
   | 'launch-predictor'
-  | 'p2p-marketplace';
+  | 'p2p-marketplace'
+  | 'social-intelligence';
 
 export interface Monitor {
   id: string;
