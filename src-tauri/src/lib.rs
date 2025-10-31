@@ -97,6 +97,7 @@ use security::keystore::Keystore;
 use security::activity_log::ActivityLogger;
 use security::audit::AuditCache;
 use data::event_store::{EventStore, SharedEventStore};
+use data::historical::{HistoricalReplayManager, SharedHistoricalReplayManager};
 use auth::session_manager::SessionManager;
 use auth::two_factor::TwoFactorManager;
 use std::error::Error;
@@ -579,6 +580,17 @@ pub fn run() {
              auto_start_manager.initialize(&app.handle());
              let shared_auto_start_manager: SharedAutoStartManager = Arc::new(auto_start_manager);
              app.manage(shared_auto_start_manager.clone());
+
+             // Initialize historical replay manager
+             let historical_replay_manager = tauri::async_runtime::block_on(async {
+                 HistoricalReplayManager::new(&app.handle(), None).await
+             }).map_err(|e| {
+                 eprintln!("Failed to initialize historical replay manager: {e}");
+                 Box::new(std::io::Error::new(std::io::ErrorKind::Other, e)) as Box<dyn Error>
+             })?;
+
+             let shared_historical_manager: SharedHistoricalReplayManager = Arc::new(RwLock::new(historical_replay_manager));
+             app.manage(shared_historical_manager.clone());
 
              // Initialize voice state
              let voice_state = VoiceState::new();
@@ -1205,6 +1217,15 @@ pub fn run() {
             check_auto_start_enabled,
             enable_auto_start,
             disable_auto_start,
+
+            // Historical Replay
+            historical_fetch_dataset,
+            historical_fetch_orderbooks,
+            historical_run_simulation,
+            historical_compute_counterfactual,
+            historical_get_cache_stats,
+            historical_clear_old_data,
+            historical_set_api_key,
 
             // Voice Interaction
             voice_request_permissions,
