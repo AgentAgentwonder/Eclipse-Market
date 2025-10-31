@@ -50,8 +50,10 @@ mod websocket;
 mod webhooks;
 mod windowing;
 mod academy;
+mod governance;
 
 pub use academy::*;
+pub use governance::*;
 pub use ai::*;
 pub use ai_chat::*;
 pub use alerts::*;
@@ -166,6 +168,7 @@ use mobile::{
 };
 use voice::commands::{SharedVoiceState, VoiceState};
 use config::settings_manager::{SettingsManager, SharedSettingsManager};
+use governance::commands::*;
 
 async fn warm_cache_on_startup(
     _app_handle: tauri::AppHandle,
@@ -886,6 +889,11 @@ pub fn run() {
               let widget_manager = WidgetManager::new();
               let widget_state: Arc<RwLock<WidgetManager>> = Arc::new(RwLock::new(widget_manager));
               app.manage(widget_state.clone());
+
+              // Initialize governance manager
+              let governance_manager = governance::GovernanceManager::new();
+              let governance_state: governance::SharedGovernanceManager = Arc::new(RwLock::new(governance_manager));
+              app.manage(governance_state.clone());
 
               Ok(())
               })
@@ -1691,6 +1699,26 @@ pub fn run() {
             diagnostics::tauri_commands::backup_before_repair,
             diagnostics::tauri_commands::rollback_repair,
             diagnostics::tauri_commands::export_diagnostics_report,
+
+            // Governance
+            sync_governance_memberships,
+            get_governance_memberships,
+            sync_governance_proposals,
+            get_governance_proposals,
+            get_all_active_governance_proposals,
+            get_wallet_voting_power,
+            submit_signed_vote,
+            delegate_governance_votes,
+            revoke_governance_delegation,
+            get_governance_delegations,
+            analyze_governance_proposal,
+            create_governance_reminder,
+            get_governance_summary,
+            get_governance_deadlines,
+            prepare_vote_signature,
+            verify_vote_signature,
+            prepare_vote_transaction,
+
             // Dev Tools
             compile_now,
             get_build_status,
