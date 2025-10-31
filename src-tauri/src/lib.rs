@@ -16,6 +16,7 @@ mod chart_stream;
 mod compiler;
 mod config;
 mod core;
+mod diagnostics;
 mod data;
 mod defi;
 mod dev_tools;
@@ -738,6 +739,25 @@ pub fn run() {
               let shared_prediction_service: market::SharedPredictionMarketService = Arc::new(RwLock::new(prediction_service));
               app.manage(shared_prediction_service.clone());
 
+              // Initialize diagnostics engine
+              let diagnostics_engine = diagnostics::tauri_commands::initialize_diagnostics_engine(&app.handle())
+                  .map_err(|e| {
+                      eprintln!("Failed to initialize diagnostics engine: {e}");
+                      Box::new(std::io::Error::new(std::io::ErrorKind::Other, e)) as Box<dyn Error>
+                  })?;
+              app.manage(diagnostics_engine.clone());
+
+              let diagnostics_state = diagnostics_engine.clone();
+              tauri::async_runtime::spawn(async move {
+                  use tokio::time::{sleep, Duration};
+                  loop {
+                      {
+                          let mut engine = diagnostics_state.write().await;
+                          let _ = engine.run_full_diagnostics().await;
+                      }
+                      sleep(Duration::from_secs(60 * 60)).await;
+                  }
+              });
               // Initialize dev tools
               let logger = logger::ComprehensiveLogger::new(&app.handle())
                   .map_err(|e| {
@@ -1463,6 +1483,21 @@ pub fn run() {
             theme_import,
             theme_get_os_preference,
 
+            // Diagnostics & Troubleshooter
+            diagnostics::tauri_commands::run_diagnostics,
+            diagnostics::tauri_commands::get_health_report,
+            diagnostics::tauri_commands::auto_repair_issue,
+            diagnostics::tauri_commands::auto_repair,
+            diagnostics::tauri_commands::verify_integrity,
+            diagnostics::tauri_commands::manual_repair,
+            diagnostics::tauri_commands::download_missing,
+            diagnostics::tauri_commands::restore_defaults,
+            diagnostics::tauri_commands::get_repair_history,
+            diagnostics::tauri_commands::get_diagnostics_settings,
+            diagnostics::tauri_commands::save_diagnostics_settings,
+            diagnostics::tauri_commands::backup_before_repair,
+            diagnostics::tauri_commands::rollback_repair,
+            diagnostics::tauri_commands::export_diagnostics_report,
             // Dev Tools
             compile_now,
             get_build_status,
