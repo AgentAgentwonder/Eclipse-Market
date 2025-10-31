@@ -4,23 +4,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use chrono::Utc;
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct SentimentResult {
-    pub score: f32,
-    pub label: String,
-    pub confidence: f32,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct SocialPost {
-    pub id: String,
-    pub text: String,
-    pub source: String,
-    pub author: String,
-    pub timestamp: i64,
-    pub sentiment: SentimentResult,
-    pub engagement: i32,
-}
+pub use crate::social::models::{SentimentResult, SocialPost};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TokenSentiment {
