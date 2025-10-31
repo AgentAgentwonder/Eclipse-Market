@@ -56,6 +56,7 @@ const panelTitles: Record<PanelType, string> = {
   'pro-charts': 'Pro Charts',
   'token-flow': 'Token Flow',
   surveillance: 'Market Surveillance',
+  'social-intelligence': 'Social Intelligence',
   'paper-trading': 'Paper Trading',
   'ai-analysis': 'AI Assistant',
   'prediction-markets': 'Prediction Markets',
@@ -65,6 +66,7 @@ const panelTitles: Record<PanelType, string> = {
   settings: 'Settings',
   'dev-console': 'Developer Console',
   'launch-predictor': 'Launch Predictor AI',
+  'p2p-marketplace': 'P2P Marketplace',
 };
 
 export const createPanelDefinition = (type: PanelType, width = 6, height = 8) => {

@@ -653,6 +653,17 @@ pub fn run() {
              let analysis_state: social::SharedSocialAnalysisService = Arc::new(RwLock::new(analysis_service));
              app.manage(analysis_state.clone());
 
+             // Initialize whale tracking service
+             let whale_pool = social_cache.pool();
+             let whale_service = social::WhaleService::new(whale_pool);
+             tauri::async_runtime::block_on(whale_service.initialize()).map_err(|e| {
+                 eprintln!("Failed to initialize whale service: {e}");
+                 Box::new(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())) as Box<dyn Error>
+             })?;
+
+             let whale_state: social::SharedWhaleService = Arc::new(RwLock::new(whale_service));
+             app.manage(whale_state.clone());
+
              // Initialize anomaly detector
              let anomaly_detector = anomalies::AnomalyDetector::new();
              let anomaly_state: anomalies::SharedAnomalyDetector = Arc::new(RwLock::new(anomaly_detector));
@@ -1124,6 +1135,12 @@ pub fn run() {
             social_get_token_trends,
             social_get_influencer_scores,
             social_get_fomo_fud,
+            social_get_whale_clusters,
+            social_get_whale_feed,
+            social_list_followed_wallets,
+            social_follow_wallet,
+            social_unfollow_wallet,
+            social_get_whale_insights,
             // Launch Predictor
             extract_token_features,
             predict_launch_success,
