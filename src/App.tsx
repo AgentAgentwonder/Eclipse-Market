@@ -27,6 +27,7 @@ import {
   PieChart,
   Clock,
   Wrench,
+  Megaphone,
   } from 'lucide-react';
 
 import { ShortcutCheatSheet } from './components/common/ShortcutCheatSheet';
@@ -70,6 +71,7 @@ import PredictionMarkets from './pages/PredictionMarkets';
 import DeFi from './pages/DeFi';
 import HistoricalReplay from './pages/HistoricalReplay';
 import Troubleshooter from './pages/Troubleshooter';
+import SocialMomentum from './pages/SocialMomentum';
 import { BIOMETRIC_STATUS_EVENT } from './constants/events';
 import { useWalletStore } from './store/walletStore';
 import { usePaperTradingStore } from './store/paperTradingStore';
@@ -536,6 +538,7 @@ function App() {
         component: MarketSurveillance,
         panelType: 'surveillance' as PanelType,
       },
+      { id: 'social-momentum', label: 'Social Momentum', icon: Megaphone, component: SocialMomentum, panelType: 'social-momentum' as PanelType },
       { id: 'dashboard', label: 'Dashboard', icon: Home, component: Dashboard },
       { id: 'coins', label: 'Coins', icon: TrendingUp, component: Coins },
       { id: 'portfolio', label: 'Portfolio', icon: Briefcase, component: Portfolio },
@@ -547,6 +550,7 @@ function App() {
       { id: 'insiders', label: 'Insiders', icon: Users, component: Insiders },
       { id: 'token-flow', label: 'Token Flow', icon: Network, component: TokenFlow },
       { id: 'surveillance', label: 'Market Surveillance', icon: AlertTriangle, component: MarketSurveillance },
+      { id: 'social-momentum', label: 'Social Momentum', icon: Megaphone, component: SocialMomentum },
       {
         id: 'trading',
         label: isPaperMode ? 'Live Trading' : 'Trading',

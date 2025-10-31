@@ -51,7 +51,7 @@ export type PanelType =
   | 'defi'
   | 'historical-replay'
   | 'troubleshooter'
-  | 'settings';
+  | 'social-momentum'
   | 'settings'
   | 'dev-console';
 
