@@ -287,6 +287,12 @@ pub fn run() {
             trading::register_auto_trading_state(app);
             trading::register_optimizer_state(app);
 
+            // Initialize safety engine
+            let default_policy = trading::safety::policy::SafetyPolicy::default();
+            let safety_engine = trading::SafetyEngine::new(default_policy, 30);
+            let safety_state: trading::SharedSafetyEngine = Arc::new(RwLock::new(safety_engine));
+            app.manage(safety_state.clone());
+
             // Initialize wallet monitor
             let monitor_handle = app.handle();
             tauri::async_runtime::spawn(async move {
@@ -1351,6 +1357,17 @@ pub fn run() {
             validate_voice_mfa,
             check_voice_permission,
             get_voice_capabilities,
+
+            // Safety Mode Engine
+            check_trade_safety,
+            approve_trade,
+            get_safety_policy,
+            update_safety_policy,
+            get_cooldown_status,
+            reset_daily_limits,
+            get_insurance_quote,
+            select_insurance,
+            list_insurance_providers,
 
             // Theme Engine
             theme_get_presets,

@@ -380,6 +380,195 @@ const { audit, loading, refresh } = useSecurityAudit({
 - Users can override with explicit confirmation
 - Can be configured to hard-block certain risk levels
 
+## Safety Mode Engine
+
+### Backend Implementation (Rust/Tauri)
+
+**Location:** `src-tauri/src/trading/safety/`
+
+**Features:**
+- Policy-based trade validation
+- Configurable cooldown periods between trades
+- Transaction impact simulation
+- MEV risk assessment and protection suggestions
+- Optional insurance provider integration
+- Risk limit enforcement (trade amount, price impact, slippage)
+- Daily trade frequency limits
+- High-risk token blocking
+
+**Data Structures:**
+
+- `SafetyPolicy` - Configurable safety rules and thresholds
+- `PolicyViolation` - Specific policy rule violations
+- `CooldownStatus` - Per-wallet cooldown tracking
+- `TransactionSimulation` - Pre-trade simulation results
+- `ImpactPreview` - Trade impact estimates
+- `InsuranceQuote` - Insurance provider quotes
+- `SafetyCheckResult` - Comprehensive safety validation result
+
+**API Commands:**
+- `check_trade_safety(request)` - Validate trade against all safety policies
+- `approve_trade(wallet_address)` - Record trade and start cooldown
+- `get_safety_policy()` - Retrieve current safety configuration
+- `update_safety_policy(policy)` - Update safety settings
+- `get_cooldown_status(wallet_address)` - Check cooldown status
+- `reset_daily_limits()` - Reset daily trade counters
+- `get_insurance_quote(provider_id, ...)` - Get insurance quote
+- `select_insurance(provider_id, ...)` - Select insurance coverage
+- `list_insurance_providers()` - List available insurance providers
+
+**Safety Policies:**
+
+Default Configuration:
+- Cooldown: 30 seconds between trades
+- Max trade amount: $10,000
+- Max daily trades: 100
+- Max price impact: 10%
+- Max slippage: 5%
+- High risk threshold: 40 (blocks tokens with security score below 40)
+- Insurance recommendation threshold: $50,000
+
+**Policy Enforcement:**
+
+1. **Cooldown Manager**: Tracks last trade timestamp per wallet, enforces waiting period
+2. **Policy Engine**: Validates trades against configured limits and rules
+3. **Transaction Simulator**: 
+   - Estimates output amounts (expected, minimum, maximum)
+   - Calculates price impact and slippage
+   - Assesses MEV risk level (low/medium/high/critical)
+   - Provides success probability estimate
+4. **Insurance Coordinator**:
+   - Manages multiple insurance providers
+   - Generates quotes based on risk factors
+   - Recommends best coverage options
+
+**Violation Severity Levels:**
+- `Warning` - Trade allowed but flagged
+- `Error` - Trade blocked but can be overridden
+- `Critical` - Trade hard-blocked, no override
+
+### Frontend Implementation (React/TypeScript)
+
+**Components:**
+
+1. **SafetySettings** (`src/pages/Settings/SafetySettings.tsx`)
+   - Master safety mode toggle
+   - Cooldown period configuration
+   - Trade limit settings (amount, daily frequency)
+   - Risk thresholds (price impact, slippage, security score)
+   - Transaction simulation toggle
+   - Insurance threshold configuration
+
+2. **Enhanced TradeConfirmationModal** (existing component enhanced)
+   - Safety check integration
+   - Cooldown timer display
+   - Policy violation warnings
+   - Transaction simulation results
+   - MEV protection suggestions
+   - Insurance recommendations
+
+**State Management:**
+
+`useSafetyStore` (Zustand):
+- Persisted safety policy configuration
+- Policy fetch and update methods
+- Cooldown status retrieval
+- Error handling
+
+**Hooks:**
+
+`useSafety`:
+- `checkTradeSafety` - Validate trade before execution
+- `approveTrade` - Record successful trade
+- `getCooldownStatus` - Check wallet cooldown
+- `getInsuranceQuote` - Request insurance quote
+- `selectInsurance` - Select insurance coverage
+- `listInsuranceProviders` - Get available providers
+
+**Types:**
+
+All safety types defined in `src/types/safety.ts`
+
+### Testing
+
+**Unit Tests (Rust):** `src-tauri/tests/safety_tests.rs`
+
+Test Coverage:
+- Policy enforcement (amount limits, daily limits, risk thresholds)
+- Cooldown logic (recording, expiration, status checks)
+- Transaction simulation (normal trades, high-impact trades)
+- Impact preview generation
+- Insurance provider management
+- Insurance quote generation
+- Full safety engine integration
+- High-risk token blocking
+- Insurance requirement logic
+- Disabled safety mode behavior
+
+### Usage Examples
+
+**Backend (Rust):**
+```rust
+// Create safety engine
+let policy = SafetyPolicy::default();
+let mut engine = SafetyEngine::new(policy, 30);
+
+// Check trade safety
+let request = SafetyCheckRequest {
+    wallet_address: "wallet123".to_string(),
+    input_amount: 100.0,
+    amount_usd: 5000.0,
+    // ... other fields
+};
+let result = engine.check_trade_safety(request).await?;
+
+// Approve trade if allowed
+if result.allowed {
+    engine.approve_trade("wallet123");
+}
+```
+
+**Frontend (TypeScript):**
+```typescript
+import { useSafety } from '../hooks/useSafety';
+
+// Check trade safety
+const { checkTradeSafety, approveTrade } = useSafety();
+
+const safetyCheck = await checkTradeSafety({
+  wallet_address: walletAddress,
+  input_amount: amount,
+  amount_usd: amountUsd,
+  // ... other fields
+});
+
+if (safetyCheck?.allowed) {
+  // Execute trade
+  await executeTrade();
+  // Record trade
+  await approveTrade(walletAddress);
+}
+```
+
+### Integration with Existing Trade Flow
+
+1. Before displaying trade confirmation modal, check safety policies
+2. Display violations and warnings in confirmation UI
+3. Show cooldown timer if wallet is on cooldown
+4. Present transaction simulation results
+5. Offer insurance if trade exceeds threshold
+6. Display MEV protection suggestions
+7. After successful trade, record trade for cooldown tracking
+
+### Security Best Practices
+
+1. **Fail-Safe**: Default to blocking trades if safety checks fail
+2. **User Control**: Users can disable safety mode entirely in settings
+3. **Transparency**: All violations clearly displayed with explanations
+4. **Flexibility**: Most limits are configurable and can be disabled
+5. **Insurance**: Optional but recommended for large trades
+6. **MEV Protection**: Integrated suggestions for Jito bundles and private RPCs
+
 ## Future Enhancements
 
 1. Per-trade 2FA enforcement thresholds
@@ -393,4 +582,8 @@ const { audit, loading, refresh } = useSecurityAudit({
 9. Historical audit tracking and comparison
 10. Automated alerts for new security findings
 11. Community-driven security reports
-12. Smart contract simulation before execution
+12. Smart contract simulation before execution (✅ Implemented)
+13. Time-delayed withdrawals for large amounts
+14. Multi-signature requirement for high-value trades
+15. Automated circuit breakers during high volatility
+16. Integration with real-time insurance oracle pricing
