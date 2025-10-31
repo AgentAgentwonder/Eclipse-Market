@@ -29,7 +29,6 @@ import {
   Clock,
   Wrench,
   Terminal,
-  Rocket,
   } from 'lucide-react';
 
 import { ShortcutCheatSheet } from './components/common/ShortcutCheatSheet';
@@ -76,6 +75,7 @@ import DeFi from './pages/DeFi';
 import Governance from './pages/Governance';
 import HistoricalReplay from './pages/HistoricalReplay';
 import Troubleshooter from './pages/Troubleshooter';
+import SocialDashboard from './pages/Social/Dashboard';
 import { BIOMETRIC_STATUS_EVENT } from './constants/events';
 import { useWalletStore } from './store/walletStore';
 import { usePaperTradingStore } from './store/paperTradingStore';
@@ -564,6 +564,7 @@ function App() {
       { id: 'token-flow', label: 'Token Flow', icon: Network, component: TokenFlow },
       { id: 'launchpad', label: 'Launchpad', icon: Rocket, component: Launchpad },
       { id: 'surveillance', label: 'Market Surveillance', icon: AlertTriangle, component: MarketSurveillance },
+      { id: 'social', label: 'Social Intel', icon: MessageSquare, component: SocialDashboard, panelType: 'social' as PanelType },
       {
         id: 'trading',
         label: isPaperMode ? 'Live Trading' : 'Trading',
@@ -663,6 +664,7 @@ function App() {
         case 'nav:coins':
         case 'nav:portfolio':
         case 'nav:trading':
+        case 'nav:social':
         case 'nav:defi':
         case 'nav:settings':
           navigateToPage(action.split(':')[1]);

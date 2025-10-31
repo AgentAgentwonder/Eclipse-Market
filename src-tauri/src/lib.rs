@@ -36,6 +36,7 @@ mod portfolio;
 mod recovery;
 mod security;
 mod sentiment;
+mod social;
 mod stocks;
 mod stream_commands;
 mod tax;
@@ -90,6 +91,7 @@ pub use notifications::*;
 pub use portfolio::*;
 pub use recovery::*;
 pub use sentiment::*;
+pub use social::*;
 pub use stocks::*;
 pub use tax::*;
 pub use token_flow::*;
@@ -579,6 +581,11 @@ pub fn run() {
              let sentiment_state: sentiment::SharedSentimentManager = Arc::new(RwLock::new(sentiment_manager));
              app.manage(sentiment_state.clone());
 
+             // Initialize social intelligence engine
+             let social_intel_engine = SocialIntelEngine::default();
+             let social_state: SharedSocialIntelEngine = Arc::new(RwLock::new(social_intel_engine));
+             app.manage(social_state.clone());
+
              // Initialize anomaly detector
              let anomaly_detector = anomalies::AnomalyDetector::new();
              let anomaly_state: anomalies::SharedAnomalyDetector = Arc::new(RwLock::new(anomaly_detector));
@@ -1028,6 +1035,22 @@ pub fn run() {
             get_sentiment_alert_config,
             dismiss_sentiment_alert,
             fetch_social_mentions,
+            get_social_sentiment,
+            get_social_trending_tokens,
+            get_influencer_mentions,
+            get_influencer_profiles,
+            get_influencer_leaderboard,
+            track_influencer,
+            get_whale_activity,
+            track_whale_wallet,
+            get_whale_profile,
+            get_fomo_fud_scores,
+            get_social_sentiment_history,
+            search_social,
+            get_community_stats,
+            get_holder_analysis,
+            configure_social_alerts,
+            get_social_alert_configuration,
             get_token_risk_score,
             get_risk_history,
             get_latest_risk_score,
