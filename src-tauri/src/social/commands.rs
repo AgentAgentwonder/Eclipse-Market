@@ -2,6 +2,7 @@ use tauri::State;
 
 use crate::security::keystore::Keystore;
 
+use super::analysis::{AnalysisSummary, GaugeReading, InfluencerScore, SentimentSnapshot as AnalysisSentimentSnapshot, SharedSocialAnalysisService, TrendRecord};
 use super::cache::{MentionAggregate, TrendSnapshot};
 use super::models::{SocialFetchResult, SocialPost};
 use super::service::SharedSocialDataService;
@@ -143,6 +144,94 @@ pub async fn social_cleanup_old_posts(
 ) -> Result<i64, String> {
     let srv = service.read().await;
     srv.cleanup_old_posts(days)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn social_run_sentiment_analysis(
+    token: String,
+    analysis_service: State<'_, SharedSocialAnalysisService>,
+) -> Result<AnalysisSummary, String> {
+    let mut srv = analysis_service.write().await;
+    srv.run_full_analysis(&token)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn social_run_full_analysis_all(
+    analysis_service: State<'_, SharedSocialAnalysisService>,
+) -> Result<AnalysisSummary, String> {
+    let mut srv = analysis_service.write().await;
+    srv.run_analysis_all()
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn social_get_sentiment_snapshot(
+    token: String,
+    analysis_service: State<'_, SharedSocialAnalysisService>,
+) -> Result<Option<AnalysisSentimentSnapshot>, String> {
+    let srv = analysis_service.read().await;
+    srv.get_sentiment_snapshot(&token)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn social_get_sentiment_snapshots(
+    token: Option<String>,
+    analysis_service: State<'_, SharedSocialAnalysisService>,
+) -> Result<Vec<AnalysisSentimentSnapshot>, String> {
+    let srv = analysis_service.read().await;
+    srv.get_sentiment_snapshots(token.as_deref())
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn social_get_trending_tokens(
+    window: Option<i64>,
+    analysis_service: State<'_, SharedSocialAnalysisService>,
+) -> Result<Vec<TrendRecord>, String> {
+    let srv = analysis_service.read().await;
+    srv.get_trending_tokens(window)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn social_get_token_trends(
+    token: String,
+    analysis_service: State<'_, SharedSocialAnalysisService>,
+) -> Result<Vec<TrendRecord>, String> {
+    let srv = analysis_service.read().await;
+    srv.get_token_trends(&token)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn social_get_influencer_scores(
+    token: Option<String>,
+    min_impact: Option<f32>,
+    analysis_service: State<'_, SharedSocialAnalysisService>,
+) -> Result<Vec<InfluencerScore>, String> {
+    let srv = analysis_service.read().await;
+    srv.get_influencer_scores(token.as_deref(), min_impact)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn social_get_fomo_fud(
+    token: Option<String>,
+    analysis_service: State<'_, SharedSocialAnalysisService>,
+) -> Result<Vec<GaugeReading>, String> {
+    let srv = analysis_service.read().await;
+    srv.get_fomo_fud_gauges(token.as_deref())
         .await
         .map_err(|e| e.to_string())
 }

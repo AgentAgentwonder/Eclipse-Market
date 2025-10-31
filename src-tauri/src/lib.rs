@@ -626,6 +626,33 @@ pub fn run() {
              let social_state: SharedSocialDataService = Arc::new(RwLock::new(social_service));
              app.manage(social_state.clone());
 
+             // Initialize social analysis service
+             let mut social_data_dir = app
+                 .path_resolver()
+                 .app_data_dir()
+                 .ok_or_else(|| "Unable to resolve app data directory".to_string())?;
+             social_data_dir.push("social");
+             std::fs::create_dir_all(&social_data_dir)
+                 .map_err(|e| format!("Failed to create social data directory: {e}"))?;
+
+             let social_cache = tauri::async_runtime::block_on(async {
+                 social::SocialCache::new(social_data_dir).await
+             }).map_err(|e| {
+                 eprintln!("Failed to initialize social cache for analysis: {e}");
+                 Box::new(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())) as Box<dyn Error>
+             })?;
+
+             let mut analysis_service = social::SocialAnalysisService::new(social_cache);
+             tauri::async_runtime::block_on(async {
+                 analysis_service.initialize().await
+             }).map_err(|e| {
+                 eprintln!("Failed to initialize social analysis service: {e}");
+                 Box::new(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())) as Box<dyn Error>
+             })?;
+
+             let analysis_state: social::SharedSocialAnalysisService = Arc::new(RwLock::new(analysis_service));
+             app.manage(analysis_state.clone());
+
              // Initialize anomaly detector
              let anomaly_detector = anomalies::AnomalyDetector::new();
              let anomaly_state: anomalies::SharedAnomalyDetector = Arc::new(RwLock::new(anomaly_detector));
@@ -1089,6 +1116,14 @@ pub fn run() {
             social_create_trend_snapshot,
             social_set_twitter_bearer_token,
             social_cleanup_old_posts,
+            social_run_sentiment_analysis,
+            social_run_full_analysis_all,
+            social_get_sentiment_snapshot,
+            social_get_sentiment_snapshots,
+            social_get_trending_tokens,
+            social_get_token_trends,
+            social_get_influencer_scores,
+            social_get_fomo_fud,
             // Launch Predictor
             extract_token_features,
             predict_launch_success,
