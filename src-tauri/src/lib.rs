@@ -16,6 +16,7 @@ mod chart_stream;
 mod compiler;
 mod config;
 mod core;
+mod diagnostics;
 mod data;
 mod defi;
 mod dev_tools;
@@ -35,6 +36,7 @@ mod security;
 mod sentiment;
 mod stocks;
 mod stream_commands;
+mod tax;
 mod token_flow;
 mod trading;
 mod tray;
@@ -81,6 +83,7 @@ pub use portfolio::*;
 pub use recovery::*;
 pub use sentiment::*;
 pub use stocks::*;
+pub use tax::*;
 pub use token_flow::*;
 pub use trading::*;
 pub use tray::*;
@@ -213,6 +216,8 @@ pub fn run() {
                 eprintln!("Failed to initialize keystore: {e}");
                 Box::new(e) as Box<dyn Error>
             })?;
+
+            let tax_engine = tax::initialize_tax_engine(&keystore);
 
             let audit_cache = AuditCache::new();
             app.manage(audit_cache);
@@ -408,6 +413,7 @@ pub fn run() {
              app.manage(std::sync::Mutex::new(portfolio_data));
              app.manage(std::sync::Mutex::new(rebalancer_state));
              app.manage(std::sync::Mutex::new(tax_lots_state));
+             app.manage(tax_engine.clone());
 
              // Initialize new coins scanner
              let new_coins_scanner = tauri::async_runtime::block_on(async {
@@ -750,6 +756,25 @@ pub fn run() {
               let shared_prediction_service: market::SharedPredictionMarketService = Arc::new(RwLock::new(prediction_service));
               app.manage(shared_prediction_service.clone());
 
+              // Initialize diagnostics engine
+              let diagnostics_engine = diagnostics::tauri_commands::initialize_diagnostics_engine(&app.handle())
+                  .map_err(|e| {
+                      eprintln!("Failed to initialize diagnostics engine: {e}");
+                      Box::new(std::io::Error::new(std::io::ErrorKind::Other, e)) as Box<dyn Error>
+                  })?;
+              app.manage(diagnostics_engine.clone());
+
+              let diagnostics_state = diagnostics_engine.clone();
+              tauri::async_runtime::spawn(async move {
+                  use tokio::time::{sleep, Duration};
+                  loop {
+                      {
+                          let mut engine = diagnostics_state.write().await;
+                          let _ = engine.run_full_diagnostics().await;
+                      }
+                      sleep(Duration::from_secs(60 * 60)).await;
+                  }
+              });
               // Initialize dev tools
               let logger = logger::ComprehensiveLogger::new(&app.handle())
                   .map_err(|e| {
@@ -990,6 +1015,9 @@ pub fn run() {
             generate_tax_report,
             export_tax_report,
             get_tax_loss_harvesting_suggestions,
+            get_tax_center_summary,
+            update_tax_settings,
+            export_tax_center_report,
             calculate_portfolio_analytics,
             get_concentration_alerts,
             get_sector_allocation,
@@ -1529,6 +1557,21 @@ pub fn run() {
             mobile_get_widget_data,
             mobile_get_all_widgets,
 
+            // Diagnostics & Troubleshooter
+            diagnostics::tauri_commands::run_diagnostics,
+            diagnostics::tauri_commands::get_health_report,
+            diagnostics::tauri_commands::auto_repair_issue,
+            diagnostics::tauri_commands::auto_repair,
+            diagnostics::tauri_commands::verify_integrity,
+            diagnostics::tauri_commands::manual_repair,
+            diagnostics::tauri_commands::download_missing,
+            diagnostics::tauri_commands::restore_defaults,
+            diagnostics::tauri_commands::get_repair_history,
+            diagnostics::tauri_commands::get_diagnostics_settings,
+            diagnostics::tauri_commands::save_diagnostics_settings,
+            diagnostics::tauri_commands::backup_before_repair,
+            diagnostics::tauri_commands::rollback_repair,
+            diagnostics::tauri_commands::export_diagnostics_report,
             // Dev Tools
             compile_now,
             get_build_status,

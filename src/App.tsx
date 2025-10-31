@@ -26,6 +26,7 @@ import {
   MessageSquare,
   PieChart,
   Clock,
+  Wrench,
   } from 'lucide-react';
 
 import { ShortcutCheatSheet } from './components/common/ShortcutCheatSheet';
@@ -68,6 +69,7 @@ import MultiChain from './pages/MultiChain';
 import PredictionMarkets from './pages/PredictionMarkets';
 import DeFi from './pages/DeFi';
 import HistoricalReplay from './pages/HistoricalReplay';
+import Troubleshooter from './pages/Troubleshooter';
 import { BIOMETRIC_STATUS_EVENT } from './constants/events';
 import { useWalletStore } from './store/walletStore';
 import { usePaperTradingStore } from './store/paperTradingStore';
@@ -382,6 +384,15 @@ function App() {
         keywords: ['historical', 'replay', 'backtest', 'time machine'],
       },
       {
+        id: 'nav-troubleshooter',
+        title: 'System Troubleshooter',
+        description: 'Detect and fix system issues',
+        category: 'system' as const,
+        action: () => setCurrentPage('troubleshooter'),
+        shortcutId: 'nav:troubleshooter',
+        keywords: ['troubleshooter', 'repair', 'diagnostics', 'fix', 'issues', 'health'],
+      },
+      {
         id: 'toggle-sidebar',
         title: 'Toggle Sidebar',
         description: 'Show or hide the navigation sidebar',
@@ -549,6 +560,7 @@ function App() {
       { id: 'defi', label: 'DeFi', icon: BanknoteIcon, component: DeFi, panelType: 'defi' as PanelType },
       { id: 'historical-replay', label: 'Historical Replay', icon: Clock, component: HistoricalReplay, panelType: 'historical-replay' as PanelType },
       { id: 'api-health', label: 'API Health', icon: Activity, component: ApiHealth, panelType: 'api-health' as PanelType },
+      { id: 'troubleshooter', label: 'Troubleshooter', icon: Wrench, component: Troubleshooter, panelType: 'troubleshooter' as PanelType },
       { id: 'dev-console', label: 'Dev Console', icon: Terminal, component: DevConsole, panelType: 'dev-console' as PanelType },
       { id: 'settings', label: 'Settings', icon: Settings, component: SettingsPage, panelType: 'settings' as PanelType },
       { id: 'advanced-settings', label: 'Advanced Settings', icon: LayoutGrid, component: AdvancedSettings, panelType: 'settings' as PanelType },
