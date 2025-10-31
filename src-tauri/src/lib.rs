@@ -100,6 +100,7 @@ use wallet::performance::{PerformanceDatabase, SharedPerformanceDatabase};
 use security::keystore::Keystore;
 use security::activity_log::ActivityLogger;
 use security::audit::AuditCache;
+use security::reputation::{ReputationEngine, SharedReputationEngine};
 use data::event_store::{EventStore, SharedEventStore};
 use data::historical::{HistoricalReplayManager, SharedHistoricalReplayManager};
 use auth::session_manager::SessionManager;
@@ -220,6 +221,17 @@ pub fn run() {
             })?;
 
             let cleanup_logger = activity_logger.clone();
+
+            // Initialize reputation engine
+            let reputation_engine = tauri::async_runtime::block_on(async {
+                ReputationEngine::new(&app.handle()).await
+            }).map_err(|e| {
+                eprintln!("Failed to initialize reputation engine: {e}");
+                Box::new(e) as Box<dyn Error>
+            })?;
+
+            let shared_reputation_engine: SharedReputationEngine = Arc::new(RwLock::new(reputation_engine));
+            app.manage(shared_reputation_engine.clone());
 
             // Initialize API config manager
             let api_config_manager = api_config::ApiConfigManager::new();
@@ -1064,6 +1076,24 @@ pub fn run() {
             security::audit::get_cached_audit,
             security::audit::clear_audit_cache,
             security::audit::check_risk_threshold,
+
+            // Reputation System
+            security::reputation::get_wallet_reputation,
+            security::reputation::get_token_reputation,
+            security::reputation::update_wallet_behavior,
+            security::reputation::initialize_token_reputation,
+            security::reputation::update_token_metrics,
+            security::reputation::add_vouch,
+            security::reputation::remove_vouch,
+            security::reputation::get_vouches,
+            security::reputation::add_to_blacklist,
+            security::reputation::remove_from_blacklist,
+            security::reputation::get_blacklist,
+            security::reputation::submit_reputation_report,
+            security::reputation::get_reputation_history,
+            security::reputation::get_reputation_stats,
+            security::reputation::get_reputation_settings,
+            security::reputation::update_reputation_settings,
 
             // Performance & Diagnostics
             get_performance_metrics,
