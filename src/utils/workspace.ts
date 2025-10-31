@@ -59,7 +59,9 @@ const panelTitles: Record<PanelType, string> = {
   'ai-analysis': 'AI Assistant',
   'prediction-markets': 'Prediction Markets',
   defi: 'DeFi Hub',
+  'historical-replay': 'Historical Replay',
   settings: 'Settings',
+  'dev-console': 'Developer Console',
 };
 
 export const createPanelDefinition = (type: PanelType, width = 6, height = 8) => {

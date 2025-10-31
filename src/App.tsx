@@ -60,6 +60,7 @@ import Wallet from './pages/Wallet';
 import { MarketSurveillance } from './pages/MarketSurveillance';
 import { PaperTradingDashboard } from './pages/PaperTrading/Dashboard';
 import { AIAnalysis } from './pages/AIAnalysis';
+import DevConsole from './pages/DevConsole';
 import SettingsPage from './pages/Settings';
 import AdvancedSettings from './pages/Settings/AdvancedSettings';
 import MultiChain from './pages/MultiChain';
@@ -539,6 +540,7 @@ function App() {
       { id: 'defi', label: 'DeFi', icon: BanknoteIcon, component: DeFi, panelType: 'defi' as PanelType },
       { id: 'historical-replay', label: 'Historical Replay', icon: Clock, component: HistoricalReplay, panelType: 'historical-replay' as PanelType },
       { id: 'api-health', label: 'API Health', icon: Activity, component: ApiHealth, panelType: 'api-health' as PanelType },
+      { id: 'dev-console', label: 'Dev Console', icon: Terminal, component: DevConsole, panelType: 'dev-console' as PanelType },
       { id: 'settings', label: 'Settings', icon: Settings, component: SettingsPage, panelType: 'settings' as PanelType },
       { id: 'advanced-settings', label: 'Advanced Settings', icon: LayoutGrid, component: AdvancedSettings, panelType: 'settings' as PanelType },
     ];
