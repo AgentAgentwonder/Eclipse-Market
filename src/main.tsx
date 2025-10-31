@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import * as Sentry from '@sentry/react';
 import { BrowserTracing } from '@sentry/tracing';
-import App from './App';
+import { ResponsiveRoot } from './ResponsiveRoot';
 import { SolanaWalletProvider } from './providers/SolanaWalletProvider';
 import { StreamProvider } from './contexts/StreamContext';
 import { useThemeStore } from './store/themeStore';
@@ -40,7 +40,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <SolanaWalletProvider>
         <DiagnosticsProvider>
           <ErrorBoundary>
-            <App />
+            <ResponsiveRoot />
           </ErrorBoundary>
         </DiagnosticsProvider>
       </SolanaWalletProvider>

@@ -26,6 +26,7 @@ mod indicators;
 mod insiders;
 mod logger;
 mod market;
+mod mobile;
 mod monitor;
 mod notifications;
 mod portfolio;
@@ -73,6 +74,7 @@ pub use indicators::*;
 pub use insiders::*;
 pub use logger::*;
 pub use market::*;
+pub use mobile::*;
 pub use monitor::*;
 pub use notifications::*;
 pub use portfolio::*;
@@ -134,6 +136,16 @@ use core::cache_manager::{CacheType, SharedCacheManager};
 use market::{HolderAnalyzer, SharedHolderAnalyzer};
 use chains::{ChainManager, SharedChainManager};
 use bridges::{BridgeManager, SharedBridgeManager};
+use mobile::{
+    MobileAuthManager,
+    MobileSyncManager,
+    MobileTradeEngine,
+    PushNotificationManager,
+    WidgetManager,
+    SharedMobileAuthManager,
+    SharedMobileSyncManager,
+    SharedPushNotificationManager,
+};
 use voice::commands::{SharedVoiceState, VoiceState};
 use config::settings_manager::{SettingsManager, SharedSettingsManager};
 
@@ -774,14 +786,48 @@ pub fn run() {
 
               shared_logger.info("Dev tools initialized successfully", None);
 
+              // Initialize mobile managers
+              let mut mobile_data_dir = app
+                  .path_resolver()
+                  .app_data_dir()
+                  .ok_or_else(|| "Unable to resolve app data directory".to_string())?;
+              mobile_data_dir.push("mobile");
+              std::fs::create_dir_all(&mobile_data_dir)
+                  .map_err(|e| format!("Failed to create mobile directory: {e}"))?;
+
+              let mut mobile_auth_manager = MobileAuthManager::new(mobile_data_dir.clone());
+              tauri::async_runtime::block_on(mobile_auth_manager.load())
+                  .map_err(|e| {
+                      eprintln!("Failed to load mobile auth manager: {e}");
+                      Box::new(std::io::Error::new(std::io::ErrorKind::Other, e)) as Box<dyn Error>
+                  })?;
+              let mobile_auth_state: SharedMobileAuthManager = Arc::new(RwLock::new(mobile_auth_manager));
+              app.manage(mobile_auth_state.clone());
+
+              let push_notification_manager = PushNotificationManager::new(1000);
+              let push_notification_state: SharedPushNotificationManager = Arc::new(RwLock::new(push_notification_manager));
+              app.manage(push_notification_state.clone());
+
+              let mobile_sync_manager = MobileSyncManager::new();
+              let mobile_sync_state: SharedMobileSyncManager = Arc::new(RwLock::new(mobile_sync_manager));
+              app.manage(mobile_sync_state.clone());
+
+              let mobile_trade_engine = MobileTradeEngine::new();
+              let mobile_trade_state: Arc<RwLock<MobileTradeEngine>> = Arc::new(RwLock::new(mobile_trade_engine));
+              app.manage(mobile_trade_state.clone());
+
+              let widget_manager = WidgetManager::new();
+              let widget_state: Arc<RwLock<WidgetManager>> = Arc::new(RwLock::new(widget_manager));
+              app.manage(widget_state.clone());
+
               Ok(())
               })
 
-             // Wallet
-             phantom_connect,
-             phantom_disconnect,
+              // Wallet
+              phantom_connect,
+              phantom_disconnect,
 
-            phantom_sign_message,
+              phantom_sign_message,
             phantom_sign_transaction,
             phantom_balance,
             list_hardware_wallets,
@@ -1462,6 +1508,26 @@ pub fn run() {
             theme_export,
             theme_import,
             theme_get_os_preference,
+
+            // Mobile companion commands
+            mobile_register_device,
+            mobile_create_biometric_challenge,
+            mobile_verify_biometric,
+            mobile_authenticate_session,
+            mobile_revoke_session,
+            mobile_update_push_token,
+            mobile_get_devices,
+            mobile_remove_device,
+            mobile_queue_notification,
+            mobile_get_pending_notifications,
+            mobile_dequeue_notification,
+            mobile_sync_data,
+            mobile_get_last_sync,
+            mobile_get_cached_sync_data,
+            mobile_execute_quick_trade,
+            mobile_safety_checks,
+            mobile_get_widget_data,
+            mobile_get_all_widgets,
 
             // Dev Tools
             compile_now,
