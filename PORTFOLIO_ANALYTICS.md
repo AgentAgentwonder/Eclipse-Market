@@ -178,13 +178,13 @@ Uses `useOrderFormSuggestionStore` to communicate between calculators and order 
 
 ### Unit Tests (TypeScript)
 
-Located in `src/__tests__/calculators.test.ts`:
+Located in `src/__tests__/calculators.test.ts` and `src/__tests__/portfolioAnalytics.test.tsx`:
 
 ```bash
 npm run test
 ```
 
-Tests cover:
+**Calculator Tests** (`calculators.test.ts`):
 - Position size calculation
 - Kelly Criterion formula
 - Leverage handling
@@ -198,21 +198,62 @@ Tests cover:
 - Short-term vs long-term classification
 - Tax loss harvesting savings
 
+**Portfolio Analytics Tests** (`portfolioAnalytics.test.tsx`):
+- Analytics page rendering and loading states
+- Correlation matrix display and calculations
+- Diversification metrics visualization
+- Sharpe ratio calculations and status indicators
+- Factor analysis display
+- Concentration alerts rendering and dismissal
+- Sector allocation breakdown
+- Export functionality
+- Cache clearing and refresh behavior
+- Error handling for API failures
+- Empty portfolio state handling
+- Concentration risk level categorization
+
 ### Integration Tests (Rust)
 
-Located in `src-tauri/src/portfolio/`:
+Located in `src-tauri/src/portfolio/analytics.rs` and `src-tauri/src/portfolio/rebalancer.rs`:
 
 ```bash
 cd src-tauri && cargo test --lib
 ```
 
-Tests cover:
+**Analytics Module Tests**:
+- `test_calculate_returns`: Verifies return calculation from price series
+- `test_mean_and_variance`: Statistical functions accuracy
+- `test_correlation`: Pearson correlation coefficient calculation
+- `test_correlation_matrix`: Pairwise correlation matrix generation
+- `test_diversification_score`: Diversification metrics computation
+- `test_risk_concentration`: Position concentration classification
+- `test_sharpe_ratio`: Risk-adjusted performance metrics
+- `test_concentration_alerts`: Alert generation for over-concentrated positions
+- `test_sector_classification`: Automatic sector categorization
+- `test_sector_allocation`: Sector-wise position aggregation
+- `test_cache_operations`: Cache storage and retrieval with TTL
+
+**Rebalancer Module Tests**:
 - Rebalancer action detection
 - Portfolio allocation adjustment
 - Deviation trigger detection
 - Tax lot disposal
 - Tax report generation (short/long-term separation)
 - Tax loss harvesting detection
+
+### UI Snapshot Tests
+
+UI components can be snapshot tested using:
+
+```bash
+npm run test -- --update-snapshot
+```
+
+Components with snapshot tests:
+- `CorrelationHeatmap`: Heatmap rendering and color scheme
+- `SectorAllocationChart`: Pie chart and sector breakdown
+- `RiskDiversificationSummary`: Metric cards and indicators
+- `ConcentrationAlerts`: Alert cards and severity badges
 
 ## Data Models
 
@@ -376,15 +417,146 @@ suggestions.forEach(s => {
 - Tax lot queries use efficient filtering to avoid full table scans
 - History logs are limited to the most recent 100 entries
 
+### 6. Advanced Portfolio Analytics (`/portfolio-analytics`)
+
+The advanced analytics page provides comprehensive portfolio analysis with real-time risk metrics, diversification scoring, and correlation analysis.
+
+**Features**:
+- **Correlation Matrix Heatmap**: Visual representation of pairwise asset correlations
+  - Color-coded heat map (red = strong positive, blue = strong negative)
+  - Interactive hover for detailed correlation values
+  - Automatic calculation using historical price data
+  
+- **Diversification Metrics**:
+  - Diversification Score (0-100): Overall portfolio diversity measure
+  - Effective N: Number of truly independent positions
+  - Average Correlation: Mean pairwise correlation across portfolio
+  - Concentration Risk (Herfindahl Index): Position concentration measure
+
+- **Risk-Adjusted Performance**:
+  - **Sharpe Ratio**: Risk-adjusted returns calculation
+  - Annualized return and volatility metrics
+  - Risk-free rate configurable (default: 3%)
+  - Performance status indicators (Excellent, Good, Fair, Caution, Negative)
+
+- **Factor Analysis**:
+  - Market Beta: Portfolio sensitivity to market movements
+  - Factor Exposures: Market, Size, Momentum factors
+  - Systematic vs. Specific Risk decomposition
+  - Individual factor beta coefficients
+
+- **Sector Allocation**:
+  - Automatic sector classification (Layer 1, DeFi, Meme, Stablecoin, etc.)
+  - Sector-wise allocation breakdown with pie chart
+  - Symbol groupings by sector
+  - Dollar value allocation per sector
+
+- **Concentration Risk Alerts**:
+  - Real-time alerts for over-concentrated positions
+  - Four severity levels: Low, Medium, High, Critical
+  - Threshold-based warnings (30% and 40% allocation)
+  - Actionable recommendations for rebalancing
+  - Dismissible alert notifications
+
+**Tauri Commands**:
+```typescript
+// Calculate comprehensive portfolio analytics
+calculate_portfolio_analytics({
+  positions: Position[],
+  timeSeries: Record<string, PricePoint[]>,
+  riskFreeRate?: number
+}): Promise<PortfolioAnalytics>
+
+// Get concentration risk alerts
+get_concentration_alerts({
+  positions: Position[]
+}): Promise<ConcentrationAlert[]>
+
+// Get sector allocation breakdown
+get_sector_allocation({
+  positions: Position[]
+}): Promise<SectorAllocation[]>
+
+// Clear analytics cache (force recalculation)
+clear_portfolio_cache(): Promise<void>
+```
+
+**Analytics Data Models**:
+```typescript
+interface PortfolioAnalytics {
+  correlation: CorrelationMatrix
+  diversification: DiversificationMetrics
+  concentration: RiskConcentration[]
+  sharpe: SharpeMetrics
+  factors: FactorAnalysis
+  calculatedAt: string
+}
+
+interface CorrelationMatrix {
+  symbols: string[]
+  matrix: number[][]  // NxN correlation matrix
+  calculatedAt: string
+}
+
+interface DiversificationMetrics {
+  score: number              // 0-100
+  effectiveN: number         // Effective number of positions
+  avgCorrelation: number     // Mean pairwise correlation
+  concentrationRisk: number  // Herfindahl index
+}
+
+interface SharpeMetrics {
+  sharpeRatio: number
+  annualizedReturn: number
+  annualizedVolatility: number
+  riskFreeRate: number
+}
+
+interface ConcentrationAlert {
+  id: string
+  symbol: string
+  allocation: number
+  severity: 'warning' | 'critical'
+  message: string
+  threshold: number
+  createdAt: string
+}
+```
+
+**Caching**:
+- Analytics calculations are cached for 5 minutes (300 seconds)
+- Automatic cache invalidation on time expiry
+- Manual cache clearing available via refresh button
+- Cache key based on position symbols for efficient lookup
+
+**Statistical Calculations**:
+- **Correlation**: Pearson correlation coefficient using return series
+- **Diversification Score**: `(Effective N / N) × (1 - |Avg Correlation|) × 100`
+- **Effective N**: `1 / Herfindahl Index`
+- **Sharpe Ratio**: `(Portfolio Return - Risk-free Rate) / Portfolio Volatility`
+- **Factor Analysis**: Multi-factor regression model (Market, Size, Momentum)
+
+**Export Functionality**:
+- Export full analytics report as JSON
+- Includes all metrics, alerts, and sector data
+- Timestamped export files
+- Compatible with portfolio tracking tools
+
 ## Future Enhancements
 
 - Real-time price updates via WebSocket integration
-- Advanced analytics: Sharpe ratio, max drawdown, volatility
-- Backtesting rebalance strategies
+- Value at Risk (VaR) and Conditional VaR calculations
+- Maximum drawdown analysis with recovery period tracking
+- Monte Carlo portfolio simulation
+- Backtesting rebalance strategies with historical data
 - Multi-account portfolio consolidation
-- Integration with external portfolio trackers
+- Integration with external portfolio trackers (Zapper, DeBank)
 - Mobile-responsive portfolio dashboard
 - CSV import for historical transactions
+- Benchmark comparison (SPY, BTC, custom indices)
+- Portfolio optimization using Modern Portfolio Theory
+- Tax-aware rebalancing recommendations
+- ESG (Environmental, Social, Governance) scoring
 
 ## Support
 

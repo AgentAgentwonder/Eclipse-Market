@@ -39,6 +39,7 @@ export type PanelType =
   | 'insiders'
   | 'trading'
   | 'portfolio'
+  | 'portfolio-analytics'
   | 'multisig'
   | 'api-health'
   | 'pro-charts'
@@ -49,7 +50,10 @@ export type PanelType =
   | 'prediction-markets'
   | 'defi'
   | 'historical-replay'
+  | 'troubleshooter'
   | 'settings';
+  | 'settings'
+  | 'dev-console';
 
 export interface Monitor {
   id: string;

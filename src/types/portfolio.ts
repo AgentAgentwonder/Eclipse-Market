@@ -207,3 +207,80 @@ export interface WeeklyUpdate {
     beta: number;
   };
 }
+
+// Portfolio Analytics Types
+
+export interface CorrelationMatrix {
+  symbols: string[];
+  matrix: number[][];
+  calculatedAt: string;
+}
+
+export interface DiversificationMetrics {
+  score: number;
+  effectiveN: number;
+  avgCorrelation: number;
+  concentrationRisk: number;
+}
+
+export interface RiskConcentration {
+  symbol: string;
+  allocation: number;
+  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  recommendation: string;
+}
+
+export interface SharpeMetrics {
+  sharpeRatio: number;
+  annualizedReturn: number;
+  annualizedVolatility: number;
+  riskFreeRate: number;
+}
+
+export interface FactorExposure {
+  name: string;
+  beta: number;
+  exposure: number;
+}
+
+export interface FactorAnalysis {
+  factors: FactorExposure[];
+  marketBeta: number;
+  systematicRisk: number;
+  specificRisk: number;
+}
+
+export interface PortfolioAnalytics {
+  correlation: CorrelationMatrix;
+  diversification: DiversificationMetrics;
+  concentration: RiskConcentration[];
+  sharpe: SharpeMetrics;
+  factors: FactorAnalysis;
+  calculatedAt: string;
+}
+
+export interface SectorAllocation {
+  sector: string;
+  allocation: number;
+  value: number;
+  symbols: string[];
+}
+
+export interface ConcentrationAlert {
+  id: string;
+  symbol: string;
+  allocation: number;
+  severity: 'warning' | 'critical';
+  message: string;
+  threshold: number;
+  createdAt: string;
+}
+
+export interface PricePoint {
+  timestamp: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
