@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   LineChart,
   Network,
+  Banknote as BanknoteIcon,
   Wallet as WalletIcon,
   LayoutGrid,
   ArrowRightLeft,
@@ -63,6 +64,7 @@ import SettingsPage from './pages/Settings';
 import AdvancedSettings from './pages/Settings/AdvancedSettings';
 import MultiChain from './pages/MultiChain';
 import PredictionMarkets from './pages/PredictionMarkets';
+import DeFi from './pages/DeFi';
 import HistoricalReplay from './pages/HistoricalReplay';
 import { BIOMETRIC_STATUS_EVENT } from './constants/events';
 import { useWalletStore } from './store/walletStore';
@@ -283,6 +285,15 @@ function App() {
         action: () => setCurrentPage('trading'),
         shortcutId: 'nav:trading',
         keywords: ['trade', 'buy', 'sell', 'swap'],
+      },
+      {
+        id: 'nav-defi',
+        title: 'DeFi Hub',
+        description: 'Navigate to DeFi control center',
+        category: 'navigation' as const,
+        action: () => setCurrentPage('defi'),
+        shortcutId: 'nav:defi',
+        keywords: ['lending', 'yield', 'defi'],
       },
       {
         id: 'nav-settings',
@@ -525,6 +536,7 @@ function App() {
       { id: 'pro-charts', label: 'Pro Charts', icon: LineChart, component: ProCharts, panelType: 'pro-charts' as PanelType },
       { id: 'ai-analysis', label: 'AI Assistant', icon: MessageSquare, component: AIAnalysis, panelType: 'ai-analysis' as PanelType },
       { id: 'prediction-markets', label: 'Prediction Markets', icon: PieChart, component: PredictionMarkets, panelType: 'prediction-markets' as PanelType },
+      { id: 'defi', label: 'DeFi', icon: BanknoteIcon, component: DeFi, panelType: 'defi' as PanelType },
       { id: 'historical-replay', label: 'Historical Replay', icon: Clock, component: HistoricalReplay, panelType: 'historical-replay' as PanelType },
       { id: 'api-health', label: 'API Health', icon: Activity, component: ApiHealth, panelType: 'api-health' as PanelType },
       { id: 'settings', label: 'Settings', icon: Settings, component: SettingsPage, panelType: 'settings' as PanelType },
@@ -609,6 +621,7 @@ function App() {
         case 'nav:coins':
         case 'nav:portfolio':
         case 'nav:trading':
+        case 'nav:defi':
         case 'nav:settings':
           navigateToPage(action.split(':')[1]);
           emitShortcutAction(action);

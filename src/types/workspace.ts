@@ -47,6 +47,7 @@ export type PanelType =
   | 'paper-trading'
   | 'ai-analysis'
   | 'prediction-markets'
+  | 'defi'
   | 'historical-replay'
   | 'settings';
 

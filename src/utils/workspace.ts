@@ -58,6 +58,7 @@ const panelTitles: Record<PanelType, string> = {
   'paper-trading': 'Paper Trading',
   'ai-analysis': 'AI Assistant',
   'prediction-markets': 'Prediction Markets',
+  defi: 'DeFi Hub',
   settings: 'Settings',
 };
 

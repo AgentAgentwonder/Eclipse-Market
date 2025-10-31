@@ -19,6 +19,7 @@ mod drawings;
 mod indicators;
 mod insiders;
 mod data;
+mod defi;
 mod market;
 mod notifications;
 mod portfolio;
@@ -58,6 +59,7 @@ pub use drawings::*;
 pub use indicators::*;
 pub use insiders::*;
 pub use data::*;
+pub use defi::*;
 pub use market::*;
 pub use notifications::*;
 pub use portfolio::*;
@@ -1196,6 +1198,33 @@ pub fn run() {
             stocks::get_insider_activity,
             stocks::create_stock_alert,
             stocks::get_stock_alerts,
+
+            // DeFi commands
+            get_solend_reserves,
+            get_solend_pools,
+            get_solend_positions,
+            get_marginfi_banks,
+            get_marginfi_positions,
+            get_kamino_vaults,
+            get_kamino_positions,
+            get_kamino_farms,
+            get_staking_pools,
+            get_staking_positions,
+            get_staking_schedule,
+            get_yield_farms,
+            get_farming_opportunities,
+            get_farming_positions,
+            get_defi_portfolio_summary,
+            get_defi_risk_metrics,
+            get_defi_snapshot,
+            get_auto_compound_recommendations,
+            configure_auto_compound,
+            get_auto_compound_config,
+            get_compound_history,
+            estimate_compound_apy_boost,
+            get_governance_proposals,
+            vote_on_proposal,
+            get_governance_participation,
 
             // Updater commands
             get_update_settings,
