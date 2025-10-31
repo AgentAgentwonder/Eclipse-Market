@@ -57,6 +57,11 @@ mod journal;
 pub use academy::*;
 pub use governance::*;
 pub use journal::*;
+mod p2p;
+
+pub use academy::*;
+pub use governance::*;
+pub use p2p::*;
 pub use ai::*;
 pub use ai_chat::*;
 pub use alerts::*;
@@ -175,6 +180,7 @@ use voice::commands::{SharedVoiceState, VoiceState};
 use config::settings_manager::{SettingsManager, SharedSettingsManager};
 use governance::commands::*;
 use journal::{JournalDatabase, SharedJournalDatabase};
+use p2p::{init_p2p_system, SharedP2PDatabase};
 
 async fn warm_cache_on_startup(
     _app_handle: tauri::AppHandle,
@@ -287,6 +293,15 @@ pub fn run() {
 
             let shared_reputation_engine: SharedReputationEngine = Arc::new(RwLock::new(reputation_engine));
             app.manage(shared_reputation_engine.clone());
+
+            // Initialize P2P system
+            let p2p_db = tauri::async_runtime::block_on(async {
+                init_p2p_system(&app.handle()).await
+            }).map_err(|e| {
+                eprintln!("Failed to initialize P2P system: {e}");
+                e
+            })?;
+            app.manage(p2p_db.clone());
 
             // Initialize academy engine
             let academy_engine = tauri::async_runtime::block_on(async {
@@ -1808,6 +1823,29 @@ pub fn run() {
             restart_service,
             get_dev_settings,
             update_dev_settings,
+
+            // P2P Marketplace & Escrow
+            create_p2p_offer,
+            get_p2p_offer,
+            list_p2p_offers,
+            update_offer_status,
+            match_p2p_offers,
+            create_p2p_escrow,
+            get_p2p_escrow,
+            list_p2p_escrows,
+            fund_p2p_escrow,
+            confirm_payment_p2p,
+            release_p2p_escrow,
+            cancel_p2p_escrow,
+            file_p2p_dispute,
+            get_p2p_dispute,
+            submit_dispute_evidence,
+            resolve_p2p_dispute,
+            send_p2p_message,
+            get_p2p_messages,
+            get_trader_profile,
+            check_p2p_compliance,
+            get_p2p_stats,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
