@@ -29,7 +29,6 @@ import {
   Clock,
   Wrench,
   Terminal,
-  Rocket,
   } from 'lucide-react';
 
 import { ShortcutCheatSheet } from './components/common/ShortcutCheatSheet';

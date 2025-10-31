@@ -1,5 +1,6 @@
 use super::aggregator::{AlertConfiguration, AlertRule, SocialSearchResult, SocialSentimentResponse};
 use super::community::{CommunityHealthMetrics, HolderAnalysis};
+use super::sentiment::FomoFudScores;
 use super::influencer_tracker::InfluencerLeaderboard;
 use super::storage::{Influencer, InfluencerMention, SentimentHistory, WhaleWallet};
 use super::trends::TrendingToken;

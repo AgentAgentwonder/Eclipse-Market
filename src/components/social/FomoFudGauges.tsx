@@ -54,7 +54,7 @@ function CircularGauge({ score, type }: { score: number; type: 'fomo' | 'fud' })
             initial={{ strokeDasharray: '0, 100' }}
             animate={{ strokeDasharray: `${score}, 100` }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
-            className={`text-${label.color}`}
+            className={label.color}
             strokeWidth="4"
             strokeLinecap="round"
             fill="none"
