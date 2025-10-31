@@ -34,6 +34,56 @@ impl Default for SafetyPolicy {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum SafetyCheck {
+    MaxNotionalValue(f64),
+    MaxOrderSize(f64),
+}
+
+impl std::fmt::Display for SafetyCheck {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SafetyCheck::MaxNotionalValue(val) => write!(f, "Max notional value: ${}", val),
+            SafetyCheck::MaxOrderSize(val) => write!(f, "Max order size: ${}", val),
+        }
+    }
+}
+
+impl SafetyPolicy {
+    pub fn check_mobile_quick_trade(&self, check: SafetyCheck, amount: f64) -> Result<(), PolicyViolation> {
+        match check {
+            SafetyCheck::MaxNotionalValue(max) => {
+                if amount > max {
+                    return Err(PolicyViolation {
+                        rule: "max_notional_value".to_string(),
+                        message: format!("Trade amount ${} exceeds maximum ${}", amount, max),
+                        severity: ViolationSeverity::Error,
+                        can_override: false,
+                    });
+                }
+            }
+            SafetyCheck::MaxOrderSize(max) => {
+                if amount > max {
+                    return Err(PolicyViolation {
+                        rule: "max_order_size".to_string(),
+                        message: format!("Order size ${} exceeds maximum ${}", amount, max),
+                        severity: ViolationSeverity::Error,
+                        can_override: false,
+                    });
+                }
+            }
+        }
+        Ok(())
+    }
+
+    pub fn mobile_quick_trade_rules(&self) -> Vec<SafetyCheck> {
+        vec![
+            SafetyCheck::MaxNotionalValue(50_000.0),
+            SafetyCheck::MaxOrderSize(1_000.0),
+        ]
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PolicyViolation {
     pub rule: String,
