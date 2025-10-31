@@ -53,6 +53,7 @@ import Stocks from './pages/Stocks';
 import Insiders from './pages/Insiders';
 import Trading from './pages/Trading';
 import Portfolio from './pages/Portfolio';
+import PortfolioAnalytics from './pages/PortfolioAnalytics';
 import Multisig from './pages/Multisig';
 import ApiHealth from './pages/ApiHealth';
 import ProCharts from './pages/ProCharts';
@@ -61,6 +62,7 @@ import Wallet from './pages/Wallet';
 import { MarketSurveillance } from './pages/MarketSurveillance';
 import { PaperTradingDashboard } from './pages/PaperTrading/Dashboard';
 import { AIAnalysis } from './pages/AIAnalysis';
+import DevConsole from './pages/DevConsole';
 import SettingsPage from './pages/Settings';
 import AdvancedSettings from './pages/Settings/AdvancedSettings';
 import MultiChain from './pages/MultiChain';
@@ -516,6 +518,13 @@ function App() {
       { id: 'dashboard', label: 'Dashboard', icon: Home, component: Dashboard, panelType: 'dashboard' as PanelType },
       { id: 'coins', label: 'Coins', icon: TrendingUp, component: Coins, panelType: 'coins' as PanelType },
       { id: 'portfolio', label: 'Portfolio', icon: Briefcase, component: Portfolio, panelType: 'portfolio' as PanelType },
+      {
+        id: 'portfolio-analytics',
+        label: 'Portfolio Analytics',
+        icon: Activity,
+        component: PortfolioAnalytics,
+        panelType: 'portfolio-analytics' as PanelType,
+      },
       { id: 'multisig', label: 'Multisig', icon: Shield, component: Multisig, panelType: 'multisig' as PanelType },
       { id: 'stocks', label: 'Stocks', icon: BarChart3, component: Stocks, panelType: 'stocks' as PanelType },
       { id: 'insiders', label: 'Insiders', icon: Users, component: Insiders, panelType: 'insiders' as PanelType },
@@ -530,6 +539,7 @@ function App() {
       { id: 'dashboard', label: 'Dashboard', icon: Home, component: Dashboard },
       { id: 'coins', label: 'Coins', icon: TrendingUp, component: Coins },
       { id: 'portfolio', label: 'Portfolio', icon: Briefcase, component: Portfolio },
+      { id: 'portfolio-analytics', label: 'Portfolio Analytics', icon: Activity, component: PortfolioAnalytics },
       { id: 'wallet', label: 'Wallet', icon: WalletIcon, component: Wallet },
       { id: 'multi-chain', label: 'Multi-Chain', icon: ArrowRightLeft, component: MultiChain },
       { id: 'multisig', label: 'Multisig', icon: Shield, component: Multisig },
@@ -551,6 +561,7 @@ function App() {
       { id: 'historical-replay', label: 'Historical Replay', icon: Clock, component: HistoricalReplay, panelType: 'historical-replay' as PanelType },
       { id: 'api-health', label: 'API Health', icon: Activity, component: ApiHealth, panelType: 'api-health' as PanelType },
       { id: 'troubleshooter', label: 'Troubleshooter', icon: Wrench, component: Troubleshooter, panelType: 'troubleshooter' as PanelType },
+      { id: 'dev-console', label: 'Dev Console', icon: Terminal, component: DevConsole, panelType: 'dev-console' as PanelType },
       { id: 'settings', label: 'Settings', icon: Settings, component: SettingsPage, panelType: 'settings' as PanelType },
       { id: 'advanced-settings', label: 'Advanced Settings', icon: LayoutGrid, component: AdvancedSettings, panelType: 'settings' as PanelType },
     ];

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { motion } from 'framer-motion';
 import {
@@ -8,6 +8,8 @@ import {
   PieChart as PieChartIcon,
   ArrowUpDown,
   DollarSign,
+  Activity,
+  AlertCircle,
 } from 'lucide-react';
 import {
   PieChart,
@@ -23,7 +25,18 @@ import {
   CartesianGrid,
 } from 'recharts';
 import { AIPortfolioAdvisor } from '../components/portfolio/AIPortfolioAdvisor';
-import { Position, PortfolioMetrics } from '../types/portfolio';
+import {
+  Position,
+  PortfolioMetrics,
+  PortfolioAnalytics as PortfolioAnalyticsType,
+  SectorAllocation,
+  ConcentrationAlert,
+  PricePoint,
+} from '../types/portfolio';
+import { RiskDiversificationSummary } from '../components/portfolio/RiskDiversificationSummary';
+import { CorrelationHeatmap } from '../components/portfolio/CorrelationHeatmap';
+import { SectorAllocationChart } from '../components/portfolio/SectorAllocationChart';
+import { ConcentrationAlerts } from '../components/portfolio/ConcentrationAlerts';
 
 type SortField = 'symbol' | 'value' | 'pnl' | 'pnlPercent' | 'allocation';
 type SortDirection = 'asc' | 'desc';
@@ -40,8 +53,14 @@ function Portfolio() {
   const [selectedPeriod, setSelectedPeriod] = useState<'daily' | 'weekly' | 'monthly' | 'all'>(
     'daily'
   );
+  const [concentrationAlerts, setConcentrationAlerts] = useState<ConcentrationAlert[]>([]);
+  const [analytics, setAnalytics] = useState<PortfolioAnalyticsType | null>(null);
+  const [sectorAllocation, setSectorAllocation] = useState<SectorAllocation[]>([]);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
+  const [analyticsTimestamp, setAnalyticsTimestamp] = useState<string | null>(null);
 
-  const fetchPortfolioData = async () => {
+  const fetchPortfolioData = useCallback(async () => {
     try {
       const [metricsData, positionsData] = await Promise.all([
         invoke<PortfolioMetrics>('get_portfolio_metrics'),
@@ -56,18 +75,92 @@ function Portfolio() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
+
+  const fetchAnalyticsData = useCallback(
+    async (positionsList: Position[]) => {
+      if (positionsList.length === 0) {
+        setAnalytics(null);
+        setSectorAllocation([]);
+        setConcentrationAlerts([]);
+        setAnalyticsTimestamp(null);
+        setAnalyticsError(null);
+        setAnalyticsLoading(false);
+        return;
+      }
+
+      setAnalyticsLoading(true);
+      setAnalyticsError(null);
+
+      try {
+        const timeSeriesEntries = await Promise.all(
+          positionsList.map(async position => {
+            try {
+              const history = await invoke<PricePoint[]>('get_price_history', {
+                address: position.mint,
+                timeframe: '1M',
+                apiKey: null,
+              });
+              return [position.symbol, history] as const;
+            } catch (error) {
+              console.error(`Failed to fetch price history for ${position.symbol}:`, error);
+              return [position.symbol, [] as PricePoint[]] as const;
+            }
+          })
+        );
+
+        const timeSeries = Object.fromEntries(timeSeriesEntries) as Record<string, PricePoint[]>;
+
+        const [analyticsResult, sectorResult, alertsResult] = await Promise.all([
+          invoke<PortfolioAnalyticsType>('calculate_portfolio_analytics', {
+            positions: positionsList,
+            timeSeries,
+            riskFreeRate: 0.03,
+          }),
+          invoke<SectorAllocation[]>('get_sector_allocation', {
+            positions: positionsList,
+          }),
+          invoke<ConcentrationAlert[]>('get_concentration_alerts', {
+            positions: positionsList,
+          }),
+        ]);
+
+        setAnalytics(analyticsResult);
+        setSectorAllocation(sectorResult);
+        setConcentrationAlerts(alertsResult);
+        setAnalyticsTimestamp(analyticsResult.calculatedAt);
+      } catch (error) {
+        console.error('Failed to fetch analytics data:', error);
+        setAnalytics(null);
+        setAnalyticsError(
+          error instanceof Error ? error.message : 'Unable to fetch analytics data.'
+        );
+      } finally {
+        setAnalyticsLoading(false);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     fetchPortfolioData();
     const interval = setInterval(fetchPortfolioData, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchPortfolioData]);
 
-  const handleRefresh = () => {
+  useEffect(() => {
+    fetchAnalyticsData(positions);
+  }, [positions, fetchAnalyticsData]);
+
+  const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    fetchPortfolioData();
-  };
+    try {
+      await invoke('clear_portfolio_cache');
+    } catch (error) {
+      console.error('Failed to clear portfolio analytics cache:', error);
+    }
+    await fetchPortfolioData();
+  }, [fetchPortfolioData]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -334,6 +427,86 @@ function Portfolio() {
             </BarChart>
           </ResponsiveContainer>
         </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Activity className="w-5 h-5 text-purple-400" />
+            <h2 className="text-xl font-semibold">Advanced Analytics</h2>
+          </div>
+          {analyticsTimestamp && (
+            <span className="text-sm text-gray-400">
+              Last calculated: {new Date(analyticsTimestamp).toLocaleString()}
+            </span>
+          )}
+        </div>
+
+        {analyticsLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-500"></div>
+          </div>
+        ) : analyticsError ? (
+          <div className="bg-red-500/10 border border-red-500/40 text-red-300 rounded-xl p-4 flex items-center gap-3">
+            <AlertCircle className="w-5 h-5" />
+            <div>
+              <p className="font-medium">Analytics unavailable</p>
+              <p className="text-sm text-red-200/80">{analyticsError}</p>
+            </div>
+          </div>
+        ) : analytics ? (
+          <div className="space-y-6">
+            {analytics && (
+              <ConcentrationAlerts alerts={concentrationAlerts} />
+            )}
+            <RiskDiversificationSummary
+              diversification={analytics.diversification}
+              sharpe={analytics.sharpe}
+              factors={analytics.factors}
+            />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <CorrelationHeatmap correlation={analytics.correlation} />
+              <SectorAllocationChart sectors={sectorAllocation} />
+            </div>
+            <div className="bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-700">
+              <h3 className="text-lg font-semibold mb-4">Concentration Risk Breakdown</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {analytics.concentration.map(risk => {
+                  const colorMap = {
+                    low: 'bg-green-500/10 border border-green-400/30',
+                    medium: 'bg-yellow-500/10 border border-yellow-400/30',
+                    high: 'bg-orange-500/10 border border-orange-400/30',
+                    critical: 'bg-red-500/10 border border-red-400/30',
+                  } as const;
+
+                  return (
+                    <div
+                      key={risk.symbol}
+                      className={`rounded-lg p-4 ${colorMap[risk.riskLevel]}`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-semibold">{risk.symbol}</span>
+                        <span className="text-sm text-gray-300">
+                          {risk.allocation.toFixed(1)}%
+                        </span>
+                      </div>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-white/10 text-white/80">
+                        {risk.riskLevel.toUpperCase()} RISK
+                      </span>
+                      <p className="text-xs text-gray-300 mt-3 leading-relaxed">
+                        {risk.recommendation}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 text-gray-400">
+            Not enough historical data to compute advanced analytics yet.
+          </div>
+        )}
       </div>
 
       <div className="bg-gray-800 rounded-xl shadow-lg border border-gray-700 overflow-hidden">

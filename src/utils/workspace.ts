@@ -50,6 +50,7 @@ const panelTitles: Record<PanelType, string> = {
   insiders: 'Insiders',
   trading: 'Trading',
   portfolio: 'Portfolio',
+  'portfolio-analytics': 'Portfolio Analytics',
   multisig: 'Multisig',
   'api-health': 'API Health',
   'pro-charts': 'Pro Charts',
@@ -59,7 +60,9 @@ const panelTitles: Record<PanelType, string> = {
   'ai-analysis': 'AI Assistant',
   'prediction-markets': 'Prediction Markets',
   defi: 'DeFi Hub',
+  'historical-replay': 'Historical Replay',
   settings: 'Settings',
+  'dev-console': 'Developer Console',
 };
 
 export const createPanelDefinition = (type: PanelType, width = 6, height = 8) => {

@@ -13,17 +13,24 @@ mod cache_commands;
 mod chains;
 mod bridges;
 mod chart_stream;
+mod compiler;
 mod config;
 mod core;
 mod diagnostics;
-mod drawings;
-mod indicators;
-mod insiders;
 mod data;
 mod defi;
+mod dev_tools;
+mod drawings;
+mod errors;
+mod fixer;
+mod indicators;
+mod insiders;
+mod logger;
 mod market;
+mod monitor;
 mod notifications;
 mod portfolio;
+mod recovery;
 mod security;
 mod sentiment;
 mod stocks;
@@ -54,16 +61,23 @@ pub use bots::*;
 pub use chains::*;
 pub use bridges::*;
 pub use chart_stream::*;
+pub use compiler::*;
 pub use config::*;
 pub use core::*;
-pub use drawings::*;
-pub use indicators::*;
-pub use insiders::*;
 pub use data::*;
 pub use defi::*;
+pub use dev_tools::*;
+pub use drawings::*;
+pub use errors::*;
+pub use fixer::*;
+pub use indicators::*;
+pub use insiders::*;
+pub use logger::*;
 pub use market::*;
+pub use monitor::*;
 pub use notifications::*;
 pub use portfolio::*;
+pub use recovery::*;
 pub use sentiment::*;
 pub use stocks::*;
 pub use token_flow::*;
@@ -744,6 +758,41 @@ pub fn run() {
                       sleep(Duration::from_secs(60 * 60)).await;
                   }
               });
+              // Initialize dev tools
+              let logger = logger::ComprehensiveLogger::new(&app.handle())
+                  .map_err(|e| {
+                      eprintln!("Failed to initialize logger: {e}");
+                      Box::new(e) as Box<dyn Error>
+                  })?;
+              let shared_logger: logger::SharedLogger = Arc::new(logger);
+              app.manage(shared_logger.clone());
+
+              let crash_reporter = errors::CrashReporter::new(&app.handle(), shared_logger.clone())
+                  .map_err(|e| {
+                      eprintln!("Failed to initialize crash reporter: {e}");
+                      Box::new(e) as Box<dyn Error>
+                  })?;
+              let shared_crash_reporter: errors::SharedCrashReporter = Arc::new(crash_reporter);
+              app.manage(shared_crash_reporter.clone());
+
+              let runtime_handler = errors::RuntimeHandler::new(shared_logger.clone());
+              let shared_runtime_handler: errors::SharedRuntimeHandler = Arc::new(runtime_handler);
+              app.manage(shared_runtime_handler.clone());
+
+              let performance_monitor = monitor::PerformanceMonitor::new();
+              let shared_performance_monitor: monitor::SharedPerformanceMonitor = Arc::new(performance_monitor);
+              app.manage(shared_performance_monitor.clone());
+              shared_performance_monitor.start();
+
+              let auto_compiler = compiler::AutoCompiler::new();
+              let shared_auto_compiler = Arc::new(auto_compiler);
+              app.manage(shared_auto_compiler.clone());
+
+              let auto_fixer = fixer::AutoFixer::new(3);
+              let shared_auto_fixer = Arc::new(auto_fixer);
+              app.manage(shared_auto_fixer.clone());
+
+              shared_logger.info("Dev tools initialized successfully", None);
 
               Ok(())
               })
@@ -915,6 +964,10 @@ pub fn run() {
             generate_tax_report,
             export_tax_report,
             get_tax_loss_harvesting_suggestions,
+            calculate_portfolio_analytics,
+            get_concentration_alerts,
+            get_sector_allocation,
+            clear_portfolio_cache,
             watchlist_create,
             watchlist_list,
             watchlist_get,
@@ -1445,6 +1498,29 @@ pub fn run() {
             diagnostics::tauri_commands::backup_before_repair,
             diagnostics::tauri_commands::rollback_repair,
             diagnostics::tauri_commands::export_diagnostics_report,
+            // Dev Tools
+            compile_now,
+            get_build_status,
+            get_compile_errors,
+            auto_fix_errors,
+            get_fix_stats,
+            get_fix_attempts,
+            clear_fix_history,
+            get_logs,
+            clear_logs,
+            export_logs,
+            log_message,
+            get_logger_config,
+            set_logger_config,
+            get_performance_metrics,
+            get_error_stats,
+            report_crash,
+            get_crash_report,
+            list_crash_reports,
+            force_gc,
+            restart_service,
+            get_dev_settings,
+            update_dev_settings,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

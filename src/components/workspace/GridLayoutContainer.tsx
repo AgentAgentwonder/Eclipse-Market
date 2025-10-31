@@ -18,6 +18,8 @@ import { PaperTradingDashboard } from '../../pages/PaperTrading/Dashboard';
 import { AIAnalysis } from '../../pages/AIAnalysis';
 import PredictionMarkets from '../../pages/PredictionMarkets';
 import DeFi from '../../pages/DeFi';
+import HistoricalReplay from '../../pages/HistoricalReplay';
+import DevConsole from '../../pages/DevConsole';
 import SettingsPage from '../../pages/Settings';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
@@ -38,7 +40,9 @@ const componentMap: Record<string, ComponentType> = {
   'ai-analysis': AIAnalysis,
   'prediction-markets': PredictionMarkets,
   defi: DeFi,
+  'historical-replay': HistoricalReplay,
   settings: SettingsPage,
+  'dev-console': DevConsole,
 };
 
 export const GridLayoutContainer = () => {
