@@ -50,6 +50,7 @@ const panelTitles: Record<PanelType, string> = {
   insiders: 'Insiders',
   trading: 'Trading',
   portfolio: 'Portfolio',
+  'portfolio-analytics': 'Portfolio Analytics',
   multisig: 'Multisig',
   'api-health': 'API Health',
   'pro-charts': 'Pro Charts',
