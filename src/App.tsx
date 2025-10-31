@@ -20,6 +20,7 @@ import {
   Wallet as WalletIcon,
   LayoutGrid,
   ArrowRightLeft,
+  Rocket,
   GraduationCap,
   Keyboard,
   Command,
@@ -66,6 +67,7 @@ import DevConsole from './pages/DevConsole';
 import SettingsPage from './pages/Settings';
 import AdvancedSettings from './pages/Settings/AdvancedSettings';
 import MultiChain from './pages/MultiChain';
+import LaunchPredictor from './pages/LaunchPredictor';
 import PredictionMarkets from './pages/PredictionMarkets';
 import DeFi from './pages/DeFi';
 import HistoricalReplay from './pages/HistoricalReplay';
@@ -366,6 +368,15 @@ function App() {
         keywords: ['ai', 'assistant', 'chat', 'analysis'],
       },
       {
+        id: 'nav-launch-predictor',
+        title: 'Launch Predictor AI',
+        description: 'Forecast new token launch success',
+        category: 'analytics' as const,
+        action: () => setCurrentPage('launch-predictor'),
+        shortcutId: 'nav:launch-predictor',
+        keywords: ['launch', 'predictor', 'ai', 'token', 'success'],
+      },
+      {
         id: 'nav-prediction-markets',
         title: 'Prediction Markets',
         description: 'View prediction markets dashboard',
@@ -556,6 +567,7 @@ function App() {
       },
       { id: 'pro-charts', label: 'Pro Charts', icon: LineChart, component: ProCharts, panelType: 'pro-charts' as PanelType },
       { id: 'ai-analysis', label: 'AI Assistant', icon: MessageSquare, component: AIAnalysis, panelType: 'ai-analysis' as PanelType },
+      { id: 'launch-predictor', label: 'Launch Predictor', icon: Rocket, component: LaunchPredictor, panelType: 'launch-predictor' as PanelType },
       { id: 'prediction-markets', label: 'Prediction Markets', icon: PieChart, component: PredictionMarkets, panelType: 'prediction-markets' as PanelType },
       { id: 'defi', label: 'DeFi', icon: BanknoteIcon, component: DeFi, panelType: 'defi' as PanelType },
       { id: 'historical-replay', label: 'Historical Replay', icon: Clock, component: HistoricalReplay, panelType: 'historical-replay' as PanelType },

@@ -101,6 +101,17 @@ pub use wallet::multisig::*;
 pub use wallet::performance::*;
 pub use windowing::*;
 
+use ai::launch_predictor::{
+    add_launch_training_data,
+    extract_token_features,
+    get_launch_bias_report,
+    get_launch_prediction_history,
+    load_latest_launch_model,
+    predict_launch_success,
+    retrain_launch_model,
+    LaunchPredictor,
+    SharedLaunchPredictor,
+};
 use ai::SharedAIAssistant;
 use alerts::{AlertManager, SharedAlertManager, SharedSmartAlertManager, SmartAlertManager};
 use api::{ApiHealthMonitor, SharedApiHealthMonitor};
@@ -623,6 +634,17 @@ pub fn run() {
              let shared_ai_assistant: ai::SharedAIAssistant = Arc::new(RwLock::new(ai_assistant));
              app.manage(shared_ai_assistant.clone());
 
+             // Initialize launch predictor
+             let launch_predictor = tauri::async_runtime::block_on(async {
+                 LaunchPredictor::new(&app.handle()).await
+             }).map_err(|e| {
+                 eprintln!("Failed to initialize launch predictor: {e}");
+                 Box::new(e) as Box<dyn Error>
+             })?;
+
+             let shared_launch_predictor: SharedLaunchPredictor = Arc::new(RwLock::new(launch_predictor));
+             app.manage(shared_launch_predictor.clone());
+
              // Initialize updater state
              let updater_state = UpdaterState::new(&app.handle()).map_err(|e| {
                  eprintln!("Failed to initialize updater state: {e}");
@@ -973,6 +995,14 @@ pub fn run() {
             get_token_risk_score,
             get_risk_history,
             get_latest_risk_score,
+            // Launch Predictor
+            extract_token_features,
+            predict_launch_success,
+            get_launch_prediction_history,
+            add_launch_training_data,
+            retrain_launch_model,
+            load_latest_launch_model,
+            get_launch_bias_report,
             // AI Assistant
             ai_chat,
             ai_get_conversations,
