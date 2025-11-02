@@ -66,7 +66,7 @@ const panelTitles: Record<PanelType, string> = {
   settings: 'Settings',
   'dev-console': 'Developer Console',
   'launch-predictor': 'Launch Predictor AI',
-  'p2p-marketplace': 'P2P Marketplace',
+  'social-intelligence': 'Social Intelligence',
 };
 
 export const createPanelDefinition = (type: PanelType, width = 6, height = 8) => {
