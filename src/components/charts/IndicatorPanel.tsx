@@ -14,7 +14,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useIndicatorStore } from '../../store/indicatorStore';
-import type { IndicatorType } from '../../types/indicators';
+import type { IndicatorConfigType } from '../../types/indicators';
 import { INDICATOR_DESCRIPTIONS } from '../../types/indicators';
 
 interface IndicatorPanelProps {
@@ -40,7 +40,7 @@ const IndicatorPanel: React.FC<IndicatorPanelProps> = ({ onClose }) => {
   const [showPresetDialog, setShowPresetDialog] = useState(false);
   const [presetName, setPresetName] = useState('');
 
-  const indicatorTypes: IndicatorType[] = [
+  const indicatorTypes: IndicatorConfigType[] = [
     'SMA',
     'EMA',
     'RSI',
@@ -57,7 +57,7 @@ const IndicatorPanel: React.FC<IndicatorPanelProps> = ({ onClose }) => {
     'VWAP',
   ];
 
-  const handleAddIndicator = (type: IndicatorType) => {
+  const handleAddIndicator = (type: IndicatorConfigType) => {
     addIndicator(type);
     setShowAddIndicator(false);
   };
