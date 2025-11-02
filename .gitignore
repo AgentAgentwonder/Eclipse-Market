@@ -6,3 +6,4 @@ src-tauri/target
 .env.local
 .DS_Store
 *.log
+diagnostic-report.json
