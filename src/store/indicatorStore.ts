@@ -4,7 +4,7 @@ import type {
   IndicatorConfig,
   IndicatorPreset,
   IndicatorAlert,
-  IndicatorType,
+  IndicatorConfigType,
   IndicatorPanel,
 } from '../types/indicators';
 import { DEFAULT_INDICATOR_PARAMS } from '../types/indicators';
@@ -17,7 +17,7 @@ interface IndicatorState {
   error: string | null;
 
   // Indicator management
-  addIndicator: (type: IndicatorType, panel?: IndicatorPanel) => IndicatorConfig;
+  addIndicator: (type: IndicatorConfigType, panel?: IndicatorPanel) => IndicatorConfig;
   removeIndicator: (id: string) => void;
   updateIndicator: (id: string, updates: Partial<IndicatorConfig>) => void;
   toggleIndicator: (id: string) => void;
@@ -58,7 +58,7 @@ export const useIndicatorStore = create<IndicatorState>((set, get) => ({
   isLoading: false,
   error: null,
 
-  addIndicator: (type: IndicatorType, panel: IndicatorPanel = 'overlay') => {
+  addIndicator: (type: IndicatorConfigType, panel: IndicatorPanel = 'overlay') => {
     const indicator: IndicatorConfig = {
       id: generateId(),
       type,

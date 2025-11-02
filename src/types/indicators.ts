@@ -58,7 +58,7 @@ export interface IndicatorNode {
   id: string;
   type: 'indicator' | 'operator' | 'constant' | 'condition';
   value?: string | number;
-  indicator?: IndicatorType;
+  indicator?: IndicatorType | IndicatorConfigType;
   params?: Record<string, number>;
   operator?: '+' | '-' | '*' | '/' | '>' | '<' | '==' | '&&' | '||';
   inputs?: string[]; // references to other node IDs
@@ -74,63 +74,13 @@ export interface CustomIndicator {
   updatedAt: number;
   author?: string;
   tags?: string[];
-export type IndicatorType =
-  | 'SMA'
-  | 'EMA'
-  | 'RSI'
-  | 'MACD'
-  | 'BollingerBands'
-  | 'Stochastic'
-  | 'ATR'
-  | 'OBV'
-  | 'CCI'
-  | 'Williams'
-  | 'MFI'
-  | 'ParabolicSAR'
-  | 'Ichimoku'
-  | 'VWAP'
-  | 'ADX'
-  | 'Aroon'
-  | 'KeltnerChannels'
-  | 'DonchianChannels'
-  | 'SMA_Cross'
-  | 'EMA_Cross';
-
-export type IndicatorPanel = 'overlay' | 'separate';
-
-export interface IndicatorConfig {
-  id: string;
-  type: IndicatorType;
-  enabled: boolean;
-  panel: IndicatorPanel;
-  params: Record<string, number | string | boolean>;
-  color?: string;
-  lineWidth?: number;
-  style?: 'solid' | 'dashed' | 'dotted';
-  visible?: boolean;
-}
-
-export interface IndicatorPreset {
-  id: string;
-  name: string;
-  description?: string;
-  indicators: IndicatorConfig[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface IndicatorAlert {
-  id: string;
-  indicatorId: string;
-  condition: 'above' | 'below' | 'crosses_above' | 'crosses_below';
-  threshold: number;
-  enabled: boolean;
-  notificationChannels: ('app' | 'email' | 'webhook' | 'telegram' | 'discord')[];
 }
 
 export interface IndicatorValue {
   timestamp: number;
-  value: number;
+  value: number | null;
+  signal?: 'buy' | 'sell' | 'neutral';
+  metadata?: Record<string, number | null>;
 }
 
 export interface BacktestResult {
@@ -185,12 +135,62 @@ export interface MultiChartState {
   crosshairPosition: { x: number; y: number; timestamp: number } | null;
   globalTimeframe: string;
 }
-  value: number | null;
-  signal?: 'buy' | 'sell' | 'neutral';
-  metadata?: Record<string, number | null>;
+
+export type IndicatorConfigType =
+  | 'SMA'
+  | 'EMA'
+  | 'RSI'
+  | 'MACD'
+  | 'BollingerBands'
+  | 'Stochastic'
+  | 'ATR'
+  | 'OBV'
+  | 'CCI'
+  | 'Williams'
+  | 'MFI'
+  | 'ParabolicSAR'
+  | 'Ichimoku'
+  | 'VWAP'
+  | 'ADX'
+  | 'Aroon'
+  | 'KeltnerChannels'
+  | 'DonchianChannels'
+  | 'SMA_Cross'
+  | 'EMA_Cross';
+
+export type IndicatorPanel = 'overlay' | 'separate';
+
+export interface IndicatorConfig {
+  id: string;
+  type: IndicatorConfigType;
+  enabled: boolean;
+  panel: IndicatorPanel;
+  params: Record<string, number | string | boolean>;
+  color?: string;
+  lineWidth?: number;
+  style?: 'solid' | 'dashed' | 'dotted';
+  visible?: boolean;
 }
 
-export const DEFAULT_INDICATOR_PARAMS: Record<IndicatorType, Record<string, number | string>> = {
+export interface IndicatorPreset {
+  id: string;
+  name: string;
+  description?: string;
+  indicators: IndicatorConfig[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IndicatorAlert {
+  id: string;
+  indicatorId: string;
+  condition: 'above' | 'below' | 'crosses_above' | 'crosses_below';
+  threshold: number;
+  enabled: boolean;
+  notificationChannels: ('app' | 'email' | 'webhook' | 'telegram' | 'discord')[];
+}
+
+export const DEFAULT_INDICATOR_PARAMS: Record<IndicatorConfigType, Record<string, number | string>> = {
   SMA: { period: 20 },
   EMA: { period: 20 },
   RSI: { period: 14 },
@@ -213,7 +213,7 @@ export const DEFAULT_INDICATOR_PARAMS: Record<IndicatorType, Record<string, numb
   EMA_Cross: { fastPeriod: 12, slowPeriod: 26 },
 };
 
-export const INDICATOR_DESCRIPTIONS: Record<IndicatorType, string> = {
+export const INDICATOR_DESCRIPTIONS: Record<IndicatorConfigType, string> = {
   SMA: 'Simple Moving Average - Average price over a period',
   EMA: 'Exponential Moving Average - Weighted average giving more importance to recent prices',
   RSI: 'Relative Strength Index - Momentum oscillator measuring speed and magnitude of price changes',

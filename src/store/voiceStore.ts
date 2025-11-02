@@ -25,57 +25,50 @@ interface VoiceState {
   availableVoices: SpeechSynthesisVoice[];
   mfaChallenge: VoiceMFAChallenge | null;
   pendingNotifications: Array<{ id: string; message: string; priority: number; timestamp: number }>;
+  settings: VoiceSettings;
+  isListening: boolean;
+  isProcessing: boolean;
+  lastTranscript: string | null;
+  errorMessage: string | null;
 
   setEnabled: (enabled: boolean) => void;
   setListening: (listening: boolean) => void;
+  setIsListening: (listening: boolean) => void;
   startSession: (locale?: VoiceLocale, drivingMode?: boolean) => void;
   endSession: () => void;
   updateSession: () => void;
-  
+
   createCommand: (intent: VoiceIntent) => VoiceCommand;
   updateCommandStatus: (commandId: string, status: VoiceCommandStatus, result?: any, error?: any) => void;
   setCurrentCommand: (command: VoiceCommand | null) => void;
   clearCommandHistory: () => void;
-  
+
   updateNotificationSettings: (settings: Partial<VoiceNotificationSettings>) => void;
   updateSpeechConfig: (config: Partial<VoiceSpeechSynthesisConfig>) => void;
   updateRecognitionConfig: (config: Partial<VoiceRecognitionConfig>) => void;
   setAvailableVoices: (voices: SpeechSynthesisVoice[]) => void;
-  
+
   createMFAChallenge: (type: VoiceMFAChallenge['type'], prompt: string) => VoiceMFAChallenge;
   submitMFAResponse: (response: VoiceMFAResponse) => boolean;
   clearMFAChallenge: () => void;
-  
+
   queueNotification: (message: string, priority?: number) => void;
   dequeueNotification: (id: string) => void;
   clearNotifications: () => void;
+
+  updateWakeWordConfig: (config: Partial<WakeWordConfig>) => void;
+  updateSTTConfig: (config: Partial<SpeechToTextConfig>) => void;
+  updateTTSConfig: (config: Partial<TextToSpeechConfig>) => void;
+  setIsProcessing: (processing: boolean) => void;
+  setLastTranscript: (transcript: string | null) => void;
+  setErrorMessage: (error: string | null) => void;
+  setConfirmationPrompts: (enabled: boolean) => void;
+  setPrivacyMode: (enabled: boolean) => void;
+  setAutoActivation: (enabled: boolean) => void;
+  resetSettings: () => void;
 }
 
 const generateId = () => `voice_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-const defaultNotificationSettings: VoiceNotificationSettings = {
-  enabled: true,
-  frequency: 'important',
-  voice: 'default',
-  rate: 1.0,
-  pitch: 1.0,
-  volume: 0.8,
-  drivingMode: false,
-  maxNotificationsPerMinute: 5,
-};
-
-const defaultSpeechConfig: VoiceSpeechSynthesisConfig = {
-  rate: 1.0,
-  pitch: 1.0,
-  volume: 0.8,
-  lang: 'en-US',
-};
-
-const defaultRecognitionConfig: VoiceRecognitionConfig = {
-  continuous: true,
-  interimResults: true,
-  maxAlternatives: 3,
-  lang: 'en-US',
 
 export interface WakeWordConfig {
   enabled: boolean;
@@ -110,27 +103,32 @@ export interface VoiceSettings {
   autoActivation: boolean;
 }
 
-interface VoiceState {
-  settings: VoiceSettings;
-  isListening: boolean;
-  isProcessing: boolean;
-  lastTranscript: string | null;
-  errorMessage: string | null;
-  
-  updateWakeWordConfig: (config: Partial<WakeWordConfig>) => void;
-  updateSTTConfig: (config: Partial<SpeechToTextConfig>) => void;
-  updateTTSConfig: (config: Partial<TextToSpeechConfig>) => void;
-  setIsListening: (listening: boolean) => void;
-  setIsProcessing: (processing: boolean) => void;
-  setLastTranscript: (transcript: string | null) => void;
-  setErrorMessage: (error: string | null) => void;
-  setConfirmationPrompts: (enabled: boolean) => void;
-  setPrivacyMode: (enabled: boolean) => void;
-  setAutoActivation: (enabled: boolean) => void;
-  resetSettings: () => void;
-}
+const defaultNotificationSettings: VoiceNotificationSettings = {
+  enabled: true,
+  frequency: 'important',
+  voice: 'default',
+  rate: 1.0,
+  pitch: 1.0,
+  volume: 0.8,
+  drivingMode: false,
+  maxNotificationsPerMinute: 5,
+};
 
-const DEFAULT_SETTINGS: VoiceSettings = {
+const defaultSpeechConfig: VoiceSpeechSynthesisConfig = {
+  rate: 1.0,
+  pitch: 1.0,
+  volume: 0.8,
+  lang: 'en-US',
+};
+
+const defaultRecognitionConfig: VoiceRecognitionConfig = {
+  continuous: true,
+  interimResults: true,
+  maxAlternatives: 3,
+  lang: 'en-US',
+};
+
+const createDefaultSettings = (): VoiceSettings => ({
   wakeWord: {
     enabled: true,
     wakeWord: 'Hey Eclipse',
@@ -155,7 +153,9 @@ const DEFAULT_SETTINGS: VoiceSettings = {
   confirmationPrompts: true,
   privacyMode: false,
   autoActivation: false,
-};
+});
+
+const DEFAULT_SETTINGS = createDefaultSettings();
 
 export const useVoiceStore = create<VoiceState>()(
   persist(
@@ -171,6 +171,11 @@ export const useVoiceStore = create<VoiceState>()(
       availableVoices: [],
       mfaChallenge: null,
       pendingNotifications: [],
+      settings: createDefaultSettings(),
+      isListening: false,
+      isProcessing: false,
+      lastTranscript: null,
+      errorMessage: null,
 
       setEnabled: enabled => {
         set({ enabled });
@@ -180,7 +185,14 @@ export const useVoiceStore = create<VoiceState>()(
       },
 
       setListening: listening => {
-        set({ listening });
+        set({ listening, isListening: listening });
+        if (listening) {
+          get().updateSession();
+        }
+      },
+
+      setIsListening: listening => {
+        set({ listening, isListening: listening });
         if (listening) {
           get().updateSession();
         }
@@ -196,7 +208,7 @@ export const useVoiceStore = create<VoiceState>()(
           locale,
           drivingMode,
         };
-        set({ session, listening: true });
+        set({ session, listening: true, isListening: true });
       },
 
       endSession: () => {
@@ -205,6 +217,7 @@ export const useVoiceStore = create<VoiceState>()(
           set({
             session: { ...session, active: false },
             listening: false,
+            isListening: false,
             currentCommand: null,
           });
         }
@@ -401,6 +414,78 @@ export const useVoiceStore = create<VoiceState>()(
       clearNotifications: () => {
         set({ pendingNotifications: [] });
       },
+
+      updateWakeWordConfig: config =>
+        set(state => ({
+          settings: {
+            ...state.settings,
+            wakeWord: {
+              ...state.settings.wakeWord,
+              ...config,
+            },
+          },
+        })),
+
+      updateSTTConfig: config =>
+        set(state => ({
+          settings: {
+            ...state.settings,
+            stt: {
+              ...state.settings.stt,
+              ...config,
+            },
+          },
+        })),
+
+      updateTTSConfig: config =>
+        set(state => ({
+          settings: {
+            ...state.settings,
+            tts: {
+              ...state.settings.tts,
+              ...config,
+            },
+          },
+        })),
+
+      setIsProcessing: processing => set({ isProcessing: processing }),
+
+      setLastTranscript: transcript => set({ lastTranscript: transcript }),
+
+      setErrorMessage: error => set({ errorMessage: error }),
+
+      setConfirmationPrompts: enabled =>
+        set(state => ({
+          settings: {
+            ...state.settings,
+            confirmationPrompts: enabled,
+          },
+        })),
+
+      setPrivacyMode: enabled =>
+        set(state => ({
+          settings: {
+            ...state.settings,
+            privacyMode: enabled,
+          },
+        })),
+
+      setAutoActivation: enabled =>
+        set(state => ({
+          settings: {
+            ...state.settings,
+            autoActivation: enabled,
+          },
+        })),
+
+      resetSettings: () =>
+        set({
+          settings: createDefaultSettings(),
+          isListening: false,
+          isProcessing: false,
+          lastTranscript: null,
+          errorMessage: null,
+        }),
     }),
     {
       name: 'voice-store',
@@ -411,91 +496,9 @@ export const useVoiceStore = create<VoiceState>()(
         speechConfig: state.speechConfig,
         recognitionConfig: state.recognitionConfig,
         commandHistory: state.commandHistory.slice(0, 20),
+        settings: state.settings,
       }),
-    (set) => ({
-      settings: DEFAULT_SETTINGS,
-      isListening: false,
-      isProcessing: false,
-      lastTranscript: null,
-      errorMessage: null,
-
-      updateWakeWordConfig: (config) =>
-        set((state) => ({
-          settings: {
-            ...state.settings,
-            wakeWord: {
-              ...state.settings.wakeWord,
-              ...config,
-            },
-          },
-        })),
-
-      updateSTTConfig: (config) =>
-        set((state) => ({
-          settings: {
-            ...state.settings,
-            stt: {
-              ...state.settings.stt,
-              ...config,
-            },
-          },
-        })),
-
-      updateTTSConfig: (config) =>
-        set((state) => ({
-          settings: {
-            ...state.settings,
-            tts: {
-              ...state.settings.tts,
-              ...config,
-            },
-          },
-        })),
-
-      setIsListening: (listening) => set({ isListening: listening }),
-
-      setIsProcessing: (processing) => set({ isProcessing: processing }),
-
-      setLastTranscript: (transcript) => set({ lastTranscript: transcript }),
-
-      setErrorMessage: (error) => set({ errorMessage: error }),
-
-      setConfirmationPrompts: (enabled) =>
-        set((state) => ({
-          settings: {
-            ...state.settings,
-            confirmationPrompts: enabled,
-          },
-        })),
-
-      setPrivacyMode: (enabled) =>
-        set((state) => ({
-          settings: {
-            ...state.settings,
-            privacyMode: enabled,
-          },
-        })),
-
-      setAutoActivation: (enabled) =>
-        set((state) => ({
-          settings: {
-            ...state.settings,
-            autoActivation: enabled,
-          },
-        })),
-
-      resetSettings: () =>
-        set({
-          settings: DEFAULT_SETTINGS,
-          isListening: false,
-          isProcessing: false,
-          lastTranscript: null,
-          errorMessage: null,
-        }),
-    }),
-    {
-      name: 'voice-settings',
-      version: 1,
     }
   )
 );
+
