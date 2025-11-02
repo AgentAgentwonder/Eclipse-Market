@@ -71,6 +71,10 @@ impl SocialCache {
         Ok(cache)
     }
 
+    pub fn pool(&self) -> Pool<Sqlite> {
+        self.pool.clone()
+    }
+
     async fn initialize(&self) -> Result<(), CacheError> {
         sqlx::query(
             r#"

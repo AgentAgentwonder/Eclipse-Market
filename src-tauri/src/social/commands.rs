@@ -1,4 +1,6 @@
 use tauri::State;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 
 use crate::security::keystore::Keystore;
 
@@ -6,6 +8,8 @@ use super::analysis::{AnalysisSummary, GaugeReading, InfluencerScore, SentimentS
 use super::cache::{MentionAggregate, TrendSnapshot};
 use super::models::{SocialFetchResult, SocialPost};
 use super::service::SharedSocialDataService;
+use super::whales::{FollowedWallet, WhaleCluster, WhaleFeedEntry, WhaleInsight, WhaleService};
+use super::SharedWhaleService;
 
 #[tauri::command]
 pub async fn social_fetch_reddit(
@@ -232,6 +236,69 @@ pub async fn social_get_fomo_fud(
 ) -> Result<Vec<GaugeReading>, String> {
     let srv = analysis_service.read().await;
     srv.get_fomo_fud_gauges(token.as_deref())
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn social_get_whale_clusters(
+    whale_service: State<'_, SharedWhaleService>,
+) -> Result<Vec<WhaleCluster>, String> {
+    let srv = whale_service.read().await;
+    srv.get_clusters().await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn social_get_whale_feed(
+    limit: Option<i32>,
+    whale_service: State<'_, SharedWhaleService>,
+) -> Result<Vec<WhaleFeedEntry>, String> {
+    let limit = limit.unwrap_or(50);
+    let srv = whale_service.read().await;
+    srv.get_whale_feed(limit).await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn social_list_followed_wallets(
+    whale_service: State<'_, SharedWhaleService>,
+) -> Result<Vec<FollowedWallet>, String> {
+    let srv = whale_service.read().await;
+    srv.get_followed_wallets().await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn social_follow_wallet(
+    wallet_address: String,
+    label: Option<String>,
+    cluster_id: Option<String>,
+    priority: Option<i32>,
+    whale_service: State<'_, SharedWhaleService>,
+) -> Result<FollowedWallet, String> {
+    let priority = priority.unwrap_or(0);
+    let mut srv = whale_service.write().await;
+    srv.follow_wallet(wallet_address, label, cluster_id, priority)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn social_unfollow_wallet(
+    wallet_address: String,
+    whale_service: State<'_, SharedWhaleService>,
+) -> Result<(), String> {
+    let mut srv = whale_service.write().await;
+    srv.unfollow_wallet(&wallet_address)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn social_get_whale_insights(
+    wallet_address: String,
+    whale_service: State<'_, SharedWhaleService>,
+) -> Result<WhaleInsight, String> {
+    let srv = whale_service.read().await;
+    srv.get_whale_insights(&wallet_address)
         .await
         .map_err(|e| e.to_string())
 }

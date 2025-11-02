@@ -29,7 +29,6 @@ import {
   Clock,
   Wrench,
   Terminal,
-  Rocket,
   Handshake,
   Vote,
   } from 'lucide-react';
@@ -66,6 +65,7 @@ import TokenFlow from './pages/TokenFlow';
 import Wallet from './pages/Wallet';
 import Launchpad from './pages/Launchpad';
 import { MarketSurveillance } from './pages/MarketSurveillance';
+import { SocialIntelligence } from './pages/SocialIntelligence';
 import { PaperTradingDashboard } from './pages/PaperTrading/Dashboard';
 import { AIAnalysis } from './pages/AIAnalysis';
 import DevConsole from './pages/DevConsole';
@@ -572,6 +572,13 @@ function App() {
         icon: AlertTriangle,
         component: MarketSurveillance,
         panelType: 'surveillance' as PanelType,
+      },
+      {
+        id: 'social-intelligence',
+        label: 'Social Intelligence',
+        icon: Waves,
+        component: SocialIntelligence,
+        panelType: 'social-intelligence' as PanelType,
       },
       { id: 'dashboard', label: 'Dashboard', icon: Home, component: Dashboard },
       { id: 'coins', label: 'Coins', icon: TrendingUp, component: Coins },

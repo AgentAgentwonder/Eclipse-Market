@@ -56,6 +56,7 @@ const panelTitles: Record<PanelType, string> = {
   'pro-charts': 'Pro Charts',
   'token-flow': 'Token Flow',
   surveillance: 'Market Surveillance',
+  'social-intelligence': 'Social Intelligence',
   'paper-trading': 'Paper Trading',
   'ai-analysis': 'AI Assistant',
   'prediction-markets': 'Prediction Markets',

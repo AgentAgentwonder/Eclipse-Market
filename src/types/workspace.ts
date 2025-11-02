@@ -45,6 +45,7 @@ export type PanelType =
   | 'pro-charts'
   | 'token-flow'
   | 'surveillance'
+  | 'social-intelligence'
   | 'paper-trading'
   | 'ai-analysis'
   | 'prediction-markets'
