@@ -21,6 +21,7 @@ import DeFi from '../../pages/DeFi';
 import HistoricalReplay from '../../pages/HistoricalReplay';
 import DevConsole from '../../pages/DevConsole';
 import SettingsPage from '../../pages/Settings';
+import SocialIntelligence from '../../pages/SocialIntelligence';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
@@ -43,6 +44,7 @@ const componentMap: Record<string, ComponentType> = {
   'historical-replay': HistoricalReplay,
   settings: SettingsPage,
   'dev-console': DevConsole,
+  'social-intelligence': SocialIntelligence,
 };
 
 export const GridLayoutContainer = () => {

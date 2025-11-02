@@ -31,6 +31,7 @@ import {
   Terminal,
   Rocket,
   Handshake,
+  Vote,
   } from 'lucide-react';
 
 import { ShortcutCheatSheet } from './components/common/ShortcutCheatSheet';
@@ -78,6 +79,7 @@ import Governance from './pages/Governance';
 import HistoricalReplay from './pages/HistoricalReplay';
 import Troubleshooter from './pages/Troubleshooter';
 import P2PMarketplace from './pages/P2PMarketplace';
+import SocialIntelligence from './pages/SocialIntelligence';
 import { BIOMETRIC_STATUS_EVENT } from './constants/events';
 import { useWalletStore } from './store/walletStore';
 import { usePaperTradingStore } from './store/paperTradingStore';
@@ -342,6 +344,15 @@ function App() {
         keywords: ['insider', 'executives'],
       },
       {
+        id: 'nav-social-intelligence',
+        title: 'Social Intelligence',
+        description: 'Monitor social sentiment and influencers',
+        category: 'analytics' as const,
+        action: () => setCurrentPage('social-intelligence'),
+        shortcutId: 'nav:social-intelligence',
+        keywords: ['social', 'sentiment', 'influencer', 'fomo', 'fud'],
+      },
+      {
         id: 'nav-token-flow',
         title: 'Token Flow',
         description: 'View token flow analysis',
@@ -546,6 +557,13 @@ function App() {
       { id: 'p2p-marketplace', label: 'P2P Marketplace', icon: Handshake, component: P2PMarketplace, panelType: 'p2p-marketplace' as PanelType },
       { id: 'stocks', label: 'Stocks', icon: BarChart3, component: Stocks, panelType: 'stocks' as PanelType },
       { id: 'insiders', label: 'Insiders', icon: Users, component: Insiders, panelType: 'insiders' as PanelType },
+      {
+        id: 'social-intelligence',
+        label: 'Social Intelligence',
+        icon: MessageSquare,
+        component: SocialIntelligence,
+        panelType: 'social-intelligence' as PanelType,
+      },
       { id: 'token-flow', label: 'Token Flow', icon: Network, component: TokenFlow, panelType: 'token-flow' as PanelType },
       { id: 'launchpad', label: 'Launchpad', icon: Rocket, component: Launchpad, panelType: 'launchpad' as PanelType },
       {
@@ -564,6 +582,7 @@ function App() {
       { id: 'multisig', label: 'Multisig', icon: Shield, component: Multisig },
       { id: 'stocks', label: 'Stocks', icon: BarChart3, component: Stocks },
       { id: 'insiders', label: 'Insiders', icon: Users, component: Insiders },
+      { id: 'social-intelligence', label: 'Social Intelligence', icon: MessageSquare, component: SocialIntelligence },
       { id: 'token-flow', label: 'Token Flow', icon: Network, component: TokenFlow },
       { id: 'launchpad', label: 'Launchpad', icon: Rocket, component: Launchpad },
       { id: 'surveillance', label: 'Market Surveillance', icon: AlertTriangle, component: MarketSurveillance },
